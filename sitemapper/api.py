@@ -10,6 +10,7 @@ from indra.statements import *
 from indra.util import read_unicode_csv
 from indra.config import has_config, get_config
 from indra.databases import uniprot_client, hgnc_client, phosphosite_client
+
 # Python 2
 try:
     basestring
@@ -24,7 +25,6 @@ if has_config('SITEMAPPER_CACHE_PATH'):
     sitemapper_cache = get_config('SITEMAPPER_CACHE_PATH')
 else:
     sitemapper_cache = None
-
 
 class MappedStatement(object):
     """Information about a Statement found to have invalid sites.
