@@ -7,8 +7,10 @@ import logging
 import textwrap
 from copy import deepcopy
 from indra.util import read_unicode_csv
-#from indra.databases import uniprot_client, hgnc_client, phosphosite_client
+from indra.databases import uniprot_client, hgnc_client
 from collections import namedtuple
+
+from sitemapper import phosphosite_client
 
 # Python 2
 try:
@@ -99,13 +101,17 @@ class SiteMapper(object):
             pass
 
     def map_sites(self, prot_id, prot_ns, site_list):
+        # Check the input
         if prot_ns not in ('uniprot', 'hgnc', 'hgnc_id'):
             raise ValueError("prot_ns must be one of 'uniprot', 'hgnc' (for "
                              "HGNC symbols) or 'hgnc_id' (for HGNC IDs)")
         valid_sites = _validate_sites(site_list)
-        return valid_sites
+        # Get the uniprot ID for the protein
+        if prot_ns == 'uniprot':
+            return self._check_agent_mod(prot_id, valid_sites)
 
-    def _check_agent_mod(self, agent, mods, do_methionine_offset=True,
+
+    def _check_agent_mod(self, up_id, mods, do_methionine_offset=True,
                          do_orthology_mapping=True,
                          do_isoform_mapping=True):
         """Check an agent for invalid sites and look for mappings.
@@ -147,18 +153,16 @@ class SiteMapper(object):
             comment).
         """
         invalid_sites = []
-        up_id = _get_uniprot_id(prot)
         # If the uniprot entry is not found, let it pass
         if not up_id:
-            logger.debug("No uniprot ID for %s, %s" % (prot.id, prot.ns))
-            return [] # Same effect as valid sites
+            raise ValueError("No uniprot ID.")
         # Look up all of the modifications in uniprot, and add them to the list
         # of invalid sites if they are missing
         for old_mod in mods:
             # If no site information for this residue, skip
             if old_mod.position is None or old_mod.residue is None:
                 continue
-            site_key = (prot.id, prot.ns, old_mod.residue, old_mod.position)
+            site_key = (up_id, old_mod.residue, old_mod.position)
             # Increase our count for this site
             self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1
             # First, check the cache to potentially avoid a costly sequence
@@ -180,8 +184,7 @@ class SiteMapper(object):
                 self._cache[site_key] = 'VALID'
                 continue
             # Check the agent for a Uniprot ID
-            up_id = agent.db_refs.get('UP')
-            hgnc_id = agent.db_refs.get('HGNC')
+            hgnc_id = uniprot_client.get_gene_name(up_id)
             if not hgnc_id:
                 logger.debug("No HGNC ID for %s, only curated sites will be "
                             "mapped" % agent.name)
