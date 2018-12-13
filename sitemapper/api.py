@@ -6,10 +6,9 @@ import pickle
 import logging
 import textwrap
 from copy import deepcopy
-from indra.statements import *
 from indra.util import read_unicode_csv
-from indra.config import has_config, get_config
-from indra.databases import uniprot_client, hgnc_client, phosphosite_client
+#from indra.databases import uniprot_client, hgnc_client, phosphosite_client
+from collections import namedtuple
 
 # Python 2
 try:
@@ -21,10 +20,12 @@ except:
 logger = logging.getLogger(__name__)
 
 
-if has_config('SITEMAPPER_CACHE_PATH'):
-    sitemapper_cache = get_config('SITEMAPPER_CACHE_PATH')
-else:
-    sitemapper_cache = None
+valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+             'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
+
+
+Site = namedtuple('Site', ['residue', 'position'])
+
 
 class MappedStatement(object):
     """Information about a Statement found to have invalid sites.
@@ -142,8 +143,8 @@ class SiteMapper(object):
             pass
 
     def map_sites(self, prot_id, prot_ns, site_list):
-        return 1234
-
+        valid_sites = _validate_sites(site_list)
+        return valid_sites
 
     def _check_agent_mod(self, agent, mods, do_methionine_offset=True,
                          do_orthology_mapping=True,
@@ -370,4 +371,20 @@ default_site_map = load_site_map(default_site_map_path)
 default_mapper = SiteMapper(default_site_map)
 """A default instance of :py:class:`SiteMapper` that contains the site
 information found in resources/curated_site_map.csv'."""
+
+def _validate_sites(site_list):
+    valid_sites = []
+    for residue, position in site_list:
+        # Check that the residue is a valid amino acid
+        if residue not in valid_aas:
+            raise ValueError('Residue %s not a valid amino acid' % residue)
+        # Next make sure that the position is a valid position
+        try:
+            int(position)
+        except ValueError:
+            raise ValueError('Position %s not a valid sequence position.'
+                             % position)
+        # Site appears valid, make a Site object
+        valid_sites.append(Site(residue, position))
+    return valid_sites
 

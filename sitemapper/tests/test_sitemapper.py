@@ -1,9 +1,27 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
-from indra.preassembler.sitemapper import default_mapper as sm, MappedStatement
-from indra.statements import *
-from indra.util import unicode_strs
-from sitemapper.api import SiteMapper
+from nose.tools import raises
+from sitemapper.api import SiteMapper, _validate_sites, Site
+
+@raises(ValueError)
+def test_invalid_residue():
+    sm = SiteMapper()
+    sm.map_sites('MAPK1', 'HGNC', [('B', '185')])
+
+@raises(ValueError)
+def test_invalid_position():
+    sm = SiteMapper()
+    sm.map_sites('MAPK1', 'HGNC', [('T', 'foo')])
+
+def test_validate_sites():
+    sites = _validate_sites([('T', '185'), ('Y', '187')])
+    assert len(sites) == 2
+    assert isinstance(sites[0], Site)
+    assert sites[0].residue == 'T'
+    assert sites[0].position == '185'
+    assert isinstance(sites[1], Site)
+    assert sites[1].residue == 'Y'
+    assert sites[1].position == '187'
 
 
 def test_check_agent_mod():
@@ -14,7 +32,6 @@ def test_check_agent_mod():
     mapk1_valid_up = sm.map_sites('P28482', 'UP',
                                     [('T', '185'), ('Y', '187')])
     assert mapk1_valid_hgnc == mapk1_valid_up
-
 
     """
     res_valid = sm._map_agent_sites(mapk1_valid)
@@ -45,6 +62,7 @@ def test_check_agent_mod():
     new_agent = res_invalid[1]
     """
 
+"""
 def test_site_map_modification():
     mapk1_invalid = Agent('MAPK1',
                           mods=[ModCondition('phosphorylation', 'T', '183'),
@@ -188,7 +206,6 @@ def test_site_map_activation():
     check_validated_mapks(res, st1)
 
 def test_site_map_hgnc():
-    """Make sure site mapping is done even if only HGNC ID is given."""
     (mapk1_invalid, mapk3_invalid) = get_invalid_mapks()
     mapk1_invalid.db_refs = {'HGNC': '6871'}
     st1 = ActiveForm(mapk1_invalid, 'kinase', True)
@@ -219,7 +236,6 @@ def test_site_map_within_bound_condition():
 
 
 def get_invalid_mapks():
-    """A handy function for getting the invalid MAPK agents we want."""
     mapk1_invalid = Agent('MAPK1',
                           mods=[ModCondition('phosphorylation', 'T', '183'),
                                 ModCondition('phosphorylation', 'Y', '185')],
@@ -232,7 +248,6 @@ def get_invalid_mapks():
     return (mapk1_invalid, mapk3_invalid)
 
 def check_validated_mapks(res, st1):
-    """Validate that the invalid MAPKs have been fixed appropriately."""
     assert len(res) == 2
     valid_stmts = res[0]
     mapped_stmts = res[1]
@@ -262,4 +277,4 @@ def validate_mapk1(agent1):
     assert len(agent1.mods) == 2
     assert agent1.mods[0].matches(ModCondition('phosphorylation', 'T', '185'))
     assert agent1.mods[1].matches(ModCondition('phosphorylation', 'Y', '187'))
-
+"""
