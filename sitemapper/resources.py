@@ -42,5 +42,51 @@ def download_phosphositeplus():
                      resp.status_code)
 
 
+def download_uniprot_mappings():
+    print('Updating UniProt entries')
+    url = 'http://www.uniprot.org/uniprot/?' + \
+        'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
+        'format=tab&columns=id,genes(PREFERRED),' + \
+        'entry%20name,database(RGD),database(MGI),length'
+    logger.info('Downloading %s' % url)
+    res = requests.get(url)
+    if res.status_code != 200:
+        logger.error('Failed to download "%s"' % url)
+
+    return res.content
+
+    reviewed_entries = load_from_http(url)
+    url = 'http://www.uniprot.org/uniprot/?' + \
+        'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
+        '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
+        'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
+        'database(RGD),database(MGI),length'
+    unreviewed_human_entries = load_from_http(url)
+    if not((reviewed_entries is not None) and
+            (unreviewed_human_entries is not None)):
+            return
+    unreviewed_human_entries = unreviewed_human_entries.decode('utf-8')
+    reviewed_entries = reviewed_entries.decode('utf-8')
+    lines = reviewed_entries.strip('\n').split('\n')
+    lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
+    # At this point, we need to clean up the gene names.
+    logging.info('Processing UniProt entries list.')
+    for i, line in enumerate(lines):
+        if i == 0:
+            continue
+        terms = line.split('\t')
+        # If there are multiple gene names, take the first one
+        gene_names = terms[1].split(';')
+        terms[1] = gene_names[0]
+        # Join the line again after the change
+        lines[i] = '\t'.join(terms)
+    # Join all lines into a single string
+    full_table = '\n'.join(lines)
+    fname = os.path.join(path, 'uniprot_entries.tsv')
+    logging.info('Saving into %s.' % fname)
+    with open(fname, 'wb') as fh:
+        fh.write(full_table.encode('utf-8'))
+
+
 if __name__ == '__main__':
     download_phosphositeplus()
