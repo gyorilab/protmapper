@@ -6,17 +6,17 @@ from sitemapper.api import SiteMapper, _validate_sites, Site
 @raises(ValueError)
 def test_invalid_residue():
     sm = SiteMapper()
-    sm.map_sites('MAPK1', 'HGNC', [('B', '185')])
+    sm.map_to_human_ref('MAPK1', 'HGNC', [('B', '185')])
 
 @raises(ValueError)
 def test_invalid_position():
     sm = SiteMapper()
-    sm.map_sites('MAPK1', 'HGNC', [('T', 'foo')])
+    sm.map_to_human_ref('MAPK1', 'HGNC', [('T', 'foo')])
 
 @raises(ValueError)
 def test_invalid_prot_ns():
     sm = SiteMapper()
-    sm.map_sites('MAPK1', 'hgncsymb', [('T', '185')])
+    sm.map_to_human_ref('MAPK1', 'hgncsymb', [('T', '185')])
 
 def test_validate_sites():
     sites = _validate_sites([('T', '185'), ('Y', '187')])
@@ -32,9 +32,9 @@ def test_validate_sites():
 def test_check_agent_mod():
     sm = SiteMapper()
 
-    mapk1_valid_hgnc = sm.map_sites('MAPK1', 'hgnc',
+    mapk1_valid_hgnc = sm.map_to_human_ref('MAPK1', 'hgnc',
                                     [('T', '185'), ('Y', '187')])
-    mapk1_valid_up = sm.map_sites('P28482', 'uniprot',
+    mapk1_valid_up = sm.map_to_human_ref('P28482', 'uniprot',
                                     [('T', '185'), ('Y', '187')])
     #assert mapk1_valid_hgnc == mapk1_valid_up
 
@@ -44,8 +44,11 @@ def test_check_agent_mod():
     assert res_valid[0] == []
     assert res_valid[1].matches(mapk1_valid)
     """
-    mapk1_invalid_hgnc = ('MAPK1', 'hgnc', [('T', '183'), ('Y', '185')])
-    mapk1_invalid_up = ('P28482', 'uniprot', [('T', '183'), ('Y', '185')])
+    mapk1_invalid_hgnc = sm.map_to_human_ref('MAPK1', 'hgnc',
+                                      [('T', '183'), ('Y', '185')])
+    mapk1_invalid_up = sm.map_to_human_ref('P28482', 'uniprot',
+                                    [('T', '183'), ('Y', '185')])
+    assert mapk1_invalid_hgnc == mapk1_invalid_up
 
     """
     res_invalid = sm._map_agent_sites(mapk1_invalid)

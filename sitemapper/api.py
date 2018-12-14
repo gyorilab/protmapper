@@ -100,18 +100,20 @@ class SiteMapper(object):
         except:
             pass
 
-    def map_sites(self, prot_id, prot_ns, site_list):
-        # Check the input
-        if prot_ns not in ('uniprot', 'hgnc', 'hgnc_id'):
-            raise ValueError("prot_ns must be one of 'uniprot', 'hgnc' (for "
-                             "HGNC symbols) or 'hgnc_id' (for HGNC IDs)")
+    def map_to_human_ref(self, prot_id, prot_ns, site_list):
+        # Check the protein ID and namespace
+        if prot_id is None:
+            raise ValueError("prot_id must not be None.")
+        if prot_ns not in ('uniprot', 'hgnc'):
+            raise ValueError("prot_ns must be either 'uniprot' or 'hgnc' (for "
+                             "HGNC symbols)")
+        # Make sure the sites are valid
         valid_sites = _validate_sites(site_list)
-        # Get the uniprot ID for the protein
-        if prot_ns == 'uniprot':
-            return self._check_agent_mod(prot_id, valid_sites)
+        return self._check_agent_mod(prot_id, prot_ns, valid_sites)
 
 
-    def _check_agent_mod(self, up_id, mods, do_methionine_offset=True,
+    def _check_agent_mod(self, prot_id, prot_ns, mods,
+                         do_methionine_offset=True,
                          do_orthology_mapping=True,
                          do_isoform_mapping=True):
         """Check an agent for invalid sites and look for mappings.
@@ -153,9 +155,12 @@ class SiteMapper(object):
             comment).
         """
         invalid_sites = []
+        # Map sites
+        up_id = _get_uniprot_id(prot_id, prot_ns)
         # If the uniprot entry is not found, let it pass
         if not up_id:
-            raise ValueError("No uniprot ID.")
+            print("No Uniprot ID found for %s, %s" % (prot_id, prot_ns))
+            return []
         # Look up all of the modifications in uniprot, and add them to the list
         # of invalid sites if they are missing
         for old_mod in mods:
@@ -256,27 +261,27 @@ class SiteMapper(object):
         return invalid_sites
 
 
-def _get_uniprot_id(agent):
+def _get_uniprot_id(prot_id, prot_ns):
     """Get the Uniprot ID for an agent, looking up in HGNC if necessary.
 
     If the Uniprot ID is a list then return the first ID by default.
     """
-    up_id = agent.db_refs.get('UP')
-    hgnc_id = agent.db_refs.get('HGNC')
-    if up_id is None:
+    # If the ID is a Uniprot ID, then we're done
+    if prot_ns == 'uniprot':
+        up_id = prot_id
+    # Otherwise, we get the Uniprot ID from the HGNC name
+    elif prot_ns == 'hgnc':
+        # Get the HGNC ID
+        hgnc_id = hgnc_client.get_hgnc_id(prot_id)
         if hgnc_id is None:
-            # If both UniProt and HGNC refs are missing we can't
-            # sequence check and so don't report a failure.
             return None
         # Try to get UniProt ID from HGNC
         up_id = hgnc_client.get_uniprot_id(hgnc_id)
-        # If this fails, again, we can't sequence check
-        if up_id is None:
-            return None
-    # If the UniProt ID is a list then choose the first one.
-    if not isinstance(up_id, basestring) and \
-       isinstance(up_id[0], basestring):
-        up_id = up_id[0]
+        # If the UniProt ID is a list then choose the first one.
+        if up_id is not None and \
+           (not isinstance(up_id, basestring) and
+            isinstance(up_id[0], basestring)):
+            up_id = up_id[0]
     return up_id
 
 
@@ -285,6 +290,7 @@ def load_site_map(path):
 
     The site map file should be a comma-separated file with six columns::
 
+        UniprotId: Uniprot ID of protein
         Gene: HGNC gene name
         OrigRes: Original (incorrect) residue
         OrigPos: Original (incorrect) residue position
@@ -300,8 +306,8 @@ def load_site_map(path):
     Returns
     -------
     dict
-        A dict mapping tuples of the form `(gene, orig_res, orig_pos)` to a
-        tuple of the form `(correct_res, correct_pos, comment)`, where `gene`
+        A dict mapping tuples of the form `(uniprot_id, orig_res, orig_pos)` to
+        a tuple of the form `(correct_res, correct_pos, comment)`, where `gene`
         is the string name of the gene (canonicalized to HGNC); `orig_res` and
         `orig_pos` are the residue and position to be mapped; `correct_res` and
         `correct_pos` are the corrected residue and position, and `comment` is
@@ -314,13 +320,13 @@ def load_site_map(path):
     next(maprows)
     for row in maprows:
         # Don't allow empty entries in the key section
-        if not (row[0] and row[1] and row[2]):
+        if not (row[0] and row[2] and row[3]):
             raise Exception("Entries in the key (gene, residue, position) "
                             "may not be empty.")
-        correct_res = row[3].strip() if row[3] else None
-        correct_pos = row[4].strip() if row[4] else None
-        comment = row[5].strip() if row[5] else None
-        site_map[(row[0].strip(), row[1].strip(), row[2].strip())] = \
+        correct_res = row[4].strip() if row[4] else None
+        correct_pos = row[5].strip() if row[5] else None
+        comment = row[6].strip() if row[6] else None
+        site_map[(row[0].strip(), row[2].strip(), row[3].strip())] = \
                                 (correct_res, correct_pos, comment)
     return site_map
 

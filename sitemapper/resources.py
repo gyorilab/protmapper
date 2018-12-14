@@ -43,25 +43,28 @@ def download_phosphositeplus():
 
 
 def download_uniprot_mappings():
-    print('Updating UniProt entries')
+    print('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
         'format=tab&columns=id,genes(PREFERRED),' + \
-        'entry%20name,database(RGD),database(MGI),length'
-    logger.info('Downloading %s' % url)
+        'entry%20name,database(RGD),database(MGI)'
+    print('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
-        logger.error('Failed to download "%s"' % url)
+        print('Failed to download "%s"' % url)
+    reviewed_entries = res.content
 
-    return res.content
-
-    reviewed_entries = load_from_http(url)
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
         '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
         'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
-        'database(RGD),database(MGI),length'
-    unreviewed_human_entries = load_from_http(url)
+        'database(RGD),database(MGI)'
+    print('Downloading %s' % url)
+    res = requests.get(url)
+    if res.status_code != 200:
+        print('Failed to download "%s"' % url)
+    unreviewed_human_entries = res.content
+
     if not((reviewed_entries is not None) and
             (unreviewed_human_entries is not None)):
             return
@@ -70,7 +73,7 @@ def download_uniprot_mappings():
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
     # At this point, we need to clean up the gene names.
-    logging.info('Processing UniProt entries list.')
+    print('Processing UniProt entries list.')
     for i, line in enumerate(lines):
         if i == 0:
             continue
@@ -82,11 +85,13 @@ def download_uniprot_mappings():
         lines[i] = '\t'.join(terms)
     # Join all lines into a single string
     full_table = '\n'.join(lines)
-    fname = os.path.join(path, 'uniprot_entries.tsv')
+    #fname = os.path.join(path, 'uniprot_entries.tsv')
+    fname = 'uniprot_entries.tsv'
     logging.info('Saving into %s.' % fname)
     with open(fname, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
 
 
 if __name__ == '__main__':
+    #download_uniprot_mappings()
     download_phosphositeplus()
