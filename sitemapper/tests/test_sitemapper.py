@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 from nose.tools import raises
-from sitemapper.api import SiteMapper, _validate_site, Site, MappedSite
+from sitemapper.api import SiteMapper, _validate_site, MappedSite
 
 @raises(ValueError)
 def test_invalid_residue():
