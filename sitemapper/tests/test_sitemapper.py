@@ -1,22 +1,22 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 from nose.tools import raises
-from sitemapper.api import SiteMapper, _validate_sites, Site
+from sitemapper.api import SiteMapper, _validate_sites, Site, MappedSite
 
 @raises(ValueError)
 def test_invalid_residue():
     sm = SiteMapper()
-    sm.map_to_human_ref('MAPK1', 'HGNC', [('B', '185')])
+    sm.map_to_human_ref('MAPK1', 'HGNC', 'B', '185')
 
 @raises(ValueError)
 def test_invalid_position():
     sm = SiteMapper()
-    sm.map_to_human_ref('MAPK1', 'HGNC', [('T', 'foo')])
+    sm.map_to_human_ref('MAPK1', 'HGNC', 'T', 'foo')
 
 @raises(ValueError)
 def test_invalid_prot_ns():
     sm = SiteMapper()
-    sm.map_to_human_ref('MAPK1', 'hgncsymb', [('T', '185')])
+    sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
 
 def test_validate_sites():
     sites = _validate_sites([('T', '185'), ('Y', '187')])
@@ -29,14 +29,54 @@ def test_validate_sites():
     assert sites[1].position == '187'
 
 
-def test_check_agent_mod():
+def test_check_agent_mod_up_id():
     sm = SiteMapper()
+    ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '185')
+    assert instance(ms, MappedSite)
+    assert ms.up_id == 'P28482'
+    assert ms.hgnc_name is None
+    assert ms.valid is True
+    assert ms.orig_res == 'T'
+    assert ms.orig_pos == '185'
+    assert ms.mapped_res == 'T'
+    assert ms.mapped_pos == '185'
+    assert ms.description == 'VALID'
 
-    mapk1_valid_hgnc = sm.map_to_human_ref('MAPK1', 'hgnc',
-                                    [('T', '185'), ('Y', '187')])
-    mapk1_valid_up = sm.map_to_human_ref('P28482', 'uniprot',
-                                    [('T', '185'), ('Y', '187')])
-    #assert mapk1_valid_hgnc == mapk1_valid_up
+    ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
+    assert instance(ms, MappedSite)
+    assert ms.up_id == 'P28482'
+    assert ms.hgnc_name is None
+    assert ms.valid is False
+    assert ms.orig_res == 'T'
+    assert ms.orig_pos == '183'
+    assert ms.mapped_res == 'T'
+    assert ms.mapped_pos == '185'
+    assert ms.description == 'INFERRED_MOUSE_SITE'
+
+
+def test_check_agent_mod_hgnc():
+    sm = SiteMapper()
+    ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '185')
+    assert instance(ms, MappedSite)
+    assert ms.up_id == 'P28482'
+    assert ms.hgnc_name == 'MAPK1'
+    assert ms.valid is True
+    assert ms.orig_res == 'T'
+    assert ms.orig_pos == '185'
+    assert ms.mapped_res == 'T'
+    assert ms.mapped_pos == '185'
+    assert ms.description == 'VALID'
+
+    ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
+    assert instance(ms, MappedSite)
+    assert ms.up_id == 'P28482'
+    assert ms.hgnc_name == 'MAPK1'
+    assert ms.valid is False
+    assert ms.orig_res == 'T'
+    assert ms.orig_pos == '183'
+    assert ms.mapped_res == 'T'
+    assert ms.mapped_pos == '185'
+    assert ms.description == 'INFERRED_MOUSE_SITE'
 
     """
     res_valid = sm._map_agent_sites(mapk1_valid)
@@ -44,11 +84,6 @@ def test_check_agent_mod():
     assert res_valid[0] == []
     assert res_valid[1].matches(mapk1_valid)
     """
-    mapk1_invalid_hgnc = sm.map_to_human_ref('MAPK1', 'hgnc',
-                                      [('T', '183'), ('Y', '185')])
-    mapk1_invalid_up = sm.map_to_human_ref('P28482', 'uniprot',
-                                    [('T', '183'), ('Y', '185')])
-    assert mapk1_invalid_hgnc == mapk1_invalid_up
 
     """
     res_invalid = sm._map_agent_sites(mapk1_invalid)
