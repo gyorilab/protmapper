@@ -29,6 +29,18 @@ valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
 Site = namedtuple('Site', ['residue', 'position'])
 Protein = namedtuple('Protein', ['id', 'ns'])
 
+class MappedSite(object):
+    def __init__(self, up_id, valid, orig_res, orig_pos, mapped_res=None,
+                 mapped_pos=None, description=None, hgnc_name=None):
+        self.up_id = up_id
+        self.valid = valid
+        self.orig_res = orig_res
+        self.orig_pos = orig_pos
+        self.mapped_res = mapped_res
+        self.mapped_pos = mapped_pos
+        self.description = description
+        self.hgnc_name = hgnc_name
+
 
 class SiteMapper(object):
     """
@@ -100,7 +112,7 @@ class SiteMapper(object):
         except:
             pass
 
-    def map_to_human_ref(self, prot_id, prot_ns, site_list):
+    def map_to_human_ref(self, prot_id, prot_ns, residue, position):
         # Check the protein ID and namespace
         if prot_id is None:
             raise ValueError("prot_id must not be None.")
@@ -108,11 +120,11 @@ class SiteMapper(object):
             raise ValueError("prot_ns must be either 'uniprot' or 'hgnc' (for "
                              "HGNC symbols)")
         # Make sure the sites are valid
-        valid_sites = _validate_sites(site_list)
-        return self._check_agent_mod(prot_id, prot_ns, valid_sites)
+        valid_res, valid_pos = _validate_site(residue, position)
+        return self._check_agent_mod(prot_id, prot_ns, valid_res, valid_pos)
 
 
-    def _check_agent_mod(self, prot_id, prot_ns, mods,
+    def _check_agent_mod(self, prot_id, prot_ns, residue, position,
                          do_methionine_offset=True,
                          do_orthology_mapping=True,
                          do_isoform_mapping=True):
@@ -154,111 +166,113 @@ class SiteMapper(object):
             None; otherwise it is a tuple consisting of (residue, position,
             comment).
         """
-        invalid_sites = []
         # Map sites
         up_id = _get_uniprot_id(prot_id, prot_ns)
-        # If the uniprot entry is not found, let it pass
+        # If an HGNC ID was given and the uniprot entry is not found,
+        # let it pass
         if not up_id:
-            print("No Uniprot ID found for %s, %s" % (prot_id, prot_ns))
-            return []
-        # Look up all of the modifications in uniprot, and add them to the list
-        # of invalid sites if they are missing
-        for old_mod in mods:
-            # If no site information for this residue, skip
-            if old_mod.position is None or old_mod.residue is None:
-                continue
-            site_key = (up_id, old_mod.residue, old_mod.position)
-            # Increase our count for this site
-            self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1
-            # First, check the cache to potentially avoid a costly sequence
-            # lookup
-            cached_site = self._cache.get(site_key)
-            if cached_site is not None:
-                if cached_site == 'VALID':
-                    pass
-                else:
-                    invalid_sites.append((site_key, cached_site))
-                continue
-            # If not cached, continue
-            # Look up the residue/position in uniprot
-            site_valid = uniprot_client.verify_location(up_id,
-                                                        old_mod.residue,
-                                                        old_mod.position)
-            # If it's not found in Uniprot, then look it up in the site map
-            if site_valid:
-                self._cache[site_key] = 'VALID'
-                continue
-            # Check the agent for a Uniprot ID
-            hgnc_id = uniprot_client.get_gene_name(up_id)
-            if not hgnc_id:
-                logger.debug("No HGNC ID for %s, only curated sites will be "
-                            "mapped" % agent.name)
-            # NOTE: The following lookups can only be performed if the
-            # Phosphosite Data is available.
-            if phosphosite_client.has_data():
-                # First, look for other entries in phosphosite for this protein
-                # where this sequence position is legit (i.e., other isoforms)
-                if do_isoform_mapping and up_id and hgnc_id:
-                    human_pos = phosphosite_client.map_to_human_site(
-                                  up_id, old_mod.residue, old_mod.position)
-                    if human_pos:
-                        mapped_site = (old_mod.residue, human_pos,
-                                       'INFERRED_ALTERNATIVE_ISOFORM')
-                        self._cache[site_key] = mapped_site
-                        invalid_sites.append((site_key, mapped_site))
-                        continue
-                # Try looking for rat or mouse sites
-                if do_orthology_mapping and up_id and hgnc_id:
-                    # Get the mouse ID for this protein
-                    up_mouse = uniprot_client.get_mouse_id(up_id)
-                    # Get mouse sequence
-                    human_pos = phosphosite_client.map_to_human_site(
-                                  up_mouse, old_mod.residue, old_mod.position)
-                    if human_pos:
-                        mapped_site = (old_mod.residue, human_pos,
-                                       'INFERRED_MOUSE_SITE')
-                        self._cache[site_key] = mapped_site
-                        invalid_sites.append((site_key, mapped_site))
-                        continue
-                    # Try the rat sequence
-                    up_rat = uniprot_client.get_rat_id(up_id)
-                    human_pos = phosphosite_client.map_to_human_site(
-                                  up_rat, old_mod.residue, old_mod.position)
-                    if human_pos:
-                        mapped_site = (old_mod.residue, human_pos,
-                                       'INFERRED_RAT_SITE')
-                        self._cache[site_key] = mapped_site
-                        invalid_sites.append((site_key, mapped_site))
-                        continue
-                # Check for methionine offset (off by one)
-                if do_methionine_offset and up_id and hgnc_id:
-                    try:
-                        offset_pos = str(int(old_mod.position) + 1)
-                    except ValueError:
-                        logger.warning("Invalid position: %s" %
-                                       old_mod.position)
-                        continue
-                    human_pos = phosphosite_client.map_to_human_site(
-                                  up_id, old_mod.residue, offset_pos)
-                    # If it's valid at the offset position, create the mapping
-                    # and continue
-                    if human_pos:
-                        mapped_site = (old_mod.residue, human_pos,
-                                       'INFERRED_METHIONINE_CLEAVAGE')
-                        self._cache[site_key] = mapped_site
-                        invalid_sites.append((site_key, mapped_site))
-                        continue
-            # Now check the site map
-            mapped_site = self.site_map.get(site_key, None)
-            # No entry in the site map; set site info to None
-            if mapped_site is None:
-                self._cache[site_key] = None
-                invalid_sites.append((site_key, None))
-            # Manually mapped in the site map
-            else:
-                self._cache[site_key] = mapped_site
-                invalid_sites.append((site_key, mapped_site))
-        return invalid_sites
+            return MappedSite(up_id, True, residue, position,
+                                     description="NO_UNIPROT_ID")
+        site_key = (up_id, residue, position)
+        # Increase our count for this site
+        self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1
+        # First, check the cache to potentially avoid a costly sequence
+        # lookup
+        cached_site = self._cache.get(site_key)
+        if cached_site is not None:
+            return cached_site
+        # If not cached, continue
+        # Look up the residue/position in uniprot
+        site_valid = uniprot_client.verify_location(up_id, residue, position)
+        # It's a valid site
+        if site_valid:
+            mapped_site = MappedSite(up_id, True, residue, position,
+                                     mapped_res=residue, mapped_pos=position,
+                                     description='VALID')
+            self._cache[site_key] = mapped_site
+            return mapped_site
+        # Check the agent for a Uniprot ID
+        hgnc_id = uniprot_client.get_gene_name(up_id)
+        if not hgnc_id:
+            logger.debug("No HGNC ID for %s, only curated sites will be "
+                        "mapped" % agent.name)
+        # NOTE: The following lookups can only be performed if the
+        # Phosphosite Data is available.
+        human_prot = uniprot_client.is_human(up_id)
+        if phosphosite_client.has_data():
+            # First, look for other entries in phosphosite for this protein
+            # where this sequence position is legit (i.e., other isoforms)
+            if do_isoform_mapping and up_id and human_prot:
+                human_pos = phosphosite_client.map_to_human_site(
+                              up_id, residue, position)
+                if human_pos:
+                    mapped_site = \
+                         MappedSite(up_id, False, residue, position,
+                                    mapped_res=residue, mapped_pos=human_pos,
+                                    description='INFERRED_ALTERNATIVE_ISOFORM')
+                    self._cache[site_key] = mapped_site
+                    return mapped_site
+            # Try looking for rat or mouse sites
+            if do_orthology_mapping and up_id and human_prot:
+                # Get the mouse ID for this protein
+                up_mouse = uniprot_client.get_mouse_id(up_id)
+                # Get mouse sequence
+                human_pos = phosphosite_client.map_to_human_site(
+                              up_mouse, residue, position)
+                if human_pos:
+                    mapped_site = \
+                         MappedSite(up_id, False, residue, position,
+                                    mapped_res=residue, mapped_pos=human_pos,
+                                    description='INFERRED_MOUSE_SITE')
+                    self._cache[site_key] = mapped_site
+                    return mapped_site
+                # Try the rat sequence
+                up_rat = uniprot_client.get_rat_id(up_id)
+                human_pos = phosphosite_client.map_to_human_site(
+                              up_rat, residue, position)
+                if human_pos:
+                    mapped_site = (residue, human_pos, 'INFERRED_RAT_SITE')
+                    mapped_site = \
+                         MappedSite(up_id, False, residue, position,
+                                    mapped_res=residue, mapped_pos=human_pos,
+                                    description='INFERRED_RAT_SITE')
+                    self._cache[site_key] = mapped_site
+                    return mapped_site
+            # Check for methionine offset (off by one)
+            if do_methionine_offset and up_id and human_prot:
+                offset_pos = str(int(position) + 1)
+                human_pos = phosphosite_client.map_to_human_site(
+                              up_id, residue, offset_pos)
+                # If it's valid at the offset position, create the mapping
+                # and continue
+                if human_pos:
+                    mapped_site = \
+                         MappedSite(up_id, False, residue, position,
+                                    mapped_res=residue, mapped_pos=human_pos,
+                                    description='INFERRED_METHIONINE_CLEAVAGE')
+                    self._cache[site_key] = mapped_site
+                    return mapped_site
+        # Now check the site map
+        mapped_site = self.site_map.get(site_key, None)
+        # No entry in the site map; set site info to None
+        if mapped_site is None:
+            mapped_site = MappedSite(up_id, False, residue, position,
+                                     description='NO_MAPPING_FOUND')
+            self._cache[site_key] = None
+            return mapped_site
+        # Manually mapped in the site map
+        else:
+            mapped_res, mapped_pos, description = mapped_site
+            # Convert empty strings to None
+            description = description if description else None
+            mapped_res = mapped_res if mapped_res else None
+            mapped_pos = mapped_pos if mapped_pos else None
+            mapped_site = MappedSite(up_id, True, residue, position,
+                                     mapped_res=mapped_res,
+                                     mapped_pos=mapped_pos,
+                                     description=description)
+            self._cache[site_key] = mapped_site
+            return mapped_site
 
 
 def _get_uniprot_id(prot_id, prot_ns):
@@ -339,6 +353,25 @@ default_site_map = load_site_map(default_site_map_path)
 default_mapper = SiteMapper(default_site_map)
 """A default instance of :py:class:`SiteMapper` that contains the site
 information found in resources/curated_site_map.csv'."""
+
+def _validate_site(residue, position):
+    if residue is None:
+        raise ValueError('residue cannot be None')
+    if position is None:
+        raise ValueError('position cannot be None')
+    # Check that the residue is a valid amino acid
+    if residue not in valid_aas:
+        raise ValueError('Residue %s not a valid amino acid' % residue)
+    # Next make sure that the position is a valid position
+    try:
+        pos_int = int(position)
+        pos_str = str(pos_int)
+    except ValueError:
+        raise ValueError('Position %s not a valid sequence position.'
+                         % position)
+    # Site appears valid, make a Site object
+    return (residue, pos_str)
+
 
 def _validate_sites(site_list):
     valid_sites = []

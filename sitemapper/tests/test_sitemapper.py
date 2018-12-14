@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 from nose.tools import raises
-from sitemapper.api import SiteMapper, _validate_sites, Site, MappedSite
+from sitemapper.api import SiteMapper, _validate_site, Site, MappedSite
 
 @raises(ValueError)
 def test_invalid_residue():
@@ -18,21 +18,22 @@ def test_invalid_prot_ns():
     sm = SiteMapper()
     sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
 
-def test_validate_sites():
-    sites = _validate_sites([('T', '185'), ('Y', '187')])
-    assert len(sites) == 2
-    assert isinstance(sites[0], Site)
-    assert sites[0].residue == 'T'
-    assert sites[0].position == '185'
-    assert isinstance(sites[1], Site)
-    assert sites[1].residue == 'Y'
-    assert sites[1].position == '187'
+def test_validate_site():
+    valid_site = _validate_site('T', '185')
+    assert isinstance(valid_site, tuple)
+    assert valid_site[0] == 'T'
+    assert valid_site[1] == '185'
+
+    valid_site = _validate_site('T', 185)
+    assert isinstance(valid_site, tuple)
+    assert valid_site[0] == 'T'
+    assert valid_site[1] == '185'
 
 
 def test_check_agent_mod_up_id():
     sm = SiteMapper()
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '185')
-    assert instance(ms, MappedSite)
+    assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
     assert ms.hgnc_name is None
     assert ms.valid is True
@@ -43,7 +44,7 @@ def test_check_agent_mod_up_id():
     assert ms.description == 'VALID'
 
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
-    assert instance(ms, MappedSite)
+    assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
     assert ms.hgnc_name is None
     assert ms.valid is False
@@ -57,7 +58,7 @@ def test_check_agent_mod_up_id():
 def test_check_agent_mod_hgnc():
     sm = SiteMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '185')
-    assert instance(ms, MappedSite)
+    assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
     assert ms.hgnc_name == 'MAPK1'
     assert ms.valid is True
@@ -68,7 +69,7 @@ def test_check_agent_mod_hgnc():
     assert ms.description == 'VALID'
 
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
-    assert instance(ms, MappedSite)
+    assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
     assert ms.hgnc_name == 'MAPK1'
     assert ms.valid is False
@@ -77,6 +78,8 @@ def test_check_agent_mod_hgnc():
     assert ms.mapped_res == 'T'
     assert ms.mapped_pos == '185'
     assert ms.description == 'INFERRED_MOUSE_SITE'
+
+
 
     """
     res_valid = sm._map_agent_sites(mapk1_valid)
@@ -104,6 +107,9 @@ def test_check_agent_mod_hgnc():
     assert map185[1][1] == '187'
     new_agent = res_invalid[1]
     """
+
+# What happens if a non human protein is passed in for mapping to human ref
+# What happens if a non-reference isoform is passed in
 
 """
 def test_site_map_modification():
