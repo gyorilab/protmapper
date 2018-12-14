@@ -1,0 +1,11 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+before_install:
+  - pip install nose
+before_script:
+  - python -m sitemapper.resources
+script:
+  - nosetests -v --with-coverage --cover-inclusive --cover-package=sitemapper
+

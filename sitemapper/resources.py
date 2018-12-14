@@ -93,5 +93,5 @@ def download_uniprot_mappings():
 
 
 if __name__ == '__main__':
-    #download_uniprot_mappings()
     download_phosphositeplus()
+    #download_uniprot_mappings()

@@ -8,7 +8,6 @@ import textwrap
 from copy import deepcopy
 from indra.util import read_unicode_csv
 from indra.databases import uniprot_client, hgnc_client
-from collections import namedtuple
 
 from sitemapper import phosphosite_client
 
