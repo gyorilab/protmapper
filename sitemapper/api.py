@@ -19,15 +19,13 @@ try:
 except:
     basestring = str
 
+
 logger = logging.getLogger(__name__)
 
 
 valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
              'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
 
-
-Site = namedtuple('Site', ['residue', 'position'])
-Protein = namedtuple('Protein', ['id', 'ns'])
 
 class MappedSite(object):
     def __init__(self, up_id, valid, orig_res, orig_pos, mapped_res=None,
@@ -112,21 +110,7 @@ class SiteMapper(object):
         except:
             pass
 
-    def map_to_human_ref(self, prot_id, prot_ns, residue, position):
-        # Check the protein ID and namespace
-        if prot_id is None:
-            raise ValueError("prot_id must not be None.")
-        if prot_ns not in ('uniprot', 'hgnc'):
-            raise ValueError("prot_ns must be either 'uniprot' or 'hgnc' (for "
-                             "HGNC symbols)")
-        # Make sure the sites are valid
-        valid_res, valid_pos = _validate_site(residue, position)
-        # The uniprot ID will be filled in,
-        mapped_site = self._check_agent_mod(prot_id, prot_ns, valid_res,
-                                            valid_pos)
-        return mapped_site
-
-    def _check_agent_mod(self, prot_id, prot_ns, residue, position,
+    def map_to_human_ref(self, prot_id, prot_ns, residue, position,
                          do_methionine_offset=True,
                          do_orthology_mapping=True,
                          do_isoform_mapping=True):
@@ -137,10 +121,14 @@ class SiteMapper(object):
 
         Parameters
         ----------
-        prot : :py:class:`sitemapper.Protein`
-            Agent to check for invalid modification sites.
-        mods : list of :py:class:`sitemapper.Site`
-            Modifications to check for validity and map.
+        prot_id : str
+            A Uniprot ID or HGNC gene symbol for the protein.
+        prot_ns : str
+            One of 'uniprot' or 'hgnc' indicating the type of ID given.
+        residue : str
+            Residue to map on the protein to check for validity and map.
+        position : str
+            Position of the residue to check for validity and map.
         do_methionine_offset : boolean
             Whether to check for off-by-one errors in site position (possibly)
             attributable to site numbering from mature proteins after
@@ -161,14 +149,20 @@ class SiteMapper(object):
 
         Returns
         -------
-        list
-            A list of invalid sites, where each entry in the list has two
-            elements: ((gene_name, residue, position), mapped_site).  If the
-            invalid position was not found in the site map, mapped_site is
-            None; otherwise it is a tuple consisting of (residue, position,
-            comment).
+        MappedSite
+            The MappedSite object gives information on results of mapping the
+            site. See :py:class:`sitemapper.MappedSite` documentation for
+            details.
         """
-        # Map sites
+        # Check the protein ID and namespace
+        if prot_id is None:
+            raise ValueError("prot_id must not be None.")
+        if prot_ns not in ('uniprot', 'hgnc'):
+            raise ValueError("prot_ns must be either 'uniprot' or 'hgnc' (for "
+                             "HGNC symbols)")
+        # Make sure the sites are valid
+        valid_res, valid_pos = _validate_site(residue, position)
+        # Get Uniprot ID and gene name
         up_id = _get_uniprot_id(prot_id, prot_ns)
         gene_name = uniprot_client.get_gene_name(up_id)
         # If an HGNC ID was given and the uniprot entry is not found,
@@ -279,6 +273,71 @@ class SiteMapper(object):
             return mapped_site
 
 
+def load_site_map(path):
+    """Load the modification site map from a file.
+
+    The site map file should be a comma-separated file with six columns::
+
+        UniprotId: Uniprot ID of protein
+        Gene: Gene name
+        OrigRes: Original (incorrect) residue
+        OrigPos: Original (incorrect) residue position
+        CorrectRes: The correct residue for the modification
+        CorrectPos: The correct residue position
+        Comment: Description of the reason for the error.
+
+    Parameters
+    ----------
+    path : string
+        Path to the tab-separated site map file.
+
+    Returns
+    -------
+    dict
+        A dict mapping tuples of the form `(uniprot_id, orig_res, orig_pos)` to
+        a tuple of the form `(correct_res, correct_pos, comment)`, where
+        `uniprot_id` is the Uniprot ID of the protein; `orig_res` and
+        `orig_pos` are the residue and position to be mapped; `correct_res` and
+        `correct_pos` are the corrected residue and position, and `comment` is
+        a string describing the reason for the mapping (species error, isoform
+        error, wrong residue name, etc.).
+    """
+    site_map = {}
+    maprows = read_unicode_csv(path)
+    # Skip the header line
+    next(maprows)
+    for row in maprows:
+        # Don't allow empty entries in the key section
+        if not (row[0] and row[2] and row[3]):
+            raise Exception("Entries in the key (gene, residue, position) "
+                            "may not be empty.")
+        correct_res = row[4].strip() if row[4] else None
+        correct_pos = row[5].strip() if row[5] else None
+        comment = row[6].strip() if row[6] else None
+        site_map[(row[0].strip(), row[2].strip(), row[3].strip())] = \
+                                (correct_res, correct_pos, comment)
+    return site_map
+
+
+def _validate_site(residue, position):
+    if residue is None:
+        raise ValueError('residue cannot be None')
+    if position is None:
+        raise ValueError('position cannot be None')
+    # Check that the residue is a valid amino acid
+    if residue not in valid_aas:
+        raise ValueError('Residue %s not a valid amino acid' % residue)
+    # Next make sure that the position is a valid position
+    try:
+        pos_int = int(position)
+        pos_str = str(pos_int)
+    except ValueError:
+        raise ValueError('Position %s not a valid sequence position.'
+                         % position)
+    # Site appears valid, make a Site object
+    return (residue, pos_str)
+
+
 def _get_uniprot_id(prot_id, prot_ns):
     """Get the Uniprot ID for an agent, looking up in HGNC if necessary.
 
@@ -303,52 +362,6 @@ def _get_uniprot_id(prot_id, prot_ns):
     return up_id
 
 
-def load_site_map(path):
-    """Load the modification site map from a file.
-
-    The site map file should be a comma-separated file with six columns::
-
-        UniprotId: Uniprot ID of protein
-        Gene: HGNC gene name
-        OrigRes: Original (incorrect) residue
-        OrigPos: Original (incorrect) residue position
-        CorrectRes: The correct residue for the modification
-        CorrectPos: The correct residue position
-        Comment: Description of the reason for the error.
-
-    Parameters
-    ----------
-    path : string
-        Path to the tab-separated site map file.
-
-    Returns
-    -------
-    dict
-        A dict mapping tuples of the form `(uniprot_id, orig_res, orig_pos)` to
-        a tuple of the form `(correct_res, correct_pos, comment)`, where `gene`
-        is the string name of the gene (canonicalized to HGNC); `orig_res` and
-        `orig_pos` are the residue and position to be mapped; `correct_res` and
-        `correct_pos` are the corrected residue and position, and `comment` is
-        a string describing the reason for the mapping (species error, isoform
-        error, wrong residue name, etc.).
-    """
-    site_map = {}
-    maprows = read_unicode_csv(path)
-    # Skip the header line
-    next(maprows)
-    for row in maprows:
-        # Don't allow empty entries in the key section
-        if not (row[0] and row[2] and row[3]):
-            raise Exception("Entries in the key (gene, residue, position) "
-                            "may not be empty.")
-        correct_res = row[4].strip() if row[4] else None
-        correct_pos = row[5].strip() if row[5] else None
-        comment = row[6].strip() if row[6] else None
-        site_map[(row[0].strip(), row[2].strip(), row[3].strip())] = \
-                                (correct_res, correct_pos, comment)
-    return site_map
-
-
 default_site_map_path = os.path.join(os.path.dirname(__file__),
                              '../resources/curated_site_map.csv')
 
@@ -357,39 +370,4 @@ default_site_map = load_site_map(default_site_map_path)
 default_mapper = SiteMapper(default_site_map)
 """A default instance of :py:class:`SiteMapper` that contains the site
 information found in resources/curated_site_map.csv'."""
-
-def _validate_site(residue, position):
-    if residue is None:
-        raise ValueError('residue cannot be None')
-    if position is None:
-        raise ValueError('position cannot be None')
-    # Check that the residue is a valid amino acid
-    if residue not in valid_aas:
-        raise ValueError('Residue %s not a valid amino acid' % residue)
-    # Next make sure that the position is a valid position
-    try:
-        pos_int = int(position)
-        pos_str = str(pos_int)
-    except ValueError:
-        raise ValueError('Position %s not a valid sequence position.'
-                         % position)
-    # Site appears valid, make a Site object
-    return (residue, pos_str)
-
-
-def _validate_sites(site_list):
-    valid_sites = []
-    for residue, position in site_list:
-        # Check that the residue is a valid amino acid
-        if residue not in valid_aas:
-            raise ValueError('Residue %s not a valid amino acid' % residue)
-        # Next make sure that the position is a valid position
-        try:
-            int(position)
-        except ValueError:
-            raise ValueError('Position %s not a valid sequence position.'
-                             % position)
-        # Site appears valid, make a Site object
-        valid_sites.append(Site(residue, position))
-    return valid_sites
 
