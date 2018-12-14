@@ -31,7 +31,7 @@ Protein = namedtuple('Protein', ['id', 'ns'])
 
 class MappedSite(object):
     def __init__(self, up_id, valid, orig_res, orig_pos, mapped_res=None,
-                 mapped_pos=None, description=None, hgnc_name=None):
+                 mapped_pos=None, description=None, gene_name=None):
         self.up_id = up_id
         self.valid = valid
         self.orig_res = orig_res
@@ -39,7 +39,7 @@ class MappedSite(object):
         self.mapped_res = mapped_res
         self.mapped_pos = mapped_pos
         self.description = description
-        self.hgnc_name = hgnc_name
+        self.gene_name = gene_name
 
 
 class SiteMapper(object):
@@ -121,8 +121,10 @@ class SiteMapper(object):
                              "HGNC symbols)")
         # Make sure the sites are valid
         valid_res, valid_pos = _validate_site(residue, position)
-        return self._check_agent_mod(prot_id, prot_ns, valid_res, valid_pos)
-
+        # The uniprot ID will be filled in,
+        mapped_site = self._check_agent_mod(prot_id, prot_ns, valid_res,
+                                            valid_pos)
+        return mapped_site
 
     def _check_agent_mod(self, prot_id, prot_ns, residue, position,
                          do_methionine_offset=True,
@@ -168,11 +170,14 @@ class SiteMapper(object):
         """
         # Map sites
         up_id = _get_uniprot_id(prot_id, prot_ns)
+        gene_name = uniprot_client.get_gene_name(up_id)
         # If an HGNC ID was given and the uniprot entry is not found,
         # let it pass
-        if not up_id:
-            return MappedSite(up_id, True, residue, position,
-                                     description="NO_UNIPROT_ID")
+        if up_id is None:
+            assert prot_ns == 'hgnc' and prot_id is not None
+            return MappedSite(None, True, residue, position,
+                              description="NO_UNIPROT_ID",
+                              gene_name=prot_id)
         site_key = (up_id, residue, position)
         # Increase our count for this site
         self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1
@@ -188,14 +193,10 @@ class SiteMapper(object):
         if site_valid:
             mapped_site = MappedSite(up_id, True, residue, position,
                                      mapped_res=residue, mapped_pos=position,
-                                     description='VALID')
+                                     description='VALID',
+                                     gene_name=gene_name)
             self._cache[site_key] = mapped_site
             return mapped_site
-        # Check the agent for a Uniprot ID
-        hgnc_id = uniprot_client.get_gene_name(up_id)
-        if not hgnc_id:
-            logger.debug("No HGNC ID for %s, only curated sites will be "
-                        "mapped" % agent.name)
         # NOTE: The following lookups can only be performed if the
         # Phosphosite Data is available.
         human_prot = uniprot_client.is_human(up_id)
@@ -209,7 +210,8 @@ class SiteMapper(object):
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_ALTERNATIVE_ISOFORM')
+                                    description='INFERRED_ALTERNATIVE_ISOFORM',
+                                    gene_name=gene_name)
                     self._cache[site_key] = mapped_site
                     return mapped_site
             # Try looking for rat or mouse sites
@@ -223,7 +225,8 @@ class SiteMapper(object):
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_MOUSE_SITE')
+                                    description='INFERRED_MOUSE_SITE',
+                                    gene_name=gene_name)
                     self._cache[site_key] = mapped_site
                     return mapped_site
                 # Try the rat sequence
@@ -235,7 +238,8 @@ class SiteMapper(object):
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_RAT_SITE')
+                                    description='INFERRED_RAT_SITE',
+                                    gene_name=gene_name)
                     self._cache[site_key] = mapped_site
                     return mapped_site
             # Check for methionine offset (off by one)
@@ -249,7 +253,8 @@ class SiteMapper(object):
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_METHIONINE_CLEAVAGE')
+                                    description='INFERRED_METHIONINE_CLEAVAGE',
+                                    gene_name=gene_name)
                     self._cache[site_key] = mapped_site
                     return mapped_site
         # Now check the site map
@@ -257,20 +262,19 @@ class SiteMapper(object):
         # No entry in the site map; set site info to None
         if mapped_site is None:
             mapped_site = MappedSite(up_id, False, residue, position,
-                                     description='NO_MAPPING_FOUND')
+                                     description='NO_MAPPING_FOUND',
+                                     gene_name=gene_name)
             self._cache[site_key] = None
             return mapped_site
         # Manually mapped in the site map
         else:
             mapped_res, mapped_pos, description = mapped_site
             # Convert empty strings to None
-            description = description if description else None
-            mapped_res = mapped_res if mapped_res else None
-            mapped_pos = mapped_pos if mapped_pos else None
             mapped_site = MappedSite(up_id, True, residue, position,
                                      mapped_res=mapped_res,
                                      mapped_pos=mapped_pos,
-                                     description=description)
+                                     description=description,
+                                     gene_name=gene_name)
             self._cache[site_key] = mapped_site
             return mapped_site
 

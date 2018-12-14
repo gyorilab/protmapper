@@ -35,7 +35,7 @@ def test_check_agent_mod_up_id():
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '185')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
-    assert ms.hgnc_name is None
+    assert ms.gene_name == 'MAPK1'
     assert ms.valid is True
     assert ms.orig_res == 'T'
     assert ms.orig_pos == '185'
@@ -46,7 +46,7 @@ def test_check_agent_mod_up_id():
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
-    assert ms.hgnc_name is None
+    assert ms.gene_name == 'MAPK1'
     assert ms.valid is False
     assert ms.orig_res == 'T'
     assert ms.orig_pos == '183'
@@ -60,7 +60,7 @@ def test_check_agent_mod_hgnc():
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '185')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
-    assert ms.hgnc_name == 'MAPK1'
+    assert ms.gene_name == 'MAPK1'
     assert ms.valid is True
     assert ms.orig_res == 'T'
     assert ms.orig_pos == '185'
@@ -71,7 +71,7 @@ def test_check_agent_mod_hgnc():
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'P28482'
-    assert ms.hgnc_name == 'MAPK1'
+    assert ms.gene_name == 'MAPK1'
     assert ms.valid is False
     assert ms.orig_res == 'T'
     assert ms.orig_pos == '183'
