@@ -8,8 +8,9 @@ import textwrap
 from copy import deepcopy
 from indra.util import read_unicode_csv
 from indra.databases import uniprot_client, hgnc_client
-
 from sitemapper import phosphosite_client
+from sitemapper.resources import resource_dir
+
 
 # Python 2
 try:
@@ -39,9 +40,9 @@ class MappedSite(object):
         self.gene_name = gene_name
 
     def __repr__(self):
-        return ('MappedSite(up_id=%s, valid=%s, orig_res=%s, orig_pos=%s, '
-                           'mapped_res=%s, mapped_pos=%s, description=%s, '
-                           'gene_name=%s' %
+        return ("MappedSite(up_id='%s', valid=%s, orig_res='%s', "
+                           "orig_pos='%s', mapped_res='%s', mapped_pos='%s', "
+                           "description='%s', gene_name='%s')" %
                            (self.up_id, self.valid, self.orig_res,
                             self.orig_pos, self.mapped_res, self.mapped_pos,
                             self.description, self.gene_name))
@@ -96,25 +97,31 @@ class SiteMapper(object):
     >>> ms.mapped_stmt
     Phosphorylation(MAP2K1(mods: (phosphorylation, S, 218), (phosphorylation, S, 222)), MAPK1(), T, 185)
     """
-    def __init__(self, site_map=None, use_cache=False):
+    def __init__(self, site_map=None, use_cache=False, cache_path=None):
         if site_map is None:
             site_map = load_site_map(default_site_map_path)
 
         self.site_map = site_map
+        # Set default cache path
+        if cache_path is None:
+            cache_path = os.path.join(resource_dir, 'sm_cache.pkl')
+        self._cache_path = cache_path
         self.use_cache = use_cache
         self._cache = {}
         if self.use_cache:
-            self._cache_path = './sm_cache.pkl'
             if os.path.exists(self._cache_path):
                 with open(self._cache_path, 'rb') as f:
                     self._cache = pickle.load(f)
-                print("Loaded cache of length %d." % len(self._cache))
+                print("Loaded cache of length %d from %s" %
+                      (len(self._cache), self._cache_path))
+            else:
+                print("No cache found at %s, one will be created." %
+                      self._cache_path)
         self._sitecount = {}
 
     def __del__(self):
         try:
             if self.use_cache:
-                import pickle
                 with open(self._cache_path, 'wb') as f:
                     pickle.dump(self._cache, f, protocol=2)
         except:

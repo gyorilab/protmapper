@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
+import os
+import pickle
 from nose.tools import raises
 from sitemapper.api import SiteMapper, _validate_site, MappedSite
 
@@ -133,8 +135,8 @@ def test_repr_str():
                        "mapped_pos='185', description='INFERRED_MOUSE_SITE', "
                        "gene_name='MAPK1')")
 
-def test_use_cache():
-    sm = SiteMapper(use_cache=True, cache_path='test_cache.pkl')
+def test_read_cache():
+    sm = SiteMapper(use_cache=True, cache_path='test_cache_read.pkl')
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'Q', '32')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'TEST1'
@@ -146,5 +148,29 @@ def test_use_cache():
     assert ms.mapped_pos == 'TEST7'
     assert ms.description == 'TEST8'
 
+def test_write_cache():
+    cache_path = 'test_cache_write.pkl'
+    assert not os.path.isfile(cache_path)
+    sm = SiteMapper(use_cache=True, cache_path='test_cache_write.pkl')
+    ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
+    del sm
+    assert os.path.isfile(cache_path)
+    with open(cache_path, 'rb') as f:
+        cache_dict = pickle.load(f)
+    assert isinstance(cache_dict, dict)
+    assert len(cache_dict) == 1
+    ms = cache_dict[('P28482', 'T', '183')]
+    assert isinstance(ms, MappedSite)
+    assert ms.up_id == 'P28482'
+    assert ms.gene_name == 'MAPK1'
+    assert ms.valid is False
+    assert ms.orig_res == 'T'
+    assert ms.orig_pos == '183'
+    assert ms.mapped_res == 'T'
+    assert ms.mapped_pos == '185'
+    assert ms.description == 'INFERRED_MOUSE_SITE'
+    os.unlink(cache_path)
+
+
 if __name__ == '__main__':
-    test_use_cache()
+    test_write_cache()
