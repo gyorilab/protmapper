@@ -38,6 +38,14 @@ class MappedSite(object):
         self.description = description
         self.gene_name = gene_name
 
+    def __repr__(self):
+        return (f'MappedSite(up_id={self.up_id}, valid={self.valid}, '
+                f'orig_res={self.orig_res}, orig_pos={self.orig_pos}, '
+                f'mapped_res={self.mapped_res}, '
+                f'mapped_pos={self.mapped_pos}, '
+                f'description={self.description}, '
+                f'gene_name={self.gene_name})')
+
 
 class SiteMapper(object):
     """
@@ -89,11 +97,14 @@ class SiteMapper(object):
     Phosphorylation(MAP2K1(mods: (phosphorylation, S, 218), (phosphorylation, S, 222)), MAPK1(), T, 185)
     """
     def __init__(self, site_map=None, use_cache=False):
+        if site_map is None:
+            site_map = load_site_map(default_site_map_path)
+
         self.site_map = site_map
         self.use_cache = use_cache
         self._cache = {}
         if self.use_cache:
-            self._cache_path = sitemapper_cache
+            self._cache_path = './sm_cache.pkl'
             if os.path.exists(self._cache_path):
                 with open(self._cache_path, 'rb') as f:
                     self._cache = pickle.load(f)
@@ -108,6 +119,21 @@ class SiteMapper(object):
                     pickle.dump(self._cache, f, protocol=2)
         except:
             pass
+
+    def map_sitelist_to_human_ref(self, site_list, **kwargs):
+        mapped_sites = []
+        for ix, (prot_id, prot_ns, residue, position) in enumerate(site_list):
+            logger.info("Mapping site %d of %d, cache size %d" %
+                        (ix, len(site_list), len(self._cache)))
+            try:
+                ms = self.map_to_human_ref(prot_id, prot_ns, residue, position,
+                                           **kwargs)
+                mapped_sites.append(ms)
+            except Exception as e:
+                logger.error("Error occurred mapping site "
+                             "(%s, %s, %s, %s): %s" %
+                             (prot_id, prot_ns, residue, position, str(e)))
+        return mapped_sites
 
     def map_to_human_ref(self, prot_id, prot_ns, residue, position,
                          do_methionine_offset=True,
@@ -257,7 +283,7 @@ class SiteMapper(object):
             mapped_site = MappedSite(up_id, False, residue, position,
                                      description='NO_MAPPING_FOUND',
                                      gene_name=gene_name)
-            self._cache[site_key] = None
+            self._cache[site_key] = mapped_site
             return mapped_site
         # Manually mapped in the site map
         else:
