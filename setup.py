@@ -10,12 +10,12 @@ def main():
 
     setup(name='sitemapper',
           version='0.0.4',
-          description='Map protein sites to human reference sequence.'
-          long_description='The sitemapper is a tool to map inconsistent '
-                           'protein sites (i.e., not matching the human '
-                           'reference sequence) found in PTM databases and the '
-                           'scientific literature to corresponding positions '
-                           'on the human reference sequence.',
+          description='Map protein sites to human reference sequence.',
+          long_description=('The sitemapper is a tool to map inconsistent '
+                            'protein sites (i.e., not matching the human '
+                            'reference sequence) found in PTM databases and '
+                            'the scientific literature to corresponding '
+                            'positions on the human reference sequence.'),
           author='John A. Bachman',
           author_email='john_bachman@hms.harvard.edu',
           url='https://github.com/indralab/sitemapper',
