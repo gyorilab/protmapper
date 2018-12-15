@@ -125,3 +125,26 @@ def test_map_methionine_cleavage():
     assert ms.mapped_pos == '668'
     assert ms.description == 'INFERRED_METHIONINE_CLEAVAGE'
 
+def test_repr_str():
+    sm = SiteMapper()
+    ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
+    assert str(ms) == ("MappedSite(up_id='P28482', valid=False, "
+                       "orig_res='T', orig_pos='183', mapped_res='T', "
+                       "mapped_pos='185', description='INFERRED_MOUSE_SITE', "
+                       "gene_name='MAPK1')")
+
+def test_use_cache():
+    sm = SiteMapper(use_cache=True, cache_path='test_cache.pkl')
+    ms = sm.map_to_human_ref('P28482', 'uniprot', 'Q', '32')
+    assert isinstance(ms, MappedSite)
+    assert ms.up_id == 'TEST1'
+    assert ms.gene_name == 'TEST2'
+    assert ms.valid == 'TEST3'
+    assert ms.orig_res == 'TEST4'
+    assert ms.orig_pos == 'TEST5'
+    assert ms.mapped_res == 'TEST6'
+    assert ms.mapped_pos == 'TEST7'
+    assert ms.description == 'TEST8'
+
+if __name__ == '__main__':
+    test_use_cache()
