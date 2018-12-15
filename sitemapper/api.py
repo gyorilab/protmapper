@@ -62,7 +62,6 @@ class MappedSite(object):
     def __ne__(self, other):
         return not(self == other)
 
-
     def __hash__(self):
         return hash((self.up_id, self.orig_res, self.orig_pos, self.mapped_res,
                      self.mapped_pos, self.description, self.gene_name))
