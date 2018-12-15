@@ -3,8 +3,10 @@ python:
   - "2.7"
   - "3.5"
 before_install:
-  - pip install nose requests coverage python-coveralls future
+  - pip install nose coverage python-coveralls
   - pip install indra
+install:
+  - pip install .
 before_script:
   - python -m sitemapper.resources
 script:
