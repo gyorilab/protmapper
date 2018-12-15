@@ -11,4 +11,5 @@ before_script:
   - python -m sitemapper.resources
 script:
   - nosetests -v --with-coverage --cover-inclusive --cover-package=sitemapper
-
+after_success:
+  - coveralls
