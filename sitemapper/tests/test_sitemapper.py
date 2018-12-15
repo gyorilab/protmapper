@@ -172,5 +172,16 @@ def test_write_cache():
     os.unlink(cache_path)
 
 
+def test_mapped_site_equals():
+    ms1 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+                     orig_pos='183', mapped_res='T', mapped_pos='185',
+                     description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
+    ms2 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+                     orig_pos='183', mapped_res='T', mapped_pos='185',
+                     description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
+    assert ms1 == ms2
+    ms2.gene_name = 'FOO'
+    assert ms1 != ms2
+
 if __name__ == '__main__':
-    test_write_cache()
+    test_mapped_site_equals()

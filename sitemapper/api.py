@@ -47,6 +47,21 @@ class MappedSite(object):
                             self.orig_pos, self.mapped_res, self.mapped_pos,
                             self.description, self.gene_name))
 
+    def __eq__(self, other):
+        if (self.up_id == other.up_id and self.valid == other.valid and
+            self.orig_res == other.orig_res and
+            self.orig_pos == other.orig_pos and
+            self.mapped_res == other.mapped_res and
+            self.mapped_pos == other.mapped_pos and
+            self.description == other.description and
+            self.gene_name == other.gene_name):
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not(self == other)
+
 
 class SiteMapper(object):
     """
