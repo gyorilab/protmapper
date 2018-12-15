@@ -39,12 +39,12 @@ class MappedSite(object):
         self.gene_name = gene_name
 
     def __repr__(self):
-        return (f'MappedSite(up_id={self.up_id}, valid={self.valid}, '
-                f'orig_res={self.orig_res}, orig_pos={self.orig_pos}, '
-                f'mapped_res={self.mapped_res}, '
-                f'mapped_pos={self.mapped_pos}, '
-                f'description={self.description}, '
-                f'gene_name={self.gene_name})')
+        return ('MappedSite(up_id=%s, valid=%s, orig_res=%s, orig_pos=%s, '
+                           'mapped_res=%s, mapped_pos=%s, description=%s, '
+                           'gene_name=%s' %
+                           (self.up_id, self.valid, self.orig_res,
+                            self.orig_pos, self.mapped_res, self.mapped_pos,
+                            self.description, self.gene_name))
 
 
 class SiteMapper(object):
