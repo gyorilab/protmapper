@@ -1,8 +1,22 @@
 import sys
 from setuptools import setup
+from setuptools.command.install import install
+from distutils.command.build_py import build_py as _build_py
+
+
+class GetResources(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        super().run()
+        install.run(self)
+        from sitemapper.resources import download_phosphositeplus, \
+            download_uniprot_mappings
+        download_phosphositeplus()
+        download_uniprot_mappings()
+
 
 def main():
-    install_list = ['future', 'requests']
+    install_list = ['future', 'requests', 'indra']
     # Only install functools32 if we're in Python 2 (it's not available
     # for Python 3)
     if sys.version_info[0] == 2:
@@ -36,6 +50,9 @@ def main():
           install_requires=install_list,
           tests_require=['nose'],
           include_package_data=True,
+          cmdclass={
+              'install': GetResources,
+              },
         )
 
 
