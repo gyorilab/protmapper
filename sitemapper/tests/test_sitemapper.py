@@ -141,9 +141,9 @@ def test_read_cache():
 
 
 def test_write_cache():
-    cache_path = 'test_cache_write.pkl'
+    cache_path = join(dirname(abspath(__file__)), 'test_cache_write.pkl')
     assert not isfile(cache_path)
-    sm = SiteMapper(use_cache=True, cache_path='test_cache_write.pkl')
+    sm = SiteMapper(use_cache=True, cache_path=cache_path)
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
     del sm
     assert isfile(cache_path)
