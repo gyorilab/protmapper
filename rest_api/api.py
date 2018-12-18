@@ -1,7 +1,7 @@
 import json
 from flask import Flask, request, abort, Response
 from flask_cors import CORS
-from sitemapper import SiteMapper
+from protmapper import ProtMapper
 
 
 app = Flask(__name__)
@@ -21,8 +21,8 @@ def map_to_human_ref():
 
     arg_values = {key: request.json.get(key) for key in args}
 
-    sm = SiteMapper()
-    ms = sm.map_to_human_ref(**arg_values)
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref(**arg_values)
     return Response(json.dumps(ms.to_json()), mimetype='application/json')
 
 
@@ -41,8 +41,8 @@ def map_sitelist_to_human_ref():
     opt_arg_values = {key: request.json.get(key) for key in
                       ('do_methionine_offset', 'do_orthology_mapping',
                        'do_isoform_mapping')}
-    sm = SiteMapper()
-    ms_list = sm.map_sitelist_to_human_ref(site_list=site_list,
+    pm = ProtMapper()
+    ms_list = pm.map_sitelist_to_human_ref(site_list=site_list,
                                            **opt_arg_values)
     res = json.dumps([ms.to_json() for ms in ms_list])
     return Response(res, mimetype='application/json')
