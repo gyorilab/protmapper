@@ -28,6 +28,29 @@ valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
 
 
 class MappedSite(object):
+    """Represent details of a site that was mapped.
+
+    Attributes
+    ----------
+    up_id : str
+        The UniProt ID of the protein whose site was mapped.
+    valid : bool
+        True if the original site was valid with respect to the given
+        protein, Falso otherwise.
+    orig_res : str
+        The original amino acid residue that was mapped.
+    orig_pos : str
+        The original amino acid position that was mapped.
+    mapped_res : str
+        The mapped amino acid residue.
+    mapped_pos : str
+        The mapped amino acid position.
+    description : str
+        A description of the mapping that was done, comes from a fixed
+        set of codes of types of mapping that were performed.
+    gene_name : str
+        The standard (HGNC) gene name of the protein that was mapped.
+    """
     def __init__(self, up_id, valid, orig_res, orig_pos, mapped_res=None,
                  mapped_pos=None, description=None, gene_name=None):
         self.up_id = up_id
