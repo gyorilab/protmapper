@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 import os
+from os.path import join, abspath, dirname, isfile
 import pickle
 from nose.tools import raises
 from sitemapper.api import SiteMapper, _validate_site, MappedSite
@@ -125,7 +126,8 @@ def test_repr_str():
 
 
 def test_read_cache():
-    sm = SiteMapper(use_cache=True, cache_path='test_cache_read.pkl')
+    cache_path = join(dirname(abspath(__file__)), 'test_cache_read.pkl')
+    sm = SiteMapper(use_cache=True, cache_path=cache_path)
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'Q', '32')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'TEST1'
@@ -140,11 +142,11 @@ def test_read_cache():
 
 def test_write_cache():
     cache_path = 'test_cache_write.pkl'
-    assert not os.path.isfile(cache_path)
+    assert not isfile(cache_path)
     sm = SiteMapper(use_cache=True, cache_path='test_cache_write.pkl')
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
     del sm
-    assert os.path.isfile(cache_path)
+    assert isfile(cache_path)
     with open(cache_path, 'rb') as f:
         cache_dict = pickle.load(f)
     assert isinstance(cache_dict, dict)
