@@ -8,8 +8,8 @@ import textwrap
 from copy import deepcopy
 from indra.util import read_unicode_csv
 from indra.databases import uniprot_client, hgnc_client
-from sitemapper import phosphosite_client
-from sitemapper.resources import resource_dir
+from protmapper import phosphosite_client
+from protmapper.resources import resource_dir
 
 
 # Python 2
@@ -67,7 +67,7 @@ class MappedSite(object):
                      self.mapped_pos, self.description, self.gene_name))
 
 
-class SiteMapper(object):
+class ProtMapper(object):
     """
     Use curated site information to standardize modification sites in stmts.
 
@@ -202,7 +202,7 @@ class SiteMapper(object):
         -------
         MappedSite
             The MappedSite object gives information on results of mapping the
-            site. See :py:class:`sitemapper.MappedSite` documentation for
+            site. See :py:class:`protmapper.MappedSite` documentation for
             details.
         """
         # Check the protein ID and namespace
@@ -418,7 +418,7 @@ default_site_map_path = os.path.join(os.path.dirname(__file__),
 
 default_site_map = load_site_map(default_site_map_path)
 
-default_mapper = SiteMapper(default_site_map)
-"""A default instance of :py:class:`SiteMapper` that contains the site
+default_mapper = ProtMapper(default_site_map)
+"""A default instance of :py:class:`ProtMapper` that contains the site
 information found in resources/curated_site_map.csv'."""
 

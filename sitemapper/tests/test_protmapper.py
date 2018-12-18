@@ -4,24 +4,24 @@ import os
 from os.path import join, abspath, dirname, isfile
 import pickle
 from nose.tools import raises
-from sitemapper.api import SiteMapper, _validate_site, MappedSite
+from protmapper.api import ProtMapper, _validate_site, MappedSite
 
 
 @raises(ValueError)
 def test_invalid_residue():
-    sm = SiteMapper()
+    sm = ProtMapper()
     sm.map_to_human_ref('MAPK1', 'HGNC', 'B', '185')
 
 
 @raises(ValueError)
 def test_invalid_position():
-    sm = SiteMapper()
+    sm = ProtMapper()
     sm.map_to_human_ref('MAPK1', 'HGNC', 'T', 'foo')
 
 
 @raises(ValueError)
 def test_invalid_prot_ns():
-    sm = SiteMapper()
+    sm = ProtMapper()
     sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
 
 
@@ -62,7 +62,7 @@ def test_mapped_site_hash():
 
 
 def test_check_agent_mod_up_id():
-    sm = SiteMapper()
+    sm = ProtMapper()
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '185')
     assert ms == MappedSite(up_id='P28482', valid=True, orig_res='T',
                             orig_pos='185', mapped_res='T', mapped_pos='185',
@@ -76,7 +76,7 @@ def test_check_agent_mod_up_id():
 
 
 def test_check_agent_mod_hgnc():
-    sm = SiteMapper()
+    sm = ProtMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '185')
     assert ms == MappedSite(up_id='P28482', valid=True, orig_res='T',
                             orig_pos='185', mapped_res='T', mapped_pos='185',
@@ -90,7 +90,7 @@ def test_check_agent_mod_hgnc():
 
 
 def test_map_mouse_site():
-    sm = SiteMapper()
+    sm = ProtMapper()
     ms = sm.map_to_human_ref('THEMIS2', 'hgnc', 'Y', '660')
     assert ms == MappedSite(up_id='Q5TEJ8', valid=False, orig_res='Y',
                             orig_pos='660', mapped_res='Y', mapped_pos='632',
@@ -99,7 +99,7 @@ def test_map_mouse_site():
 
 
 def test_map_rat_site():
-    sm = SiteMapper()
+    sm = ProtMapper()
     ms = sm.map_to_human_ref('NPHS1', 'hgnc', 'Y', '1204')
     assert ms == MappedSite(up_id='O60500', valid=False, orig_res='Y',
                             orig_pos='1204', mapped_res='Y', mapped_pos='1193',
@@ -108,7 +108,7 @@ def test_map_rat_site():
 
 
 def test_map_methionine_cleavage():
-    sm = SiteMapper()
+    sm = ProtMapper()
     ms = sm.map_to_human_ref('DAXX', 'hgnc', 'S', '667')
     assert ms == MappedSite(up_id='Q9UER7', valid=False, orig_res='S',
                             orig_pos='667', mapped_res='S', mapped_pos='668',
@@ -117,7 +117,7 @@ def test_map_methionine_cleavage():
 
 
 def test_repr_str():
-    sm = SiteMapper()
+    sm = ProtMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
     assert str(ms) == ("MappedSite(up_id='P28482', valid=False, "
                        "orig_res='T', orig_pos='183', mapped_res='T', "
@@ -127,7 +127,7 @@ def test_repr_str():
 
 def test_read_cache():
     cache_path = join(dirname(abspath(__file__)), 'test_cache_read.pkl')
-    sm = SiteMapper(use_cache=True, cache_path=cache_path)
+    sm = ProtMapper(use_cache=True, cache_path=cache_path)
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'Q', '32')
     assert isinstance(ms, MappedSite)
     assert ms.up_id == 'TEST1'
@@ -143,7 +143,7 @@ def test_read_cache():
 def test_write_cache():
     cache_path = join(dirname(abspath(__file__)), 'test_cache_write.pkl')
     assert not isfile(cache_path)
-    sm = SiteMapper(use_cache=True, cache_path=cache_path)
+    sm = ProtMapper(use_cache=True, cache_path=cache_path)
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
     del sm
     assert isfile(cache_path)

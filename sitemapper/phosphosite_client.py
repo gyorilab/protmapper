@@ -4,7 +4,7 @@ import logging
 from os.path import dirname, abspath, join
 from collections import namedtuple, defaultdict
 from indra.util import read_unicode_csv
-from sitemapper.resources import psp_filename as phosphosite_data_file
+from protmapper.resources import psp_filename as phosphosite_data_file
 
 
 logger = logging.getLogger(__name__)
