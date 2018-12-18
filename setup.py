@@ -9,7 +9,7 @@ def main():
         install_list.append('functools32')
 
     setup(name='sitemapper',
-          version='0.0.4',
+          version='0.0.1',
           description='Map protein sites to human reference sequence.',
           long_description=('The sitemapper is a tool to map inconsistent '
                             'protein sites (i.e., not matching the human '
