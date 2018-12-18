@@ -1,3 +1,4 @@
+import json
 from flask import Flask, request, abort, Response
 from flask_cors import CORS
 from sitemapper import SiteMapper
@@ -8,18 +9,22 @@ CORS(app)
 
 
 @app.route('/map/to_human_ref', methods=['GET', 'POST'])
-def map_to_human_ref()
-    prot_id = request.json.get('prot_id')
-    prot_ns = request.json.get('prot_ns')
-    residue = request.json.get('residue')
-    position = request.json.get('position')
-    do_methionine_offset = request.json.get('do_methionine_offset')
-    do_orthology_mapping = request.json.get('do_orthology_mapping')
-    do_isoform_mapping = request.json.get('do_isoform_mapping')
+def map_to_human_ref():
+    args = ('prot_id', 'prot_ns', 'residue', 'position',
+            'do_methionine_offset', 'do_orthology_mapping',
+            'do_isoform_mapping')
+    required_args = args[:4]
+    for arg in required_args:
+        if request.json.get(arg) is None:
+            abort(Response('The required argument "%s" is missing.' % arg,
+                           400))
+
+    arg_values = {key: request.json.get(key) for key in args}
 
     sm = SiteMapper()
-    ms = sm.map_to_human_ref(prot_id, prot_ns, residue, position,
-                             do_methionine_offset=do_methionine_offset,
-                             do_orthology_mapping=do_orthology_mapping,
-                             do_isoform_mapping=do_isoform_mapping)
-    return Response()
+    ms = sm.map_to_human_ref(**arg_values)
+    return Response(json.dumps(ms.to_json()), mimetype='application/json')
+
+
+if __name__ == '__main__':
+    app.run()
