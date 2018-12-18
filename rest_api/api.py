@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route('/map/to_human_ref', methods=['GET', 'POST'])
+@app.route('/map_to_human_ref', methods=['GET', 'POST'])
 def map_to_human_ref():
     args = ('prot_id', 'prot_ns', 'residue', 'position',
             'do_methionine_offset', 'do_orthology_mapping',
@@ -25,6 +25,27 @@ def map_to_human_ref():
     ms = sm.map_to_human_ref(**arg_values)
     return Response(json.dumps(ms.to_json()), mimetype='application/json')
 
+
+@app.route('/map_sitelist_to_human_ref', methods=['GET', 'POST'])
+def map_sitelist_to_human_ref():
+    site_list = request.json.get('site_list')
+    if site_list is None:
+            abort(Response('The required sute_list argument is missing.' %
+                           arg, 400))
+
+    for site in site_list:
+        if len(site) != 4:
+            abort(Response('Site list entries need to have exactly '
+                           '4 elements.', 400))
+
+    opt_arg_values = {key: request.json.get(key) for key in
+                      ('do_methionine_offset', 'do_orthology_mapping',
+                       'do_isoform_mapping')}
+    sm = SiteMapper()
+    ms_list = sm.map_sitelist_to_human_ref(site_list=site_list,
+                                           **opt_arg_values)
+    res = json.dumps([ms.to_json() for ms in ms_list])
+    return Response(res, mimetype='application/json')
 
 if __name__ == '__main__':
     app.run()
