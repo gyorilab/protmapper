@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # If the protmapper resource directory does not exist, try to create it
 home_dir = os.path.expanduser('~')
-resource_dir = os.path.join(home_dir, '.sitemapper')
+resource_dir = os.path.join(home_dir, '.protmapper')
 
 
 if not os.path.isdir(resource_dir):

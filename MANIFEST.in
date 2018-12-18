@@ -1,1 +1,1 @@
-include sitemapper/tests/test_cache_read.pkl
+include protmapper/tests/test_cache_read.pkl

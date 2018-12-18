@@ -1,6 +1,6 @@
 import logging
-from sitemapper.api import SiteMapper, MappedSite
-from sitemapper.resources import resource_dir
+from protmapper.api import ProtMapper, MappedSite
+from protmapper.resources import resource_dir
 
 
 logging.basicConfig(format=('%(levelname)s: [%(asctime)s] %(name)s'

@@ -8,8 +8,8 @@ before_install:
 install:
   - pip install .
 before_script:
-  - python -m sitemapper.resources
+  - python -m protmapper.resources
 script:
-  - nosetests -v --with-coverage --cover-inclusive --cover-package=sitemapper
+  - nosetests -v --with-coverage --cover-inclusive --cover-package=protmapper
 after_success:
   - coveralls
