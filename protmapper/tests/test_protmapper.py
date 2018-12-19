@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 import os
+from collections import Counter
 from os.path import join, abspath, dirname, isfile
 import pickle
 from nose.tools import raises
@@ -59,6 +60,22 @@ def test_mapped_site_hash():
     assert hash(ms1) == hash(ms2)
     ms2.gene_name = 'FOO'
     assert hash(ms1) != hash(ms2)
+
+
+def test_mapped_site_set_ctr():
+    """Check if two identical sites in different objects are handled as equal
+    in sets and counters."""
+    ms1 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+                     orig_pos='183', mapped_res='T', mapped_pos='185',
+                     description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
+    ms2 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+                     orig_pos='183', mapped_res='T', mapped_pos='185',
+                     description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
+    ms_list = [ms1, ms2]
+    assert len(set(ms_list)) == 1
+    ctr = Counter(ms_list)
+    assert len(ctr) == 1
+    assert list(ctr.values())[0] == 2
 
 
 def test_check_agent_mod_up_id():
