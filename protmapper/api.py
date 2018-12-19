@@ -343,7 +343,7 @@ class ProtMapper(object):
         else:
             mapped_res, mapped_pos, description = mapped_site
             # Convert empty strings to None
-            mapped_site = MappedSite(up_id, True, residue, position,
+            mapped_site = MappedSite(up_id, False, residue, position,
                                      mapped_res=mapped_res,
                                      mapped_pos=mapped_pos,
                                      description=description,

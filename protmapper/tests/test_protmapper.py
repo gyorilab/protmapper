@@ -133,6 +133,18 @@ def test_map_methionine_cleavage():
                             gene_name='DAXX')
 
 
+def test_map_from_sitemap():
+    sm = ProtMapper()
+    ms = sm.map_to_human_ref('P15056', 'uniprot', 'S', '753')
+    assert ms == MappedSite(up_id='P15056', valid=False, orig_res='S',
+                            orig_pos='753', mapped_res='T', mapped_pos='753',
+                            description='wrong residue', gene_name='BRAF')
+
+
+def test_map_invalid_from_sitemap():
+    pass
+
+
 def test_repr_str():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
