@@ -5,6 +5,7 @@ import os
 import pickle
 import logging
 import textwrap
+import requests
 from copy import deepcopy
 from indra.util import read_unicode_csv
 from indra.databases import uniprot_client, hgnc_client
@@ -262,7 +263,17 @@ class ProtMapper(object):
             return cached_site
         # If not cached, continue
         # Look up the residue/position in uniprot
-        site_valid = uniprot_client.verify_location(up_id, residue, position)
+        try:
+            site_valid = uniprot_client.verify_location(up_id, residue,
+                                                        position)
+        except requests.exceptions.HTTPError:
+            mapped_site = \
+                 MappedSite(up_id, False, residue, position,
+                            mapped_res=residue, mapped_pos=position,
+                            description='SEQUENCE_RETRIEVAL_ERROR',
+                            gene_name=gene_name)
+            return mapped_site
+
         # It's a valid site
         if site_valid:
             mapped_site = MappedSite(up_id, True, residue, position,
