@@ -266,7 +266,6 @@ class ProtMapper(object):
         # It's a valid site
         if site_valid:
             mapped_site = MappedSite(up_id, True, residue, position,
-                                     mapped_res=residue, mapped_pos=position,
                                      description='VALID',
                                      gene_name=gene_name)
             self._cache[site_key] = mapped_site

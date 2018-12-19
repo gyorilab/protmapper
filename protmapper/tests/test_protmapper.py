@@ -82,7 +82,7 @@ def test_check_agent_mod_up_id():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '185')
     assert ms == MappedSite(up_id='P28482', valid=True, orig_res='T',
-                            orig_pos='185', mapped_res='T', mapped_pos='185',
+                            orig_pos='185', mapped_res=None, mapped_pos=None,
                             description='VALID', gene_name='MAPK1')
 
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
@@ -96,7 +96,7 @@ def test_check_agent_mod_hgnc():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '185')
     assert ms == MappedSite(up_id='P28482', valid=True, orig_res='T',
-                            orig_pos='185', mapped_res='T', mapped_pos='185',
+                            orig_pos='185', mapped_res=None, mapped_pos=None,
                             description='VALID', gene_name='MAPK1')
 
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
