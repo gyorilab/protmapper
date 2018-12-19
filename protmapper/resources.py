@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 import os
 import logging
-import requests
+import urllib.request
 
 
 logger = logging.getLogger(__name__)
@@ -30,13 +30,13 @@ def download_phosphositeplus():
     print("Note that PhosphoSitePlus data is not available for commercial use; "
           "please see full terms and conditions at: "
           "https://www.psp.org/staticDownloads")
-    resp = requests.get(psp_url)
+    resp = urllib.request.urlopen(psp_url)
     # Check the status code
-    if resp.status_code == 200:
+    if resp.status == 200:
         # Read and write as bytes (response.content)
         logger.info("Saving PhosphoSitePlus data to %s" % psp_filename)
         with open(psp_filename, 'wb') as f:
-            f.write(resp.content)
+            f.write(resp.read())
     else:
         logger.error("Error %s occurred downloading PhosphoSitePlus data" %
                      resp.status_code)
@@ -49,10 +49,10 @@ def download_uniprot_mappings():
         'format=tab&columns=id,genes(PREFERRED),' + \
         'entry%20name,database(RGD),database(MGI)'
     print('Downloading %s' % url)
-    res = requests.get(url)
-    if res.status_code != 200:
+    res = urllib.request.urlopen(url)
+    if res.status != 200:
         print('Failed to download "%s"' % url)
-    reviewed_entries = res.content
+    reviewed_entries = res.read()
 
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
@@ -60,16 +60,14 @@ def download_uniprot_mappings():
         'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
         'database(RGD),database(MGI)'
     print('Downloading %s' % url)
-    res = requests.get(url)
-    if res.status_code != 200:
+    res = urllib.request.urlopen(url)
+    if res.status != 200:
         print('Failed to download "%s"' % url)
-    unreviewed_human_entries = res.content
+    unreviewed_human_entries = res.read()
 
     if not((reviewed_entries is not None) and
             (unreviewed_human_entries is not None)):
             return
-    unreviewed_human_entries = unreviewed_human_entries.decode('utf-8')
-    reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
     # At this point, we need to clean up the gene names.
