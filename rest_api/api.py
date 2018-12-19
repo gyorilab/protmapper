@@ -1,5 +1,5 @@
 import json
-from flask import Flask, request, abort, Response
+from flask import Flask, request, abort, Response, jsonify
 from flask_cors import CORS
 from protmapper import ProtMapper
 
@@ -23,7 +23,7 @@ def map_to_human_ref():
 
     pm = ProtMapper()
     ms = pm.map_to_human_ref(**arg_values)
-    return Response(json.dumps(ms.to_json()), mimetype='application/json')
+    return jsonify(ms.to_json())
 
 
 @app.route('/map_sitelist_to_human_ref', methods=['GET', 'POST'])
@@ -44,8 +44,7 @@ def map_sitelist_to_human_ref():
     pm = ProtMapper()
     ms_list = pm.map_sitelist_to_human_ref(site_list=site_list,
                                            **opt_arg_values)
-    res = json.dumps([ms.to_json() for ms in ms_list])
-    return Response(res, mimetype='application/json')
+    return jsonify([ms.to_json() for ms in ms_list])
 
 if __name__ == '__main__':
     app.run()
