@@ -443,7 +443,7 @@ def _get_uniprot_id(prot_id, prot_ns):
 
 
 default_site_map_path = os.path.join(os.path.dirname(__file__),
-                             '../resources/curated_site_map.csv')
+                                     'curated_site_map.csv')
 
 default_site_map = load_site_map(default_site_map_path)
 
