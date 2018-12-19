@@ -159,3 +159,9 @@ def test_write_cache():
     os.unlink(cache_path)
 
 
+def test_mapped_site_to_json():
+    args = dict(up_id='P28482', valid=True, orig_res='T',
+                orig_pos='185', mapped_res='T', mapped_pos='185',
+                description='VALID', gene_name='MAPK1')
+    ms = MappedSite(**args)
+    assert ms.to_json() == args
