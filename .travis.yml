@@ -10,6 +10,7 @@ install:
 before_script:
   - python -m protmapper.resources
 script:
-  - nosetests -v --with-coverage --cover-inclusive --cover-package=protmapper
+  - cd ../..
+  - nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
 after_success:
   - coveralls

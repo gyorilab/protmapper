@@ -1,1 +1,2 @@
 include protmapper/tests/test_cache_read.pkl
+include protmapper/curated_site_map.csv
