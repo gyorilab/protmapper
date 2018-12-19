@@ -68,6 +68,8 @@ def download_uniprot_mappings():
     if not((reviewed_entries is not None) and
             (unreviewed_human_entries is not None)):
             return
+    unreviewed_human_entries = unreviewed_human_entries.decode('utf-8')
+    reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
     # At this point, we need to clean up the gene names.
