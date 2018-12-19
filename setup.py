@@ -1,7 +1,6 @@
 import sys
 from setuptools import setup
 from setuptools.command.install import install
-from distutils.command.build_py import build_py as _build_py
 
 
 class GetResources(install):
