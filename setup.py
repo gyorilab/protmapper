@@ -7,12 +7,11 @@ from distutils.command.build_py import build_py as _build_py
 class GetResources(install):
     """Post-installation for installation mode."""
     def run(self):
-        super().run()
-        install.run(self)
-        from sitemapper.resources import download_phosphositeplus, \
+        from protmapper.resources import download_phosphositeplus, \
             download_uniprot_mappings
         download_phosphositeplus()
         download_uniprot_mappings()
+        install.run(self)
 
 
 def main():
