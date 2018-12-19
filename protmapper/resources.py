@@ -21,6 +21,7 @@ if not os.path.isdir(resource_dir):
 
 
 psp_filename = os.path.join(resource_dir, 'Phosphorylation_site_dataset.tsv')
+up_filename = os.path.join(resource_dir, 'uniprot_entries.tsv')
 
 
 def download_phosphositeplus():
@@ -86,9 +87,8 @@ def download_uniprot_mappings():
     # Join all lines into a single string
     full_table = '\n'.join(lines)
     #fname = os.path.join(path, 'uniprot_entries.tsv')
-    fname = 'uniprot_entries.tsv'
-    logging.info('Saving into %s.' % fname)
-    with open(fname, 'wb') as fh:
+    logging.info('Saving into %s.' % up_filename)
+    with open(up_filename, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
 
 
