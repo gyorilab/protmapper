@@ -142,7 +142,12 @@ def test_map_from_sitemap():
 
 
 def test_map_invalid_from_sitemap():
-    pass
+    sm = ProtMapper()
+    ms = sm.map_to_human_ref('P06400', 'uniprot', 'D', '1')
+    assert ms == MappedSite(up_id='P06400', valid=False, orig_res='D',
+                            orig_pos='1', mapped_res=None, mapped_pos=None,
+                            description='probable reading error: cyclin D1',
+                            gene_name='RB1')
 
 
 def test_repr_str():
