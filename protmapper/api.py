@@ -5,7 +5,9 @@ import os
 import pickle
 import logging
 import textwrap
+import requests
 from copy import deepcopy
+from requests.exceptions import HTTPError
 from indra.util import read_unicode_csv
 from indra.databases import uniprot_client, hgnc_client
 from protmapper import phosphosite_client
@@ -34,6 +36,16 @@ class MappedSite(object):
     ----------
     up_id : str
         The UniProt ID of the protein whose site was mapped.
+    error_code : str or None
+        One of several strings indicating an error in retrieving the protein
+        sequence, or None if there was no error. Error codes include
+        'NO_UNIPROT_ID' if the given gene name could not be converted into
+        a Uniprot ID; 'UNIPROT_HTTP_NOT_FOUND' if the given Uniprot ID resulted
+        in a 404 Not Found error from the Uniprot web service; or
+        'UNIPROT_HTTP_OTHER' if it was any other type of Uniprot web service
+        error. If the error code is not None, the `orig_res` and `orig_pos`
+        fields will be set (based on the query arguments) but all other fields
+        will be None.
     valid : bool
         True if the original site was valid with respect to the given
         protein, Falso otherwise.
@@ -51,9 +63,11 @@ class MappedSite(object):
     gene_name : str
         The standard (HGNC) gene name of the protein that was mapped.
     """
-    def __init__(self, up_id, valid, orig_res, orig_pos, mapped_res=None,
-                 mapped_pos=None, description=None, gene_name=None):
+    def __init__(self, up_id, valid, orig_res, orig_pos,
+                 error_code=None, mapped_res=None, mapped_pos=None,
+                 description=None, gene_name=None):
         self.up_id = up_id
+        self.error_code = error_code
         self.valid = valid
         self.orig_res = orig_res
         self.orig_pos = orig_pos
@@ -63,15 +77,18 @@ class MappedSite(object):
         self.gene_name = gene_name
 
     def __repr__(self):
-        return ("MappedSite(up_id='%s', valid=%s, orig_res='%s', "
-                           "orig_pos='%s', mapped_res='%s', mapped_pos='%s', "
-                           "description='%s', gene_name='%s')" %
-                           (self.up_id, self.valid, self.orig_res,
-                            self.orig_pos, self.mapped_res, self.mapped_pos,
-                            self.description, self.gene_name))
+        quote_args = lambda args: tuple([a if a in (None, True, False)
+                                           else ("'%s'" % a) for a in args])
+        return ("MappedSite(up_id=%s, error_code=%s, valid=%s, "
+                    "orig_res=%s, orig_pos=%s, mapped_res=%s, "
+                    "mapped_pos=%s, description=%s, gene_name=%s)" %
+                quote_args([self.up_id, self.error_code, self.valid,
+                           self.orig_res, self.orig_pos, self.mapped_res,
+                           self.mapped_pos, self.description, self.gene_name]))
 
     def __eq__(self, other):
         if (self.up_id == other.up_id and self.valid == other.valid and
+            self.error_code == other.error_code and
             self.orig_res == other.orig_res and
             self.orig_pos == other.orig_pos and
             self.mapped_res == other.mapped_res and
@@ -86,12 +103,13 @@ class MappedSite(object):
         return not(self == other)
 
     def __hash__(self):
-        return hash((self.up_id, self.orig_res, self.orig_pos, self.mapped_res,
-                     self.mapped_pos, self.description, self.gene_name))
+        return hash((self.up_id, self.error_code, self.valid, self.orig_res,
+                     self.orig_pos, self.mapped_res, self.mapped_pos,
+                     self.description, self.gene_name))
 
     def to_json(self):
-        keys = ('up_id', 'valid', 'orig_res', 'orig_pos', 'mapped_res',
-                'mapped_pos', 'description', 'gene_name')
+        keys = ('up_id', 'error_code', 'valid', 'orig_res', 'orig_pos',
+                'mapped_res', 'mapped_pos', 'description', 'gene_name')
         jd = {key: self.__dict__.get(key) for key in keys}
         return jd
 
@@ -244,14 +262,14 @@ class ProtMapper(object):
         valid_res, valid_pos = _validate_site(residue, position)
         # Get Uniprot ID and gene name
         up_id = _get_uniprot_id(prot_id, prot_ns)
-        gene_name = uniprot_client.get_gene_name(up_id)
-        # If an HGNC ID was given and the uniprot entry is not found,
-        # let it pass
+        # If an HGNC ID was given and the uniprot entry is not found, flag
+        # as error
         if up_id is None:
             assert prot_ns == 'hgnc' and prot_id is not None
-            return MappedSite(None, True, residue, position,
-                              description="NO_UNIPROT_ID",
-                              gene_name=prot_id)
+            return MappedSite(None, None, residue, position,
+                              gene_name=prot_id, error_code='NO_UNIPROT_ID')
+        # Get the gene name from Uniprot
+        gene_name = uniprot_client.get_gene_name(up_id)
         site_key = (up_id, residue, position)
         # Increase our count for this site
         self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1
@@ -262,7 +280,18 @@ class ProtMapper(object):
             return cached_site
         # If not cached, continue
         # Look up the residue/position in uniprot
-        site_valid = uniprot_client.verify_location(up_id, residue, position)
+        try:
+            site_valid = uniprot_client.verify_location(up_id, residue,
+                                                        position)
+        except HTTPError as ex:
+            if ex.response.status_code == 404:
+                error_code = 'UNIPROT_HTTP_NOT_FOUND'
+            else:
+                error_code = 'UNIPROT_HTTP_OTHER'
+            # Set error_code; valid will set to None, not True/False
+            mapped_site = MappedSite(up_id, None, residue, position,
+                                     error_code=error_code)
+            return mapped_site
         # It's a valid site
         if site_valid:
             mapped_site = MappedSite(up_id, True, residue, position,
