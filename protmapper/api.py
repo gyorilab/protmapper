@@ -63,9 +63,9 @@ class MappedSite(object):
     gene_name : str
         The standard (HGNC) gene name of the protein that was mapped.
     """
-    def __init__(self, up_id, error_code, valid, orig_res, orig_pos,
-                 mapped_res=None, mapped_pos=None, description=None,
-                 gene_name=None):
+    def __init__(self, up_id, valid, orig_res, orig_pos,
+                 error_code=None, mapped_res=None, mapped_pos=None,
+                 description=None, gene_name=None):
         self.up_id = up_id
         self.error_code = error_code
         self.valid = valid
@@ -77,14 +77,14 @@ class MappedSite(object):
         self.gene_name = gene_name
 
     def __repr__(self):
-        #quote_args = lambda args: [None if a is None else '%s' % a
-        #                           for a in 
-        return ("MappedSite(up_id='%s', error_code='%s', valid=%s, "
-                    "orig_res='%s', orig_pos='%s', mapped_res='%s', "
-                    "mapped_pos='%s', description='%s', gene_name='%s')" %
-                           (self.up_id, self.error_code, self.valid,
-                            self.orig_res, self.orig_pos, self.mapped_res,
-                            self.mapped_pos, self.description, self.gene_name))
+        quote_args = lambda args: tuple([a if a in (None, True, False)
+                                           else ("'%s'" % a) for a in args])
+        return ("MappedSite(up_id=%s, error_code=%s, valid=%s, "
+                    "orig_res=%s, orig_pos=%s, mapped_res=%s, "
+                    "mapped_pos=%s, description=%s, gene_name=%s)" %
+                quote_args([self.up_id, self.error_code, self.valid,
+                           self.orig_res, self.orig_pos, self.mapped_res,
+                           self.mapped_pos, self.description, self.gene_name]))
 
     def __eq__(self, other):
         if (self.up_id == other.up_id and self.valid == other.valid and
@@ -266,8 +266,8 @@ class ProtMapper(object):
         # as error
         if up_id is None:
             assert prot_ns == 'hgnc' and prot_id is not None
-            return MappedSite(None, 'NO_UNIPROT_ID', None, residue, position,
-                              gene_name=prot_id)
+            return MappedSite(None, None, residue, position,
+                              gene_name=prot_id, error_code='NO_UNIPROT_ID')
         # Get the gene name from Uniprot
         gene_name = uniprot_client.get_gene_name(up_id)
         site_key = (up_id, residue, position)
@@ -289,8 +289,8 @@ class ProtMapper(object):
             else:
                 error_code = 'UNIPROT_HTTP_OTHER'
             # Set error_code; valid will set to None, not True/False
-            mapped_site = MappedSite(up_id, error_code, None, residue,
-                                     position)
+            mapped_site = MappedSite(up_id, None, residue, position,
+                                     error_code=error_code)
             return mapped_site
         # It's a valid site
         if site_valid:

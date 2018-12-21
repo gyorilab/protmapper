@@ -39,7 +39,7 @@ def test_validate_site():
 
 
 def test_mapped_site_equals():
-    ms1 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+    ms1 = MappedSite(up_id='P28482', error_code=None, valid=False, orig_res='T',
                      orig_pos='183', mapped_res='T', mapped_pos='185',
                      description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
     ms2 = MappedSite(up_id='P28482', valid=False, orig_res='T',
@@ -51,10 +51,10 @@ def test_mapped_site_equals():
 
 
 def test_mapped_site_hash():
-    ms1 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+    ms1 = MappedSite(up_id='P28482', error_code=None, valid=False, orig_res='T',
                      orig_pos='183', mapped_res='T', mapped_pos='185',
                      description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
-    ms2 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+    ms2 = MappedSite(up_id='P28482', error_code=None, valid=False, orig_res='T',
                      orig_pos='183', mapped_res='T', mapped_pos='185',
                      description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
     assert hash(ms1) == hash(ms2)
@@ -65,10 +65,10 @@ def test_mapped_site_hash():
 def test_mapped_site_set_ctr():
     """Check if two identical sites in different objects are handled as equal
     in sets and counters."""
-    ms1 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+    ms1 = MappedSite(up_id='P28482', error_code=None, valid=False, orig_res='T',
                      orig_pos='183', mapped_res='T', mapped_pos='185',
                      description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
-    ms2 = MappedSite(up_id='P28482', valid=False, orig_res='T',
+    ms2 = MappedSite(up_id='P28482', error_code=None, valid=False, orig_res='T',
                      orig_pos='183', mapped_res='T', mapped_pos='185',
                      description='INFERRED_MOUSE_SITE', gene_name='MAPK1')
     ms_list = [ms1, ms2]
@@ -81,54 +81,57 @@ def test_mapped_site_set_ctr():
 def test_check_agent_mod_up_id():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '185')
-    assert ms == MappedSite(up_id='P28482', valid=True, orig_res='T',
-                            orig_pos='185', mapped_res=None, mapped_pos=None,
-                            description='VALID', gene_name='MAPK1')
+    assert ms == MappedSite(up_id='P28482', error_code=None, valid=True,
+                            orig_res='T', orig_pos='185', mapped_res=None,
+                            mapped_pos=None, description='VALID',
+                            gene_name='MAPK1')
 
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
-    assert ms == MappedSite(up_id='P28482', valid=False, orig_res='T',
-                            orig_pos='183', mapped_res='T', mapped_pos='185',
-                            description='INFERRED_MOUSE_SITE',
+    assert ms == MappedSite(up_id='P28482', error_code=None, valid=False,
+                            orig_res='T', orig_pos='183', mapped_res='T',
+                            mapped_pos='185', description='INFERRED_MOUSE_SITE',
                             gene_name='MAPK1')
 
 
 def test_check_agent_mod_hgnc():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '185')
-    assert ms == MappedSite(up_id='P28482', valid=True, orig_res='T',
-                            orig_pos='185', mapped_res=None, mapped_pos=None,
-                            description='VALID', gene_name='MAPK1')
+    assert ms == MappedSite(up_id='P28482', error_code=None, valid=True,
+                            orig_res='T', orig_pos='185', mapped_res=None,
+                            mapped_pos=None, description='VALID',
+                            gene_name='MAPK1')
 
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
-    assert ms == MappedSite(up_id='P28482', valid=False, orig_res='T',
-                            orig_pos='183', mapped_res='T', mapped_pos='185',
-                            description='INFERRED_MOUSE_SITE',
+    assert ms == MappedSite(up_id='P28482', error_code=None, valid=False,
+                            orig_res='T', orig_pos='183', mapped_res='T',
+                            mapped_pos='185', description='INFERRED_MOUSE_SITE',
                             gene_name='MAPK1')
 
 
 def test_map_mouse_site():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('THEMIS2', 'hgnc', 'Y', '660')
-    assert ms == MappedSite(up_id='Q5TEJ8', valid=False, orig_res='Y',
-                            orig_pos='660', mapped_res='Y', mapped_pos='632',
-                            description='INFERRED_MOUSE_SITE',
+    assert ms == MappedSite(up_id='Q5TEJ8', error_code=None, valid=False,
+                            orig_res='Y', orig_pos='660', mapped_res='Y',
+                            mapped_pos='632', description='INFERRED_MOUSE_SITE',
                             gene_name='THEMIS2')
 
 
 def test_map_rat_site():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('NPHS1', 'hgnc', 'Y', '1204')
-    assert ms == MappedSite(up_id='O60500', valid=False, orig_res='Y',
-                            orig_pos='1204', mapped_res='Y', mapped_pos='1193',
-                            description='INFERRED_RAT_SITE',
+    assert ms == MappedSite(up_id='O60500', error_code=None, valid=False,
+                            orig_res='Y', orig_pos='1204', mapped_res='Y',
+                            mapped_pos='1193', description='INFERRED_RAT_SITE',
                             gene_name='NPHS1')
 
 
 def test_map_methionine_cleavage():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('DAXX', 'hgnc', 'S', '667')
-    assert ms == MappedSite(up_id='Q9UER7', valid=False, orig_res='S',
-                            orig_pos='667', mapped_res='S', mapped_pos='668',
+    assert ms == MappedSite(up_id='Q9UER7', error_code=None, valid=False,
+                            orig_res='S', orig_pos='667', mapped_res='S',
+                            mapped_pos='668',
                             description='INFERRED_METHIONINE_CLEAVAGE',
                             gene_name='DAXX')
 
@@ -153,25 +156,11 @@ def test_map_invalid_from_sitemap():
 def test_repr_str():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('MAPK1', 'hgnc', 'T', '183')
-    assert str(ms) == ("MappedSite(up_id='P28482', valid=False, "
-                       "orig_res='T', orig_pos='183', mapped_res='T', "
-                       "mapped_pos='185', description='INFERRED_MOUSE_SITE', "
+    assert str(ms) == ("MappedSite(up_id='P28482', error_code=None, "
+                       "valid=False, orig_res='T', orig_pos='183', "
+                       "mapped_res='T', mapped_pos='185', "
+                       "description='INFERRED_MOUSE_SITE', "
                        "gene_name='MAPK1')")
-
-
-def test_read_cache():
-    cache_path = join(dirname(abspath(__file__)), 'test_cache_read.pkl')
-    sm = ProtMapper(use_cache=True, cache_path=cache_path)
-    ms = sm.map_to_human_ref('P28482', 'uniprot', 'Q', '32')
-    assert isinstance(ms, MappedSite)
-    assert ms.up_id == 'TEST1'
-    assert ms.gene_name == 'TEST2'
-    assert ms.valid == 'TEST3'
-    assert ms.orig_res == 'TEST4'
-    assert ms.orig_pos == 'TEST5'
-    assert ms.mapped_res == 'TEST6'
-    assert ms.mapped_pos == 'TEST7'
-    assert ms.description == 'TEST8'
 
 
 def test_write_cache():
@@ -186,19 +175,20 @@ def test_write_cache():
     assert isinstance(cache_dict, dict)
     assert len(cache_dict) == 1
     ms = cache_dict[('P28482', 'T', '183')]
-    assert ms == MappedSite(up_id='P28482', valid=False, orig_res='T',
-                            orig_pos='183', mapped_res='T', mapped_pos='185',
+    assert ms == MappedSite(up_id='P28482', error_code=None, valid=False,
+                            orig_res='T', orig_pos='183', mapped_res='T',
+                            mapped_pos='185',
                             description='INFERRED_MOUSE_SITE',
                             gene_name='MAPK1')
     os.unlink(cache_path)
 
 
 def test_mapped_site_to_json():
-    args = dict(up_id='P28482', valid=True, orig_res='T',
+    kwargs = dict(up_id='P28482', error_code=None, valid=True, orig_res='T',
                 orig_pos='185', mapped_res='T', mapped_pos='185',
                 description='VALID', gene_name='MAPK1')
-    ms = MappedSite(**args)
-    assert ms.to_json() == args
+    ms = MappedSite(**kwargs)
+    assert ms.to_json() == kwargs
 
 
 def test_invalid_uniprot_http_error():
@@ -207,12 +197,19 @@ def test_invalid_uniprot_http_error():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('ASDF', 'uniprot', 'Q', '999')
     assert ms.error_code == 'UNIPROT_HTTP_NOT_FOUND'
-
+    assert ms == MappedSite(up_id='ASDF', error_code='UNIPROT_HTTP_NOT_FOUND',
+                   valid=None, orig_res='Q', orig_pos='999',
+                   mapped_res=None, mapped_pos=None, description=None,
+                   gene_name=None)
 
 def test_invalid_gene_name_error():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('ASDF', 'hgnc', 'Q', '999')
     assert ms.error_code == 'NO_UNIPROT_ID'
+    assert ms == MappedSite(up_id=None, error_code='NO_UNIPROT_ID',
+                   valid=None, orig_res='Q', orig_pos='999',
+                   mapped_res=None, mapped_pos=None, description=None,
+                   gene_name='ASDF')
 
 
 if __name__ == '__main__':
