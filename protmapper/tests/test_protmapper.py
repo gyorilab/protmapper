@@ -206,7 +206,7 @@ def test_invalid_uniprot_http_error():
     should be indicated in the returned MappedSite."""
     sm = ProtMapper()
     ms = sm.map_to_human_ref('ASDF', 'uniprot', 'Q', '999')
-    assert ms.http_error
+    assert ms.error_code == 'UNIPROT_HTTP_NOT_FOUND'
 
 if __name__ == '__main__':
     test_invalid_uniprot_http_error()
