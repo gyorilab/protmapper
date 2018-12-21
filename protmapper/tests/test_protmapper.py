@@ -210,7 +210,3 @@ def test_invalid_gene_name_error():
                    valid=None, orig_res='Q', orig_pos='999',
                    mapped_res=None, mapped_pos=None, description=None,
                    gene_name='ASDF')
-
-
-if __name__ == '__main__':
-    test_invalid_gene_name_error()
