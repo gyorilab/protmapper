@@ -199,3 +199,14 @@ def test_mapped_site_to_json():
                 description='VALID', gene_name='MAPK1')
     ms = MappedSite(**args)
     assert ms.to_json() == args
+
+
+def test_invalid_uniprot_http_error():
+    """Trigger an HTTP Error by passing in an invalid Uniprot ID. The error
+    should be indicated in the returned MappedSite."""
+    sm = ProtMapper()
+    ms = sm.map_to_human_ref('ASDF', 'uniprot', 'Q', '999')
+    assert ms.http_error
+
+if __name__ == '__main__':
+    test_invalid_uniprot_http_error()
