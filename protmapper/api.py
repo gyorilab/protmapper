@@ -39,7 +39,7 @@ class MappedSite(object):
     error_code : str or None
         One of several strings indicating an error in retrieving the protein
         sequence, or None if there was no error. Error codes include
-        'INVALID_GENE_NAME' if the given gene name could not be converted into
+        'NO_UNIPROT_ID' if the given gene name could not be converted into
         a Uniprot ID; 'UNIPROT_HTTP_NOT_FOUND' if the given Uniprot ID resulted
         in a 404 Not Found error from the Uniprot web service; or
         'UNIPROT_HTTP_OTHER' if it was any other type of Uniprot web service
@@ -262,14 +262,14 @@ class ProtMapper(object):
         valid_res, valid_pos = _validate_site(residue, position)
         # Get Uniprot ID and gene name
         up_id = _get_uniprot_id(prot_id, prot_ns)
-        gene_name = uniprot_client.get_gene_name(up_id)
-        # If an HGNC ID was given and the uniprot entry is not found,
-        # let it pass
+        # If an HGNC ID was given and the uniprot entry is not found, flag
+        # as error
         if up_id is None:
             assert prot_ns == 'hgnc' and prot_id is not None
-            return MappedSite(None, True, residue, position,
-                              description="NO_UNIPROT_ID",
+            return MappedSite(None, 'NO_UNIPROT_ID', None, residue, position,
                               gene_name=prot_id)
+        # Get the gene name from Uniprot
+        gene_name = uniprot_client.get_gene_name(up_id)
         site_key = (up_id, residue, position)
         # Increase our count for this site
         self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1

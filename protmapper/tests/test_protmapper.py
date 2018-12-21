@@ -208,5 +208,12 @@ def test_invalid_uniprot_http_error():
     ms = sm.map_to_human_ref('ASDF', 'uniprot', 'Q', '999')
     assert ms.error_code == 'UNIPROT_HTTP_NOT_FOUND'
 
+
+def test_invalid_gene_name_error():
+    sm = ProtMapper()
+    ms = sm.map_to_human_ref('ASDF', 'hgnc', 'Q', '999')
+    assert ms.error_code == 'NO_UNIPROT_ID'
+
+
 if __name__ == '__main__':
-    test_invalid_uniprot_http_error()
+    test_invalid_gene_name_error()
