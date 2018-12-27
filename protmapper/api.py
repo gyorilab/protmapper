@@ -185,11 +185,14 @@ class ProtMapper(object):
                       self._cache_path)
         self._sitecount = {}
 
+    def save_cache(self):
+        with open(self._cache_path, 'wb') as f:
+            pickle.dump(self._cache, f)
+
     def __del__(self):
         try:
             if self.use_cache:
-                with open(self._cache_path, 'wb') as f:
-                    pickle.dump(self._cache, f, protocol=2)
+                self.save_cache()
         except:
             pass
 
