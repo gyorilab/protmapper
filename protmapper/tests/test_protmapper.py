@@ -202,6 +202,7 @@ def test_invalid_uniprot_http_error():
                    mapped_res=None, mapped_pos=None, description=None,
                    gene_name=None)
 
+
 def test_invalid_gene_name_error():
     sm = ProtMapper()
     ms = sm.map_to_human_ref('ASDF', 'hgnc', 'Q', '999')
@@ -210,3 +211,18 @@ def test_invalid_gene_name_error():
                    valid=None, orig_res='Q', orig_pos='999',
                    mapped_res=None, mapped_pos=None, description=None,
                    gene_name='ASDF')
+
+
+def test_motif_from_position():
+    sm = ProtMapper()
+    # Try with string position
+    motif = sm.motif_from_position('O95218-2', '120', window=7)
+    assert motif == 'EYIEREESDGEYDEF'
+    # Also try with int
+    sm.motif_from_position('O95218-2', '120')
+    assert motif == 'EYIEREESDGEYDEF'
+    # Change the window size
+    motif = sm.motif_from_position('O95218-2', '120', window=5)
+    assert motif == 'IEREESDGEYD'
+
+
