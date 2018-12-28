@@ -216,13 +216,24 @@ def test_invalid_gene_name_error():
 def test_motif_from_position():
     sm = ProtMapper()
     # Try with string position
-    motif = sm.motif_from_position('O95218-2', '120', window=7)
+    (motif, respos) = sm.motif_from_position('O95218-2', '120', window=7)
     assert motif == 'EYIEREESDGEYDEF'
+    assert respos == 7
     # Also try with int
-    sm.motif_from_position('O95218-2', '120')
+    motif, respos = sm.motif_from_position('O95218-2', '120')
     assert motif == 'EYIEREESDGEYDEF'
+    assert respos == 7
     # Change the window size
-    motif = sm.motif_from_position('O95218-2', '120', window=5)
+    motif, respos = sm.motif_from_position('O95218-2', '120', window=5)
     assert motif == 'IEREESDGEYD'
+    assert respos == 5
+    # Try with a residue that is close to the end of the protein
+    motif, respos = sm.motif_from_position('Q04637-1', '1596', window=7)
+    assert motif == 'LREAEEESDHN'
+    assert respos == 7
+    # Try with a residue that is close to the start of the protein
+    motif, respos = sm.motif_from_position('Q04637-1', '3', window=7)
+    assert motif == 'MNKAPQSTGP'
+    assert respos == 2
 
 

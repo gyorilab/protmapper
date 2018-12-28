@@ -392,7 +392,10 @@ class ProtMapper(object):
         end_ix = pos_int + window if pos_int + window < len(seq) else len(seq)
         start_ix = pos_int - window - 1 if pos_int - window > 0 else 0
         motif = seq[start_ix:end_ix]
-        return motif
+        # Get the residue position, which will be the same as the window
+        # size unless the start_ix is something other than the pos - window
+        respos = pos_int - start_ix - 1
+        return (motif, respos)
 
 
 def load_site_map(path):
