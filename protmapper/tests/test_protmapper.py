@@ -241,10 +241,29 @@ def test_map_peptide():
     sm = ProtMapper()
     # Check the localization of a peptide to a target protein
     peptide = 'MNTPSQPRQHFY'
-    pos = 4
+    pos = 5
     respos = sm.map_peptide('Q04637-1', peptide, pos)
     assert respos == 45
     # Check that the motif is not found in an unrelated sequence
     respos = sm.map_peptide('O95218-2', peptide, pos)
     assert respos is None
+
+
+def test_map_peptide_to_human_ref():
+    sm = ProtMapper()
+    peptide = 'MNTPSQPRQHFY'
+    pos = 5
+    ms = sm.map_peptide_to_human_ref('Q04637', 'uniprot', peptide, pos)
+    assert isinstance(ms, MappedSite)
+    assert ms.up_id == 'Q04637'
+    assert ms.gene_name == 'EIF4G1'
+    assert ms.valid is True
+    assert ms.orig_res is None
+    assert ms.orig_pos is None
+    assert ms.mapped_res == 'S'
+    assert ms.mapped_pos == '45'
+    assert ms.description is  None
+    # The same as above except with the gene name instead
+    ms2 = sm.map_peptide_to_human_ref('EIF4G1', 'hgnc', peptide, pos)
+    assert ms2 == ms
 

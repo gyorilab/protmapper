@@ -397,7 +397,6 @@ class ProtMapper(object):
         respos = pos_int - start_ix - 1
         return (motif, respos)
 
-
     @staticmethod
     def map_peptide(target_up_id, peptide, pos):
         seq = uniprot_client.get_sequence(target_up_id)
@@ -405,8 +404,42 @@ class ProtMapper(object):
         # Peptide not found in sequence, return None
         if peptide_start == -1:
             return None
-        target_pos = peptide_start + pos + 1
+        target_pos = peptide_start + pos
         return target_pos
+
+    @staticmethod
+    def map_peptide_to_human_ref(prot_id, prot_ns, peptide, site_pos):
+        # Get the uniprot ID for the gene
+        # Check the protein ID and namespace
+        if prot_id is None:
+            raise ValueError("prot_id must not be None.")
+        if prot_ns not in ('uniprot', 'hgnc'):
+            raise ValueError("prot_ns must be either 'uniprot' or 'hgnc' (for "
+                             "HGNC symbols)")
+        if prot_ns  == 'uniprot' and len(prot_id.split('-')) != 1 and \
+                                                prot_id.split('-')[1] != '1':
+            raise ValueError("Protein ID passed in appears to be a "
+                             "non-reference isoform: %s" % prot_id)
+        # Get Uniprot ID and gene name
+        up_id = _get_uniprot_id(prot_id, prot_ns)
+        # If an HGNC ID was given and the uniprot entry is not found, flag
+        # as error
+        if up_id is None:
+            assert prot_ns == 'hgnc' and prot_id is not None
+            return MappedSite(None, None, residue, position,
+                              gene_name=prot_id, error_code='NO_UNIPROT_ID')
+        # Get the gene name from Uniprot
+        gene_name = uniprot_client.get_gene_name(up_id)
+        mapped_pos = ProtMapper.map_peptide(up_id, peptide, site_pos)
+        ms = MappedSite(up_id=up_id, valid=None, orig_res=None, orig_pos=None,
+                        error_code=None, description=None, gene_name=gene_name)
+        if mapped_pos is None:
+            ms.valid = False
+        else:
+            ms.valid = True
+            ms.mapped_res = peptide[site_pos - 1]
+            ms.mapped_pos = str(mapped_pos)
+        return ms
 
 
 def load_site_map(path):
