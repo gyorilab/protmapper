@@ -398,6 +398,17 @@ class ProtMapper(object):
         return (motif, respos)
 
 
+    @staticmethod
+    def map_peptide(target_up_id, peptide, pos):
+        seq = uniprot_client.get_sequence(target_up_id)
+        peptide_start = seq.find(peptide)
+        # Peptide not found in sequence, return None
+        if peptide_start == -1:
+            return None
+        target_pos = peptide_start + pos + 1
+        return target_pos
+
+
 def load_site_map(path):
     """Load the modification site map from a file.
 

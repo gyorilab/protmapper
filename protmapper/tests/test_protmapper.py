@@ -237,3 +237,14 @@ def test_motif_from_position():
     assert respos == 2
 
 
+def test_map_peptide():
+    sm = ProtMapper()
+    # Check the localization of a peptide to a target protein
+    peptide = 'MNTPSQPRQHFY'
+    pos = 4
+    respos = sm.map_peptide('Q04637-1', peptide, pos)
+    assert respos == 45
+    # Check that the motif is not found in an unrelated sequence
+    respos = sm.map_peptide('O95218-2', peptide, pos)
+    assert respos is None
+
