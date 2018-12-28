@@ -218,23 +218,26 @@ def test_motif_from_position():
     # Try with string position
     (motif, respos) = sm.motif_from_position('O95218-2', '120', window=7)
     assert motif == 'EYIEREESDGEYDEF'
-    assert respos == 7
+    assert respos == 8
     # Also try with int
     motif, respos = sm.motif_from_position('O95218-2', '120')
     assert motif == 'EYIEREESDGEYDEF'
-    assert respos == 7
+    assert respos == 8
     # Change the window size
     motif, respos = sm.motif_from_position('O95218-2', '120', window=5)
     assert motif == 'IEREESDGEYD'
-    assert respos == 5
+    assert respos == 6
     # Try with a residue that is close to the end of the protein
     motif, respos = sm.motif_from_position('Q04637-1', '1596', window=7)
     assert motif == 'LREAEEESDHN'
-    assert respos == 7
+    assert respos == 8
     # Try with a residue that is close to the start of the protein
     motif, respos = sm.motif_from_position('Q04637-1', '3', window=7)
     assert motif == 'MNKAPQSTGP'
-    assert respos == 2
+    assert respos == 3
+    (motif, respos) = sm.motif_from_position('P28482', '187')
+    assert motif == 'HTGFLTEYVATRWYR'
+    assert respos == 8
 
 
 def test_map_peptide():
@@ -255,15 +258,25 @@ def test_map_peptide_to_human_ref():
     pos = 5
     ms = sm.map_peptide_to_human_ref('Q04637', 'uniprot', peptide, pos)
     assert isinstance(ms, MappedSite)
-    assert ms.up_id == 'Q04637'
-    assert ms.gene_name == 'EIF4G1'
-    assert ms.valid is True
-    assert ms.orig_res is None
-    assert ms.orig_pos is None
-    assert ms.mapped_res == 'S'
-    assert ms.mapped_pos == '45'
-    assert ms.description is  None
+    assert ms == MappedSite(up_id='Q04637', error_code=None, valid=True,
+                            orig_res=None, orig_pos=None, mapped_res='S',
+                            mapped_pos='45',
+                            description=None,
+                            gene_name='EIF4G1')
     # The same as above except with the gene name instead
     ms2 = sm.map_peptide_to_human_ref('EIF4G1', 'hgnc', peptide, pos)
     assert ms2 == ms
+
+
+def test_peptide_round_trip():
+    pm = ProtMapper()
+    pos = '187'
+    motif, site_pos = pm.motif_from_position('P28482', '187')
+    ms = pm.map_peptide_to_human_ref('MAPK1', 'hgnc', motif, site_pos)
+    assert isinstance(ms, MappedSite)
+    assert ms == MappedSite(up_id='P28482', error_code=None, valid=True,
+                            orig_res=None, orig_pos=None, mapped_res='Y',
+                            mapped_pos='187',
+                            description=None,
+                            gene_name='MAPK1')
 

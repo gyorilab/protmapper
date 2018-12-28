@@ -394,7 +394,7 @@ class ProtMapper(object):
         motif = seq[start_ix:end_ix]
         # Get the residue position, which will be the same as the window
         # size unless the start_ix is something other than the pos - window
-        respos = pos_int - start_ix - 1
+        respos = pos_int - start_ix
         return (motif, respos)
 
     @staticmethod
