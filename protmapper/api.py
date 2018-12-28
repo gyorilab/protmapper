@@ -383,6 +383,17 @@ class ProtMapper(object):
             self._cache[site_key] = mapped_site
             return mapped_site
 
+    @staticmethod
+    def motif_from_position(up_id, pos, window=7):
+        # Validate that the position is an integer
+        pos_str = str(pos)
+        pos_int = int(pos)
+        seq = uniprot_client.get_sequence(up_id)
+        end_ix = pos_int + window if pos_int + window < len(seq) else len(seq)
+        start_ix = pos_int - window - 1 if pos_int - window > 0 else 0
+        motif = seq[start_ix:end_ix]
+        return motif
+
 
 def load_site_map(path):
     """Load the modification site map from a file.
