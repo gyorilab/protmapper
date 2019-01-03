@@ -388,6 +388,7 @@ class ProtMapper(object):
         # Validate that the position is an integer
         pos_str = str(pos)
         pos_int = int(pos)
+        # TODO: Check that the position is contained within the sequence
         seq = uniprot_client.get_sequence(up_id)
         end_ix = pos_int + window if pos_int + window < len(seq) else len(seq)
         start_ix = pos_int - window - 1 if pos_int - window > 0 else 0
@@ -426,7 +427,7 @@ class ProtMapper(object):
         # as error
         if up_id is None:
             assert prot_ns == 'hgnc' and prot_id is not None
-            return MappedSite(None, None, residue, position,
+            return MappedSite(None, None, None, None,
                               gene_name=prot_id, error_code='NO_UNIPROT_ID')
         # Get the gene name from Uniprot
         gene_name = uniprot_client.get_gene_name(up_id)
