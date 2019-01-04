@@ -5,25 +5,23 @@ from collections import Counter
 from os.path import join, abspath, dirname, isfile
 import pickle
 from nose.tools import raises
-from protmapper.api import ProtMapper, _validate_site, MappedSite
+from protmapper.api import ProtMapper, _validate_site, MappedSite, \
+                           InvalidSiteException
 
 
-@raises(ValueError)
-def test_invalid_residue():
-    sm = ProtMapper()
-    sm.map_to_human_ref('MAPK1', 'HGNC', 'B', '185')
+@raises(InvalidSiteException)
+def test_validate_invalid_residue1():
+    _validate_site('B', '185')
 
 
-@raises(ValueError)
-def test_invalid_position():
-    sm = ProtMapper()
-    sm.map_to_human_ref('MAPK1', 'HGNC', 'T', 'foo')
+@raises(InvalidSiteException)
+def test_validate_invalid_residue2():
+    _validate_site('T', 'foo')
 
 
-@raises(ValueError)
-def test_invalid_prot_ns():
-    sm = ProtMapper()
-    sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
+@raises(InvalidSiteException)
+def test_validate_invalid_residue3():
+    _validate_site('T', '12.5')
 
 
 def test_validate_site():
@@ -76,6 +74,36 @@ def test_mapped_site_set_ctr():
     ctr = Counter(ms_list)
     assert len(ctr) == 1
     assert list(ctr.values())[0] == 2
+
+
+def test_map_invalid_residue():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('MAPK1', 'hgnc', 'B', '185')
+    assert ms == MappedSite('P28482', None, 'B', '185',
+                            error_code='INVALID_SITE',
+                            description='Residue B not a valid amino acid')
+
+
+def test_map_invalid_position1():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('MAPK1', 'hgnc', 'T', 'foo')
+    assert ms == MappedSite(
+            'P28482', None, 'T', 'foo', error_code='INVALID_SITE',
+            description='Position foo not a valid sequence position.')
+
+
+def test_map_invalid_position2():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('MAPK1', 'hgnc', 'T', '12.5')
+    assert ms == MappedSite(
+            'P28482', None, 'T', '12.5', error_code='INVALID_SITE',
+            description='Position 12.5 not a valid sequence position.')
+
+
+@raises(ValueError)
+def test_invalid_prot_ns():
+    sm = ProtMapper()
+    sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
 
 
 def test_check_agent_mod_up_id():

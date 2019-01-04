@@ -29,6 +29,10 @@ valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
              'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
 
 
+class InvalidSiteException(Exception):
+    pass
+
+
 class MappedSite(object):
     """Represent details of a site that was mapped.
 
@@ -261,8 +265,6 @@ class ProtMapper(object):
         if prot_ns not in ('uniprot', 'hgnc'):
             raise ValueError("prot_ns must be either 'uniprot' or 'hgnc' (for "
                              "HGNC symbols)")
-        # Make sure the sites are valid
-        valid_res, valid_pos = _validate_site(residue, position)
         # Get Uniprot ID and gene name
         up_id = _get_uniprot_id(prot_id, prot_ns)
         # If an HGNC ID was given and the uniprot entry is not found, flag
@@ -271,6 +273,13 @@ class ProtMapper(object):
             assert prot_ns == 'hgnc' and prot_id is not None
             return MappedSite(None, None, residue, position,
                               gene_name=prot_id, error_code='NO_UNIPROT_ID')
+        # Make sure the sites are valid
+        try:
+            valid_res, valid_pos = _validate_site(residue, position)
+        except InvalidSiteException as ex:
+            return MappedSite(up_id, None, residue, position,
+                              error_code='INVALID_SITE',
+                              description=str(ex))
         # Get the gene name from Uniprot
         gene_name = uniprot_client.get_gene_name(up_id)
         site_key = (up_id, residue, position)
@@ -491,19 +500,21 @@ def load_site_map(path):
 
 def _validate_site(residue, position):
     if residue is None:
-        raise ValueError('residue cannot be None')
+        raise InvalidSiteException('residue cannot be None')
     if position is None:
-        raise ValueError('position cannot be None')
+        raise InvalidSiteException('position cannot be None')
     # Check that the residue is a valid amino acid
     if residue not in valid_aas:
-        raise ValueError('Residue %s not a valid amino acid' % residue)
+        raise InvalidSiteException('Residue %s not a valid amino acid' %
+                                   residue)
     # Next make sure that the position is a valid position
     try:
         pos_int = int(position)
         pos_str = str(pos_int)
+    # Catch the ValueError and re-raise as an InvalidSiteException
     except ValueError:
-        raise ValueError('Position %s not a valid sequence position.'
-                         % position)
+        raise InvalidSiteException('Position %s not a valid sequence position.'
+                                   % position)
     # Site appears valid, make a Site object
     return (residue, pos_str)
 
