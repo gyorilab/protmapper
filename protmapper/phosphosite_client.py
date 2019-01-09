@@ -66,7 +66,9 @@ def _get_phospho_site_dataset():
             site = PhosphoSite(*row)
             res_pos = site.MOD_RSD.split('-')[0]
             base_acc_id = site.ACC_ID.split('-')[0]
-            data_by_up[base_acc_id][res_pos].append(site)
+            data_by_up[site.ACC_ID][res_pos].append(site)
+            if base_acc_id != site.ACC_ID:
+                data_by_up[base_acc_id][res_pos].append(site)
             data_by_site_grp[site.SITE_GRP_ID].append(site)
         _data_by_up = data_by_up
         _data_by_site_grp = data_by_site_grp
@@ -168,3 +170,13 @@ def map_to_human_site(up_id, mod_res, mod_pos):
         return None
     return human_pos
 
+
+def sites_only():
+    sites = []
+    (data_by_up, data_by_site_grp) = _get_phospho_site_dataset()
+    for up_id, respos_dict in data_by_up.items():
+        for respos in respos_dict.keys():
+            res = respos[0]
+            pos = respos[1:]
+            sites.append((up_id, res, pos))
+    return sites

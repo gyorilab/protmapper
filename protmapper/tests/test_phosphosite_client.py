@@ -16,6 +16,12 @@ def test_isoform_mapping_from_human():
     assert pos == '349'
 
 
+def test_mapping_from_human_isoform():
+    up_id = 'P29353-2'
+    pos = map_to_human_site(up_id, 'Y', '239')
+    assert pos == '349'
+
+
 def test_isoform_mapping_from_mouse():
     up_id = 'P29353'
     pos = map_to_human_site(up_id, 'Y', '239')
@@ -28,11 +34,14 @@ def test_mapping_from_mouse_isoform():
     assert pos == '214'
 
 
-def test_data_as_triples():
+def test_sites_only():
     sites = sites_only()
+    # These checks make sure that the sites are constructed from the data
+    # dictionaries as expected
     assert ('Q8CI51-3', 'S', '105') in sites
     assert ('Q8CI51', 'T', '80') in sites
-    # T80 exists in mouse isoform 3 as well, but we test the assumption that
-    # Phosphosite doesn't include sites for isoforms with the same position
-    # as in the reference isoform
-    assert ('Q8CI51-3', 'T', '80') in sites
+    assert ('Q8CI51-3', 'T', '80') not in sites
+    assert ('P29353', 'Y', '427') in sites
+    assert ('P29353', 'Y', '317') in sites
+    assert ('P29353-2', 'Y', '317') in sites
+    assert ('P29353-2', 'Y', '427') not in sites
