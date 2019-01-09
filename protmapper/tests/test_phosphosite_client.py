@@ -23,8 +23,20 @@ def test_mapping_from_human_isoform():
 
 
 def test_isoform_mapping_from_mouse():
-    up_id = 'P29353'
+    up_id = 'P29353' # SHC1
     pos = map_to_human_site(up_id, 'Y', '239')
+    assert pos == '349'
+
+
+def test_mapping_from_human_ref():
+    up_id = 'P29353' # SHC1
+    pos = map_to_human_site(up_id, 'Y', '349')
+    assert pos == '349'
+
+
+def test_mapping_from_human_ref_iso_id():
+    up_id = 'P29353-1' # SHC1
+    pos = map_to_human_site(up_id, 'Y', '349')
     assert pos == '349'
 
 
@@ -45,3 +57,6 @@ def test_sites_only():
     assert ('P29353', 'Y', '317') in sites
     assert ('P29353-2', 'Y', '317') in sites
     assert ('P29353-2', 'Y', '427') not in sites
+    # Check the -1 isoforms are also included
+    assert ('P28661-1', 'S', '28') in sites
+

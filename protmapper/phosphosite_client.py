@@ -67,8 +67,13 @@ def _get_phospho_site_dataset():
             res_pos = site.MOD_RSD.split('-')[0]
             base_acc_id = site.ACC_ID.split('-')[0]
             data_by_up[site.ACC_ID][res_pos].append(site)
+            # If the ID was isoform specific, add to the dict for the whole
+            # protein
             if base_acc_id != site.ACC_ID:
                 data_by_up[base_acc_id][res_pos].append(site)
+            # To catch additional cases, include an entry for the -1 base ID
+            else:
+                data_by_up['%s-1' % base_acc_id] = data_by_up[base_acc_id]
             data_by_site_grp[site.SITE_GRP_ID].append(site)
         _data_by_up = data_by_up
         _data_by_site_grp = data_by_site_grp
