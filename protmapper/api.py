@@ -419,6 +419,7 @@ class ProtMapper(object):
 
     @staticmethod
     def map_peptide_to_human_ref(prot_id, prot_ns, peptide, site_pos):
+        """site_pos is 1-indexed!!!"""
         # Get the uniprot ID for the gene
         # Check the protein ID and namespace
         if prot_id is None:

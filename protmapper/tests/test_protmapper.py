@@ -296,6 +296,19 @@ def test_map_peptide_to_human_ref():
     assert ms2 == ms
 
 
+def test_map_peptide_to_human_ref2():
+    pm = ProtMapper()
+    up_id = 'P07942'
+    peptide = 'GDNLLDSRMEIRE'
+    sitepos = 7
+    ms = pm.map_peptide_to_human_ref(up_id, 'uniprot', peptide, sitepos)
+    assert ms == MappedSite(up_id='P07942', error_code=None, valid=True,
+                            orig_res=None, orig_pos=None, mapped_res='S',
+                            mapped_pos='250', description=None,
+                            gene_name='LAMB1')
+    assert ms
+
+
 def test_peptide_round_trip():
     pm = ProtMapper()
     pos = '187'
@@ -307,4 +320,3 @@ def test_peptide_round_trip():
                             mapped_pos='187',
                             description=None,
                             gene_name='MAPK1')
-
