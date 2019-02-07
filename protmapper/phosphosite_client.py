@@ -178,10 +178,12 @@ def map_to_human_site(up_id, mod_res, mod_pos):
     return human_pos
 
 
-def sites_only():
+def sites_only(exclude_isoforms=False):
     sites = []
     (data_by_up, data_by_site_grp) = _get_phospho_site_dataset()
     for up_id, respos_dict in data_by_up.items():
+        if exclude_isoforms and '-' in up_id:
+            continue
         for respos in respos_dict.keys():
             res = respos[0]
             pos = respos[1:]
