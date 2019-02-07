@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 from functools import lru_cache
 from urllib.error import HTTPError
 from indra.util import read_unicode_csv
-
+from protmapper.resources import resource_dir
 
 logger = logging.getLogger(__name__)
 
@@ -755,16 +755,14 @@ um = UniprotMapper()
 
 def _build_uniprot_entries(from_pickle=True):
     # Try the pickle file first if it exists (not in version control)
-    up_entries_pkl = os.path.dirname(os.path.abspath(__file__)) + \
-        '/../resources/uniprot_entries.pkl'
+    up_entries_pkl = os.path.join(resource_dir, 'uniprot_entries.pkl')
     if from_pickle and os.path.exists(up_entries_pkl):
         import pickle
         with open(up_entries_pkl, 'rb') as fh:
             entries = pickle.load(fh)
         return entries
     # Otherwise process the regular entries TSV
-    up_entries_file = os.path.dirname(os.path.abspath(__file__)) + \
-        '/../resources/uniprot_entries.tsv'
+    up_entries_file = os.path.join(resource_dir, 'uniprot_entries.tsv')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
     uniprot_mnemonic_reverse = {}
@@ -801,8 +799,7 @@ def _build_uniprot_entries(from_pickle=True):
 
 
 def _build_human_mouse_rat():
-    hgnc_file = os.path.dirname(os.path.abspath(__file__)) +\
-                '/../resources/hgnc_entries.tsv'
+    hgnc_file = os.path.join(resource_dir, 'hgnc_entries.tsv')
     csv_rows = read_unicode_csv(hgnc_file, delimiter='\t')
     # Skip the header row
     next(csv_rows)
@@ -830,8 +827,7 @@ def _build_human_mouse_rat():
 
 def _build_uniprot_sec():
     # Try loading pickle first (not in version control)
-    up_entries_pkl = os.path.dirname(os.path.abspath(__file__)) + \
-        '/../resources/uniprot_sec_ac.pkl'
+    up_entries_pkl = os.path.join(resource_dir, 'uniprot_sec_ac.pkl')
     if os.path.exists(up_entries_pkl):
         import pickle
         with open(up_entries_pkl, 'rb') as fh:
@@ -839,8 +835,7 @@ def _build_uniprot_sec():
         return entries
     # File containing secondary accession numbers mapped
     # to primary accession numbers
-    sec_file = os.path.dirname(os.path.abspath(__file__)) +\
-                '/../resources/uniprot_sec_ac.txt'
+    sec_file = os.path.join(resource_dir, 'uniprot_sec_ac.txt')
     try:
         uniprot_sec = {}
         lines = open(sec_file, 'rt').readlines()
@@ -860,8 +855,7 @@ def _build_uniprot_sec():
 
 
 def _build_uniprot_subcell_loc():
-    fname = os.path.dirname(os.path.abspath(__file__)) +\
-                '/../resources/uniprot_subcell_loc.tsv'
+    fname = os.path.join(resource_dir, 'uniprot_subcell_loc.tsv')
     try:
         csv_rows = read_unicode_csv(fname, delimiter='\t')
         # Skip the header row
