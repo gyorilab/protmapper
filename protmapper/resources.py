@@ -23,7 +23,7 @@ if not os.path.isdir(resource_dir):
         logger.warning(resource_dir + ' already exists')
 
 
-def download_phosphositeplus():
+def download_phosphositeplus(out_file, cached=True):
     psp_url = ('http://sorger.med.harvard.edu/data/bachman/'
                        'Phosphorylation_site_dataset.tsv')
     logger.info("Downloading PhosphoSitePlus data from %s\n" % psp_url)
@@ -32,18 +32,17 @@ def download_phosphositeplus():
                 "https://www.psp.org/staticDownloads")
     resp = requests.get(psp_url)
     # Check the status code
-    psp_filename = os.path.join(resource_dir, 'Phosphorylation_site_dataset.tsv')
     if resp.status_code == 200:
         # Read and write as bytes (response.content)
-        logger.info("Saving PhosphoSitePlus data to %s" % psp_filename)
-        with open(psp_filename, 'wb') as f:
+        logger.info("Saving PhosphoSitePlus data to %s" % out_file)
+        with open(out_file, 'wb') as f:
             f.write(resp.content)
     else:
         logger.error("Error %s occurred downloading PhosphoSitePlus data" %
                      resp.status_code)
 
 
-def download_uniprot_entries():
+def download_uniprot_entries(out_file, cached=True):
     logger.info('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
@@ -86,10 +85,8 @@ def download_uniprot_entries():
         lines[i] = '\t'.join(terms)
     # Join all lines into a single string
     full_table = '\n'.join(lines)
-    #fname = os.path.join(path, 'uniprot_entries.tsv')
-    fname = os.path.join(resource_dir, 'uniprot_entries.tsv')
-    logging.info('Saving into %s.' % fname)
-    with open(fname, 'wb') as fh:
+    logging.info('Saving into %s.' % out_file)
+    with open(out_file, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
 
 
@@ -105,16 +102,15 @@ def download_uniprot_sec_ac(out_file, cached=True):
                                            out_file)
 
 
-def download_hgnc_entries():
+def download_hgnc_entries(out_file, cached=True):
     logger.info('Downloading HGNC entries')
     url = 'http://tinyurl.com/y83dx5s6'
     res = requests.get(url)
     if res.status_code != 200:
         logger.error('Failed to download "%s"' % url)
         return
-    fname = os.path.join(resource_dir, 'hgnc_entries.tsv')
-    logger.info('Saving into %s' % fname)
-    with open(fname, 'wb') as fh:
+    logger.info('Saving into %s' % out_file)
+    with open(out_file, 'wb') as fh:
         fh.write(res.content)
 
 
