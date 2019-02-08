@@ -26,10 +26,10 @@ if not os.path.isdir(resource_dir):
 def download_phosphositeplus():
     psp_url = ('http://sorger.med.harvard.edu/data/bachman/'
                        'Phosphorylation_site_dataset.tsv')
-    print("Downloading PhosphoSitePlus data from %s\n" % psp_url)
-    print("Note that PhosphoSitePlus data is not available for commercial use; "
-          "please see full terms and conditions at: "
-          "https://www.psp.org/staticDownloads")
+    logger.info("Downloading PhosphoSitePlus data from %s\n" % psp_url)
+    logger.info("Note that PhosphoSitePlus data is not available for "
+                "commercial use; please see full terms and conditions at: "
+                "https://www.psp.org/staticDownloads")
     resp = requests.get(psp_url)
     # Check the status code
     psp_filename = os.path.join(resource_dir, 'Phosphorylation_site_dataset.tsv')
@@ -44,15 +44,15 @@ def download_phosphositeplus():
 
 
 def download_uniprot_entries():
-    print('Downloading UniProt entries')
+    logger.info('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
         'format=tab&columns=id,genes(PREFERRED),' + \
         'entry%20name,database(RGD),database(MGI),length'
-    print('Downloading %s' % url)
+    logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
-        print('Failed to download "%s"' % url)
+        logger.info('Failed to download "%s"' % url)
     reviewed_entries = res.content
 
     url = 'http://www.uniprot.org/uniprot/?' + \
@@ -60,10 +60,10 @@ def download_uniprot_entries():
         '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
         'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
         'database(RGD),database(MGI),length'
-    print('Downloading %s' % url)
+    logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
-        print('Failed to download "%s"' % url)
+        logger.info('Failed to download "%s"' % url)
     unreviewed_human_entries = res.content
 
     if not((reviewed_entries is not None) and
@@ -74,7 +74,7 @@ def download_uniprot_entries():
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
     # At this point, we need to clean up the gene names.
-    print('Processing UniProt entries list.')
+    logger.info('Processing UniProt entries list.')
     for i, line in enumerate(lines):
         if i == 0:
             continue
@@ -95,7 +95,7 @@ def download_uniprot_entries():
 
 def download_uniprot_sec_ac(out_file, cached=True):
     if not cached:
-        print('Downloading UniProt secondary accession mappings')
+        logger.info('Downloading UniProt secondary accession mappings')
         url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
             'docs/sec_ac.txt'
         urlretrieve(url, out_file)
@@ -106,14 +106,14 @@ def download_uniprot_sec_ac(out_file, cached=True):
 
 
 def download_hgnc_entries():
-    print('Downloading HGNC entries')
+    logger.info('Downloading HGNC entries')
     url = 'http://tinyurl.com/y83dx5s6'
     res = requests.get(url)
     if res.status_code != 200:
         logger.error('Failed to download "%s"' % url)
         return
     fname = os.path.join(resource_dir, 'hgnc_entries.tsv')
-    print('Saving into %s' % fname)
+    logger.info('Saving into %s' % fname)
     with open(fname, 'wb') as fh:
         fh.write(res.content)
 
@@ -143,11 +143,13 @@ class ResourceManager(object):
     def download_resource_file(self, resource_id, cached=True):
         download_fun = self.get_download_fun(resource_id)
         fname = self.get_resource_file(resource_id)
+        logger.info('Downloading \'%s\' resource file into %s%s.' %
+                    (resource_id, fname, ' from cache' if cached else ''))
         download_fun(fname, cached=cached)
 
-    def get_create_resource_file(self, resource_id):
+    def get_create_resource_file(self, resource_id, cached=True):
         if not self.has_resource_file(resource_id):
-            self.download_resource_file(resource_id)
+            self.download_resource_file(resource_id, cached)
         return self.get_resource_file(resource_id)
 
     def get_resource_ids(self):
