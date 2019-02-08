@@ -21,7 +21,6 @@ if not os.path.isdir(resource_dir):
         logger.warning(resource + ' already exists')
 
 
-psp_filename = os.path.join(resource_dir, 'Phosphorylation_site_dataset.tsv')
 
 
 def download_phosphositeplus():
@@ -33,6 +32,7 @@ def download_phosphositeplus():
           "https://www.psp.org/staticDownloads")
     resp = requests.get(psp_url)
     # Check the status code
+    psp_filename = os.path.join(resource_dir, 'Phosphorylation_site_dataset.tsv')
     if resp.status_code == 200:
         # Read and write as bytes (response.content)
         logger.info("Saving PhosphoSitePlus data to %s" % psp_filename)
@@ -92,6 +92,8 @@ def download_uniprot_entries():
     with open(fname, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
 
+
+def download_uniprot_sec_ac():
     print('Downloading UniProt secondary accession mappings')
     url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
         'docs/sec_ac.txt'
@@ -112,7 +114,42 @@ def download_hgnc_entries():
         fh.write(res.content)
 
 
+RESOURCE_MAP = {
+    'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
+    'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
+    'up': ('uniprot_entries.tsv', download_uniprot_entries),
+    'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
+    }
+
+
+class ResourceManager(object):
+    def __init__(self, resource_map):
+        self.resource_map = resource_map
+
+    def get_resource_file(self, resource_id):
+        return os.path.join(resource_dir, self.resource_map[resource_id][0])
+
+    def has_resource_file(self, resource_id):
+        fname = self.get_resource_file(resource_id)
+        return os.path.exists(fname)
+
+    def download_resource_file(self, resource_id):
+        download_fun = self.resource_map[resource_id][0]
+        download_fun()
+
+    def get_create_resource_file(self, resource_id):
+        if not self.has_resource_file(resource_id):
+            self.download_resource_file(resource_id)
+        return self.get_resource_file()
+
+    def get_resource_ids(self):
+        return list(self.resource_map.keys())
+
+
+resource_manager = ResourceManager(RESOURCE_MAP)
+
+
 if __name__ == '__main__':
-    download_phosphositeplus()
-    download_uniprot_entries()
-    download_hgnc_entries()
+    resource_ids = resource_manager.get_resource_ids()
+    for resource_id in resource_ids:
+        resource_mamanger.get_create_resource_file(resource_id)
