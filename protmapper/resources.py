@@ -3,6 +3,7 @@ from builtins import dict, str
 import os
 import logging
 import requests
+from urllib.request import urlretrieve
 
 
 logger = logging.getLogger(__name__)
@@ -86,10 +87,16 @@ def download_uniprot_mappings():
     # Join all lines into a single string
     full_table = '\n'.join(lines)
     #fname = os.path.join(path, 'uniprot_entries.tsv')
-    fname = 'uniprot_entries.tsv'
+    fname = os.path,join(resource_dir, 'uniprot_entries.tsv')
     logging.info('Saving into %s.' % fname)
     with open(fname, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
+
+    print('Downloading UniProt secondary accession mappings')
+    url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
+        'docs/sec_ac.txt'
+    fname = os.path.join(resource_dir, 'uniprot_sec_ac.txt')
+    urlretrieve(url, fname)
 
 
 if __name__ == '__main__':
