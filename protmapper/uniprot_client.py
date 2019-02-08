@@ -6,7 +6,7 @@ import requests
 from xml.etree import ElementTree
 from functools import lru_cache
 from urllib.error import HTTPError
-from protmapper.resources import resource_dir
+from protmapper.resources import resource_manager
 
 logger = logging.getLogger(__name__)
 
@@ -754,7 +754,7 @@ um = UniprotMapper()
 
 
 def _build_uniprot_entries(from_pickle=True):
-    up_entries_file = os.path.join(resource_dir, 'uniprot_entries.tsv')
+    up_entries_file = resource_manager.get_create_resource_file('up')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
     uniprot_mnemonic_reverse = {}
@@ -789,7 +789,7 @@ def _build_uniprot_entries(from_pickle=True):
 
 
 def _build_human_mouse_rat():
-    hgnc_file = os.path.join(resource_dir, 'hgnc_entries.tsv')
+    hgnc_file = resource_manager.get_create_resource_file('hgnc')
     with open(hgnc_file, 'r') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
@@ -819,7 +819,7 @@ def _build_human_mouse_rat():
 def _build_uniprot_sec():
     # File containing secondary accession numbers mapped
     # to primary accession numbers
-    sec_file = os.path.join(resource_dir, 'uniprot_sec_ac.txt')
+    sec_file = resource_manager.get_create_resource_file('upsec')
     uniprot_sec = {}
     lines = open(sec_file, 'rt').readlines()
     for i, l in enumerate(lines):
@@ -833,20 +833,3 @@ def _build_uniprot_sec():
         except KeyError:
             uniprot_sec[sec_id] = [prim_id]
     return uniprot_sec
-
-
-def _build_uniprot_subcell_loc():
-    fname = os.path.join(resource_dir, 'uniprot_subcell_loc.tsv')
-    with open(fname, 'r') as fh:
-        csv_rows = csv.reader(fh, delimiter='\t')
-        # Skip the header row
-        next(csv_rows)
-        subcell_loc = {}
-        for row in csv_rows:
-            loc_id = row[0]
-            loc_alias = row[3]
-            subcell_loc[loc_id] = loc_alias
-    return subcell_loc
-
-
-uniprot_subcell_loc = _build_uniprot_subcell_loc()
