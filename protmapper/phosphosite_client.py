@@ -1,10 +1,8 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
+import csv
 import logging
 from os.path import dirname, abspath, join
 from collections import namedtuple, defaultdict
-from indra.util import read_unicode_csv
-from protmapper.resources import psp_filename as phosphosite_data_file
+from protmapper.resources import resource_manager
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +34,7 @@ def has_data():
             _has_data = True
         except Exception as e:
             logger.info("Could not load PhosphoSite data from file %s" %
-                         phosphosite_data_file)
+                         resource_manager.get_resource_file('psp'))
             logger.info("Source Exception: %s" % e)
             _has_data = False
     return _has_data
@@ -55,10 +53,10 @@ def _get_phospho_site_dataset():
     """
     global _data_by_up
     global _data_by_site_grp
+    phosphosite_data_file = resource_manager.get_create_resource_file('psp')
     if _data_by_up is None or _data_by_site_grp is None:
         # Get the csv reader generator
-        reader = read_unicode_csv(phosphosite_data_file, delimiter='\t',
-                                  skiprows=4)
+        reader = csv.reader(phosphosite_data_file, delimiter='\t', skiprows=4)
         # Build up a dict by protein
         data_by_up = defaultdict(lambda: defaultdict(list))
         data_by_site_grp = defaultdict(list)
