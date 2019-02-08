@@ -5,7 +5,6 @@ python:
   - "3.6"
 before_install:
   - pip install nose coverage python-coveralls
-  - pip install indra
 install:
   - pip install .
 before_script:
