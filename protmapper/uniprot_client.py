@@ -1,11 +1,11 @@
 import os
+import csv
 import rdflib
 import logging
 import requests
 from xml.etree import ElementTree
 from functools import lru_cache
 from urllib.error import HTTPError
-from indra.util import read_unicode_csv
 from protmapper.resources import resource_dir
 
 logger = logging.getLogger(__name__)
@@ -754,14 +754,6 @@ um = UniprotMapper()
 
 
 def _build_uniprot_entries(from_pickle=True):
-    # Try the pickle file first if it exists (not in version control)
-    up_entries_pkl = os.path.join(resource_dir, 'uniprot_entries.pkl')
-    if from_pickle and os.path.exists(up_entries_pkl):
-        import pickle
-        with open(up_entries_pkl, 'rb') as fh:
-            entries = pickle.load(fh)
-        return entries
-    # Otherwise process the regular entries TSV
     up_entries_file = os.path.join(resource_dir, 'uniprot_entries.tsv')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
@@ -771,8 +763,8 @@ def _build_uniprot_entries(from_pickle=True):
     uniprot_mgi_reverse = {}
     uniprot_rgd_reverse = {}
     uniprot_length = {}
-    try:
-        csv_rows = read_unicode_csv(up_entries_file, delimiter='\t')
+    with open(up_entries_file, 'r') as fh:
+        csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
         for row in csv_rows:
@@ -791,8 +783,6 @@ def _build_uniprot_entries(from_pickle=True):
                 if rgd_ids:
                     uniprot_rgd[up_id] = rgd_ids[0]
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
-    except IOError:
-        pass
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
             uniprot_length)
@@ -800,64 +790,55 @@ def _build_uniprot_entries(from_pickle=True):
 
 def _build_human_mouse_rat():
     hgnc_file = os.path.join(resource_dir, 'hgnc_entries.tsv')
-    csv_rows = read_unicode_csv(hgnc_file, delimiter='\t')
-    # Skip the header row
-    next(csv_rows)
-    uniprot_mouse = {}
-    uniprot_rat = {}
-    for row in csv_rows:
-        human_id, mgi_id, rgd_id = row[6:9]
-        if human_id:
-            if mgi_id:
-                mgi_id = mgi_id.split(', ')[0]
-                if mgi_id.startswith('MGI:'):
-                    mgi_id = mgi_id[4:]
-                mouse_id = um.uniprot_mgi_reverse.get(mgi_id)
-                if mouse_id:
-                    uniprot_mouse[human_id] = mouse_id
-            if rgd_id:
-                rgd_id = rgd_id.split(', ')[0]
-                if rgd_id.startswith('RGD:'):
-                    rgd_id = rgd_id[4:]
-                rat_id = um.uniprot_rgd_reverse.get(rgd_id)
-                if rat_id:
-                    uniprot_rat[human_id] = rat_id
+    with open(hgnc_file, 'r') as fh:
+        csv_rows = csv.reader(fh, delimiter='\t')
+        # Skip the header row
+        next(csv_rows)
+        uniprot_mouse = {}
+        uniprot_rat = {}
+        for row in csv_rows:
+            human_id, mgi_id, rgd_id = row[6:9]
+            if human_id:
+                if mgi_id:
+                    mgi_id = mgi_id.split(', ')[0]
+                    if mgi_id.startswith('MGI:'):
+                        mgi_id = mgi_id[4:]
+                    mouse_id = um.uniprot_mgi_reverse.get(mgi_id)
+                    if mouse_id:
+                        uniprot_mouse[human_id] = mouse_id
+                if rgd_id:
+                    rgd_id = rgd_id.split(', ')[0]
+                    if rgd_id.startswith('RGD:'):
+                        rgd_id = rgd_id[4:]
+                    rat_id = um.uniprot_rgd_reverse.get(rgd_id)
+                    if rat_id:
+                        uniprot_rat[human_id] = rat_id
     return uniprot_mouse, uniprot_rat
 
 
 def _build_uniprot_sec():
-    # Try loading pickle first (not in version control)
-    up_entries_pkl = os.path.join(resource_dir, 'uniprot_sec_ac.pkl')
-    if os.path.exists(up_entries_pkl):
-        import pickle
-        with open(up_entries_pkl, 'rb') as fh:
-            entries = pickle.load(fh)
-        return entries
     # File containing secondary accession numbers mapped
     # to primary accession numbers
     sec_file = os.path.join(resource_dir, 'uniprot_sec_ac.txt')
-    try:
-        uniprot_sec = {}
-        lines = open(sec_file, 'rt').readlines()
-        for i, l in enumerate(lines):
-            if l.startswith('Secondary AC'):
-                entry_lines = lines[i+2:]
+    uniprot_sec = {}
+    lines = open(sec_file, 'rt').readlines()
+    for i, l in enumerate(lines):
+        if l.startswith('Secondary AC'):
+            entry_lines = lines[i+2:]
 
-        for l in entry_lines:
-            sec_id, prim_id = l.split()
-            try:
-                uniprot_sec[sec_id].append(prim_id)
-            except KeyError:
-                uniprot_sec[sec_id] = [prim_id]
-    except IOError:
-        uniprot_sec = {}
+    for l in entry_lines:
+        sec_id, prim_id = l.split()
+        try:
+            uniprot_sec[sec_id].append(prim_id)
+        except KeyError:
+            uniprot_sec[sec_id] = [prim_id]
     return uniprot_sec
 
 
 def _build_uniprot_subcell_loc():
     fname = os.path.join(resource_dir, 'uniprot_subcell_loc.tsv')
-    try:
-        csv_rows = read_unicode_csv(fname, delimiter='\t')
+    with open(fname, 'r') as fh:
+        csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
         subcell_loc = {}
@@ -865,8 +846,6 @@ def _build_uniprot_subcell_loc():
             loc_id = row[0]
             loc_alias = row[3]
             subcell_loc[loc_id] = loc_alias
-    except IOError:
-        subcell_loc = {}
     return subcell_loc
 
 
