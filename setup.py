@@ -2,7 +2,7 @@ import sys
 from setuptools import setup
 
 def main():
-    install_list = ['future', 'requests', 'rdflib']
+    install_list = ['future', 'requests', 'rdflib', 'boto3']
     # Only install functools32 if we're in Python 2 (it's not available
     # for Python 3)
     if sys.version_info[0] == 2:

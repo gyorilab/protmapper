@@ -1,8 +1,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 import os
+import boto3
 import logging
 import requests
+import botocore
 from urllib.request import urlretrieve
 
 
@@ -18,7 +20,7 @@ if not os.path.isdir(resource_dir):
     try:
         os.makedirs(resource_dir)
     except Exception:
-        logger.warning(resource + ' already exists')
+        logger.warning(resource_dir + ' already exists')
 
 
 def download_phosphositeplus():
@@ -91,12 +93,16 @@ def download_uniprot_entries():
         fh.write(full_table.encode('utf-8'))
 
 
-def download_uniprot_sec_ac():
-    print('Downloading UniProt secondary accession mappings')
-    url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
-        'docs/sec_ac.txt'
-    fname = os.path.join(resource_dir, 'uniprot_sec_ac.txt')
-    urlretrieve(url, fname)
+def download_uniprot_sec_ac(out_file, cached=True):
+    if not cached:
+        print('Downloading UniProt secondary accession mappings')
+        url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
+            'docs/sec_ac.txt'
+        urlretrieve(url, out_file)
+    else:
+        s3 = boto3.resource('s3')
+        s3.Bucket('bigmech').download_file('travis/uniprot_sec_ac.txt',
+                                           out_file)
 
 
 def download_hgnc_entries():
@@ -127,13 +133,17 @@ class ResourceManager(object):
     def get_resource_file(self, resource_id):
         return os.path.join(resource_dir, self.resource_map[resource_id][0])
 
+    def get_download_fun(self, resource_id):
+        return self.resource_map[resource_id][1]
+
     def has_resource_file(self, resource_id):
         fname = self.get_resource_file(resource_id)
         return os.path.exists(fname)
 
-    def download_resource_file(self, resource_id):
-        download_fun = self.resource_map[resource_id][1]
-        download_fun()
+    def download_resource_file(self, resource_id, cached=True):
+        download_fun = self.get_download_fun(resource_id)
+        fname = self.get_resource_file(resource_id)
+        download_fun(fname, cached=cached)
 
     def get_create_resource_file(self, resource_id):
         if not self.has_resource_file(resource_id):
