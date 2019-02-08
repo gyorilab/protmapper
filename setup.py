@@ -3,10 +3,6 @@ from setuptools import setup
 
 def main():
     install_list = ['future', 'requests', 'rdflib', 'boto3']
-    # Only install functools32 if we're in Python 2 (it's not available
-    # for Python 3)
-    if sys.version_info[0] == 2:
-        install_list.append('functools32')
 
     setup(name='protmapper',
           version='0.0.1',
@@ -25,7 +21,6 @@ def main():
             'Intended Audience :: Science/Research',
             'License :: OSI Approved :: BSD License',
             'Operating System :: OS Independent',
-            'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 3',
             'Topic :: Scientific/Engineering :: Bio-Informatics',
             ],
