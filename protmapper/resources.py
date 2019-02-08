@@ -125,20 +125,75 @@ RESOURCE_MAP = {
 
 
 class ResourceManager(object):
+    """Class to manage a set of resource files.
+
+    Parameters
+    ----------
+    resource_map : dict
+        A dict that maps resource file IDs to a tuple of resource file names
+        and download functions.
+    """
     def __init__(self, resource_map):
         self.resource_map = resource_map
 
     def get_resource_file(self, resource_id):
+        """Return the path to the resource file with the given ID.
+
+        Parameters
+        ----------
+        resource_id : str
+            The ID of the resource.
+
+        Returns
+        -------
+        str
+            The path to the resource file.
+        """
         return os.path.join(resource_dir, self.resource_map[resource_id][0])
 
     def get_download_fun(self, resource_id):
+        """Return the download function for the given resource.
+
+        Parameters
+        ----------
+        resource_id : str
+            The ID of the resource.
+
+        Returns
+        -------
+        function
+            The download function for the given resource.
+        """
         return self.resource_map[resource_id][1]
 
     def has_resource_file(self, resource_id):
+        """Return True if the resource file existis for the given ID.
+
+        Parameters
+        ----------
+        resource_id : str
+            The ID of the resource.
+
+        Returns
+        -------
+        bool
+            True if the resource file exists, false otherwise.
+        """
         fname = self.get_resource_file(resource_id)
         return os.path.exists(fname)
 
     def download_resource_file(self, resource_id, cached=True):
+        """Download the resource file corresponding to the given ID.
+
+        Parameters
+        ----------
+        resource_id : str
+            The ID of the resource.
+        cached : Optional[bool]
+            If True, the download is a pre-processed file from S3, otherwise
+            the download is obtained and processed from the primary source.
+            Default: True
+        """
         download_fun = self.get_download_fun(resource_id)
         fname = self.get_resource_file(resource_id)
         logger.info('Downloading \'%s\' resource file into %s%s.' %
@@ -146,11 +201,28 @@ class ResourceManager(object):
         download_fun(fname, cached=cached)
 
     def get_create_resource_file(self, resource_id, cached=True):
+        """Return the path to the resource file, download if it doesn't exist.
+
+        Parameters
+        ----------
+        resource_id : str
+            The ID of the resource.
+        cached : Optional[bool]
+            If True, the download is a pre-processed file from S3, otherwise
+            the download is obtained and processed from the primary source.
+            Default: True
+
+        Returns
+        -------
+        str
+            The path to the resource file.
+        """
         if not self.has_resource_file(resource_id):
             self.download_resource_file(resource_id, cached)
         return self.get_resource_file(resource_id)
 
     def get_resource_ids(self):
+        """Return a list of all the resource IDs managed by this manager."""
         return list(self.resource_map.keys())
 
 
