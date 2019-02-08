@@ -816,6 +816,26 @@ def _build_human_mouse_rat():
     return uniprot_mouse, uniprot_rat
 
 
+def _build_hgnc_mappings():
+    hgnc_file = resource_manager.get_create_resource_file('hgnc')
+    with open(hgnc_file, 'r') as fh:
+        csv_rows = csv.reader(fh, delimiter='\t')
+        # Skip the header row
+        next(csv_rows)
+        hgnc_ids = {}
+        uniprot_ids = {}
+        for row in csv_rows:
+            hgnc_id = row[0][5:]
+            hgnc_status = row[3]
+            if hgnc_status == 'Approved':
+                hgnc_name = row[1]
+                hgnc_ids[hgnc_name] = hgnc_id
+            # Uniprot
+            uniprot_id = row[6]
+            uniprot_ids[hgnc_id] = uniprot_id
+    return hgnc_ids, uniprot_ids
+
+
 def _build_uniprot_sec():
     # File containing secondary accession numbers mapped
     # to primary accession numbers

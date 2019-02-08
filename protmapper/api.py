@@ -1,17 +1,12 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
-from future.utils import python_2_unicode_compatible
 import os
+import csv
 import pickle
 import logging
-import textwrap
-import requests
-from copy import deepcopy
 from requests.exceptions import HTTPError
-from indra.util import read_unicode_csv
-from indra.databases import uniprot_client, hgnc_client
-from protmapper import phosphosite_client
 from protmapper.resources import resource_dir
+from protmapper import phosphosite_client, uniprot_client
 
 
 # Python 2
@@ -483,19 +478,20 @@ def load_site_map(path):
         error, wrong residue name, etc.).
     """
     site_map = {}
-    maprows = read_unicode_csv(path)
-    # Skip the header line
-    next(maprows)
-    for row in maprows:
-        # Don't allow empty entries in the key section
-        if not (row[0] and row[2] and row[3]):
-            raise Exception("Entries in the key (gene, residue, position) "
-                            "may not be empty.")
-        correct_res = row[4].strip() if row[4] else None
-        correct_pos = row[5].strip() if row[5] else None
-        comment = row[6].strip() if row[6] else None
-        site_map[(row[0].strip(), row[2].strip(), row[3].strip())] = \
-                                (correct_res, correct_pos, comment)
+    with open(path, 'r') as fh:
+        maprows = csv.reader(fh)
+        # Skip the header line
+        next(maprows)
+        for row in maprows:
+            # Don't allow empty entries in the key section
+            if not (row[0] and row[2] and row[3]):
+                raise Exception("Entries in the key (gene, residue, position) "
+                                "may not be empty.")
+            correct_res = row[4].strip() if row[4] else None
+            correct_pos = row[5].strip() if row[5] else None
+            comment = row[6].strip() if row[6] else None
+            site_map[(row[0].strip(), row[2].strip(), row[3].strip())] = \
+                                    (correct_res, correct_pos, comment)
     return site_map
 
 
@@ -531,15 +527,14 @@ def _get_uniprot_id(prot_id, prot_ns):
     # Otherwise, we get the Uniprot ID from the HGNC name
     elif prot_ns == 'hgnc':
         # Get the HGNC ID
-        hgnc_id = hgnc_client.get_hgnc_id(prot_id)
-        if hgnc_id is None:
+        hgnc_id = hgnc_ids.get(prot_id)
+        if not hgnc_id:
             return None
         # Try to get UniProt ID from HGNC
-        up_id = hgnc_client.get_uniprot_id(hgnc_id)
+        up_id = uniprot_ids.get(hgnc_id)
         # If the UniProt ID is a list then choose the first one.
-        if up_id is not None and \
-           (not isinstance(up_id, basestring) and
-            isinstance(up_id[0], basestring)):
+        if up_id and (not isinstance(up_id, basestring) and
+                      isinstance(up_id[0], basestring)):
             up_id = up_id[0]
     return up_id
 
@@ -553,3 +548,5 @@ default_mapper = ProtMapper(default_site_map)
 """A default instance of :py:class:`ProtMapper` that contains the site
 information found in resources/curated_site_map.csv'."""
 
+
+hgnc_ids, uniprot_ids = uniprot_client._build_hgnc_mappings()
