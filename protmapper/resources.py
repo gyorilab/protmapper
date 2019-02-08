@@ -21,8 +21,6 @@ if not os.path.isdir(resource_dir):
         logger.warning(resource + ' already exists')
 
 
-
-
 def download_phosphositeplus():
     psp_url = ('http://sorger.med.harvard.edu/data/bachman/'
                        'Phosphorylation_site_dataset.tsv')
@@ -48,7 +46,7 @@ def download_uniprot_entries():
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
         'format=tab&columns=id,genes(PREFERRED),' + \
-        'entry%20name,database(RGD),database(MGI)'
+        'entry%20name,database(RGD),database(MGI),length'
     print('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
@@ -59,7 +57,7 @@ def download_uniprot_entries():
         'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
         '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
         'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
-        'database(RGD),database(MGI)'
+        'database(RGD),database(MGI),length'
     print('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
@@ -134,13 +132,13 @@ class ResourceManager(object):
         return os.path.exists(fname)
 
     def download_resource_file(self, resource_id):
-        download_fun = self.resource_map[resource_id][0]
+        download_fun = self.resource_map[resource_id][1]
         download_fun()
 
     def get_create_resource_file(self, resource_id):
         if not self.has_resource_file(resource_id):
             self.download_resource_file(resource_id)
-        return self.get_resource_file()
+        return self.get_resource_file(resource_id)
 
     def get_resource_ids(self):
         return list(self.resource_map.keys())
@@ -152,4 +150,4 @@ resource_manager = ResourceManager(RESOURCE_MAP)
 if __name__ == '__main__':
     resource_ids = resource_manager.get_resource_ids()
     for resource_id in resource_ids:
-        resource_mamanger.get_create_resource_file(resource_id)
+        resource_manager.get_create_resource_file(resource_id)
