@@ -23,26 +23,25 @@ if not os.path.isdir(resource_dir):
         logger.warning(resource_dir + ' already exists')
 
 
+def _download_from_s3(key, out_file):
+    s3 = boto3.client('s3',
+                      config=botocore.client.Config(
+                          signature_version=botocore.UNSIGNED))
+    s3.download_file('bigmech', 'travis/%s' % key, out_file)
+
+
 def download_phosphositeplus(out_file, cached=True):
-    psp_url = ('http://sorger.med.harvard.edu/data/bachman/'
-                       'Phosphorylation_site_dataset.tsv')
-    logger.info("Downloading PhosphoSitePlus data from %s\n" % psp_url)
     logger.info("Note that PhosphoSitePlus data is not available for "
                 "commercial use; please see full terms and conditions at: "
                 "https://www.psp.org/staticDownloads")
-    resp = requests.get(psp_url)
-    # Check the status code
-    if resp.status_code == 200:
-        # Read and write as bytes (response.content)
-        logger.info("Saving PhosphoSitePlus data to %s" % out_file)
-        with open(out_file, 'wb') as f:
-            f.write(resp.content)
-    else:
-        logger.error("Error %s occurred downloading PhosphoSitePlus data" %
-                     resp.status_code)
+    _download_from_s3('Phosphorylation_site_dataset.tsv', out_file)
 
 
 def download_uniprot_entries(out_file, cached=True):
+    if cached:
+        _download_from_s3('uniprot_entries.tsv', out_file)
+        return
+
     logger.info('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
@@ -91,18 +90,21 @@ def download_uniprot_entries(out_file, cached=True):
 
 
 def download_uniprot_sec_ac(out_file, cached=True):
-    if not cached:
-        logger.info('Downloading UniProt secondary accession mappings')
-        url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
-            'docs/sec_ac.txt'
-        urlretrieve(url, out_file)
-    else:
-        s3 = boto3.resource('s3')
-        s3.Bucket('bigmech').download_file('travis/uniprot_sec_ac.txt',
-                                           out_file)
+    if cached:
+        _download_from_s3('uniprot_sec_ac.txt', out_file)
+        return
+
+    logger.info('Downloading UniProt secondary accession mappings')
+    url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
+        'docs/sec_ac.txt'
+    urlretrieve(url, out_file)
 
 
 def download_hgnc_entries(out_file, cached=True):
+    if cached:
+        _download_from_s3('hgnc_entries.tsv', out_file)
+        return
+
     logger.info('Downloading HGNC entries')
     url = 'http://tinyurl.com/y83dx5s6'
     res = requests.get(url)
