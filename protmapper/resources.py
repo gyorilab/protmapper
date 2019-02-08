@@ -43,7 +43,7 @@ def download_phosphositeplus():
                      resp.status_code)
 
 
-def download_uniprot_mappings():
+def download_uniprot_entries():
     print('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
@@ -87,7 +87,7 @@ def download_uniprot_mappings():
     # Join all lines into a single string
     full_table = '\n'.join(lines)
     #fname = os.path.join(path, 'uniprot_entries.tsv')
-    fname = os.path,join(resource_dir, 'uniprot_entries.tsv')
+    fname = os.path.join(resource_dir, 'uniprot_entries.tsv')
     logging.info('Saving into %s.' % fname)
     with open(fname, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
@@ -99,6 +99,20 @@ def download_uniprot_mappings():
     urlretrieve(url, fname)
 
 
+def download_hgnc_entries():
+    print('Downloading HGNC entries')
+    url = 'http://tinyurl.com/y83dx5s6'
+    res = requests.get(url)
+    if res.status_code != 200:
+        logger.error('Failed to download "%s"' % url)
+        return
+    fname = os.path.join(resource_dir, 'hgnc_entries.tsv')
+    print('Saving into %s' % fname)
+    with open(fname, 'wb') as fh:
+        fh.write(res.content)
+
+
 if __name__ == '__main__':
     download_phosphositeplus()
-    #download_uniprot_mappings()
+    download_uniprot_entries()
+    download_hgnc_entries()
