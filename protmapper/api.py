@@ -45,7 +45,8 @@ class MappedSite(object):
         will be None.
     valid : bool
         True if the original site was valid with respect to the given
-        protein, Falso otherwise.
+        protein, False otherwise. Further, in case of an error (if error_code is
+        not None), it is set to None.
     orig_res : str
         The original amino acid residue that was mapped.
     orig_pos : str
@@ -109,6 +110,31 @@ class MappedSite(object):
                 'mapped_res', 'mapped_pos', 'description', 'gene_name')
         jd = {key: self.__dict__.get(key) for key in keys}
         return jd
+
+    def not_invalid(self):
+        """Return True if the original site is not known to be invalid.
+
+        Returns
+        -------
+        bool
+            True the original site is valid or if there is an error code, which
+            implicitly means that the validity of the original site could
+            not be established. False otherwise.
+        """
+        return self.valid or self.error_code
+
+    def has_mapping(self):
+        """Return True if the original site is not known to be invalid.
+
+        Returns
+        -------
+        bool
+            True the original site is valid or if there is an error code, which
+            implicitly means that the validity of the original site could
+            not be established. False otherwise.
+        """
+        return (not self.not_invalid()) and \
+            (self.mapped_pos and self.mapped_res)
 
 
 class ProtMapper(object):
