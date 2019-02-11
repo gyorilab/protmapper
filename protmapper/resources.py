@@ -1,6 +1,9 @@
 import os
-import boto3
+import zlib
 import logging
+from io import BytesIO
+from ftplib import FTP
+import boto3
 import requests
 import botocore
 from urllib.request import urlretrieve
@@ -27,6 +30,19 @@ def _download_from_s3(key, out_file):
                           signature_version=botocore.UNSIGNED))
     tc = boto3.s3.transfer.TransferConfig(use_threads=False)
     s3.download_file('bigmech', 'travis/%s' % key, out_file, Config=tc)
+
+
+def _download_ftp_gz(ftp_host, ftp_path, outfile, ftp_blocksize=33554432):
+    ftp = FTP('ftp.uniprot.org')
+    ftp.login()
+    gzf_bytes = BytesIO()
+    ftp.retrbinary('RETR %s' % ftp_path,
+                   callback=lambda s: gzf_bytes.write(s),
+                   blocksize=ftp_blocksize)
+    ret = gzf_bytes.getvalue()
+    ret = zlib.decompress(ret, 16+zlib.MAX_WBITS)
+    with open(out_file, 'wb') as f:
+        f.write(ret)
 
 
 def download_phosphositeplus(out_file, cached=True):
@@ -115,11 +131,19 @@ def download_hgnc_entries(out_file, cached=True):
         fh.write(res.content)
 
 
+def download_swissprot(out_file, cached=False):
+    logger.info('Downloading reviewed protein sequences from SwissProt')
+    ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
+                 'complete/uniprot_sprot.fasta.gz')
+    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
+
+
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
     'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
     'up': ('uniprot_entries.tsv', download_uniprot_entries),
     'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
+    'swissprot': ('uniprot_sprot.fasta', download_swissprot),
     }
 
 

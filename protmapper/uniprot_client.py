@@ -883,3 +883,10 @@ def _build_uniprot_sec():
         except KeyError:
             uniprot_sec[sec_id] = [prim_id]
     return uniprot_sec
+
+
+def _build_uniprot_sequences():
+    seq_file = resource_manager.get_create_resource_file('swissprot')
+    with open(seq_file, 'rt') as f:
+        lines = f.readlines()
+        print(len(lines), "lines")
