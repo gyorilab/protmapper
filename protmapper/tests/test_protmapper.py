@@ -46,6 +46,10 @@ def test_mapped_site_equals():
     assert ms1 == ms2
     ms2.gene_name = 'FOO'
     assert ms1 != ms2
+    assert ms1.not_invalid() is False
+    assert ms1.has_mapping() is True
+    assert ms2.not_invalid() is False
+    assert ms2.has_mapping() is True
 
 
 def test_mapped_site_hash():
@@ -82,6 +86,8 @@ def test_map_invalid_residue():
     assert ms == MappedSite('P28482', None, 'B', '185',
                             error_code='INVALID_SITE',
                             description='Residue B not a valid amino acid')
+    assert ms.not_invalid() is True
+    assert ms.has_mapping() is False
 
 
 def test_map_invalid_position1():
@@ -113,12 +119,16 @@ def test_check_agent_mod_up_id():
                             orig_res='T', orig_pos='185', mapped_res=None,
                             mapped_pos=None, description='VALID',
                             gene_name='MAPK1')
+    assert ms.not_invalid() is True
+    assert ms.has_mapping() is False
 
     ms = sm.map_to_human_ref('P28482', 'uniprot', 'T', '183')
     assert ms == MappedSite(up_id='P28482', error_code=None, valid=False,
                             orig_res='T', orig_pos='183', mapped_res='T',
                             mapped_pos='185', description='INFERRED_MOUSE_SITE',
                             gene_name='MAPK1')
+    assert ms.not_invalid() is False
+    assert ms.has_mapping() is True
 
 
 def test_check_agent_mod_hgnc():

@@ -117,24 +117,23 @@ class MappedSite(object):
         Returns
         -------
         bool
-            True the original site is valid or if there is an error code, which
-            implicitly means that the validity of the original site could
+            True if the original site is valid or if there is an error code,
+            which implicitly means that the validity of the original site could
             not be established. False otherwise.
         """
-        return self.valid or self.error_code
+        return self.valid or self.error_code is not None
 
     def has_mapping(self):
-        """Return True if the original site is not known to be invalid.
+        """Return True if the original site was mapped successfully.
 
         Returns
         -------
         bool
-            True the original site is valid or if there is an error code, which
-            implicitly means that the validity of the original site could
-            not be established. False otherwise.
+            True if a mapping was successfully obtained for the site, False
+            otherwise.
         """
         return (not self.not_invalid()) and \
-            (self.mapped_pos and self.mapped_res)
+            (self.mapped_pos is not None and self.mapped_res is not None)
 
 
 class ProtMapper(object):
