@@ -2,7 +2,7 @@ import sys
 from setuptools import setup
 
 def main():
-    install_list = ['future', 'requests', 'rdflib', 'boto3']
+    install_list = ['requests', 'rdflib', 'boto3']
 
     setup(name='protmapper',
           version='0.0.1',

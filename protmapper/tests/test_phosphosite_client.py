@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
 from nose.plugins.attrib import attr
 from protmapper.phosphosite_client import map_to_human_site, sites_only
 
