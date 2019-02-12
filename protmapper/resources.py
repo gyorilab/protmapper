@@ -6,7 +6,7 @@ import botocore
 from urllib.request import urlretrieve
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('protmapper.resources')
 
 
 # If the protmapper resource directory does not exist, try to create it
@@ -216,6 +216,8 @@ class ResourceManager(object):
             The path to the resource file.
         """
         if not self.has_resource_file(resource_id):
+            logger.info(('Could not access \'%s\' resource'
+                         ' file, will download.') % resource_id)
             self.download_resource_file(resource_id, cached)
         return self.get_resource_file(resource_id)
 
