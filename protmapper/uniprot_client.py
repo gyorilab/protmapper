@@ -887,6 +887,22 @@ def _build_uniprot_sec():
 
 def _build_uniprot_sequences():
     seq_file = resource_manager.get_create_resource_file('swissprot')
-    with open(seq_file, 'rt') as f:
-        lines = f.readlines()
-        print(len(lines), "lines")
+    iso_file = resource_manager.get_create_resource_file('isoforms')
+    sequences = {}
+    logger.info("Loading protein sequences...")
+    for file in (seq_file, iso_file):
+        with open(file, 'rt') as f:
+            lines = f.readlines()
+            cur_up_id = None
+            seq_lines = []
+            for line in lines:
+                if line.startswith('>'):
+                    line_up_id = line.split('|')[1]
+                    if cur_up_id is not None:
+                        seq = ''.join(seq_lines)
+                        sequences[cur_up_id] = seq
+                        seq_lines = []
+                    cur_up_id = line_up_id
+                else:
+                    seq_lines.append(line.strip())
+    return sequences

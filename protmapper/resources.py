@@ -32,7 +32,7 @@ def _download_from_s3(key, out_file):
     s3.download_file('bigmech', 'travis/%s' % key, out_file, Config=tc)
 
 
-def _download_ftp_gz(ftp_host, ftp_path, outfile, ftp_blocksize=33554432):
+def _download_ftp_gz(ftp_host, ftp_path, out_file, ftp_blocksize=33554432):
     ftp = FTP('ftp.uniprot.org')
     ftp.login()
     gzf_bytes = BytesIO()
@@ -138,12 +138,20 @@ def download_swissprot(out_file, cached=False):
     _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
 
 
+def download_isoforms(out_file, cached=False):
+    logger.info('Downloading isoform sequences from Uniprot')
+    ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
+                'complete/uniprot_sprot_varsplic.fasta.gz')
+    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
+
+
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
     'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
     'up': ('uniprot_entries.tsv', download_uniprot_entries),
     'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
     'swissprot': ('uniprot_sprot.fasta', download_swissprot),
+    'isoforms': ('uniprot_sprot_varsplic.fasta', download_isoforms),
     }
 
 
