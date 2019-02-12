@@ -380,12 +380,15 @@ def get_sequence(protein_id):
         protein_id = prim_ids[0]
     except KeyError:
         pass
-    url = uniprot_url + '%s.fasta' % protein_id
-    res = requests.get(url)
-    res.raise_for_status()
-    # res.text is Unicode
-    lines = res.text.splitlines()
-    seq = (''.join(lines[1:])).replace('\n','')
+    # Try to get the sequence from the downloaded sequence files
+    seq = um.uniprot_sequences.get(protein_id)
+    if seq is None:
+        url = uniprot_url + '%s.fasta' % protein_id
+        res = requests.get(url)
+        res.raise_for_status()
+        # res.text is Unicode
+        lines = res.text.splitlines()
+        seq = (''.join(lines[1:])).replace('\n','')
     return seq
 
 
@@ -685,6 +688,7 @@ class UniprotMapper(object):
     def __init__(self):
         self.initialized = False
         self.initialized_hmr = False
+        self.initialized_seq = False
 
     def initialize(self):
         maps = _build_uniprot_entries()
@@ -702,6 +706,10 @@ class UniprotMapper(object):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
         self.initialized_hmr = True
+
+    def initialize_seq(self):
+        self._sequences = _build_uniprot_sequences()
+        self.initialized_seq = True
 
     @property
     def uniprot_gene_name(self):
@@ -775,6 +783,11 @@ class UniprotMapper(object):
             self.initialize_hmr()
         return self._uniprot_human_rat
 
+    @property
+    def uniprot_sequences(self):
+        if not self.initialized_seq:
+            self.initialize_seq()
+        return self._sequences
 
 um = UniprotMapper()
 
