@@ -60,7 +60,7 @@ def _get_phospho_site_dataset():
             reader = csv.reader(fh, delimiter='\t')
             # Skip 4 rows
             for _ in range(4):
-                print(next(reader))
+                next(reader)
             # Build up a dict by protein
             data_by_up = defaultdict(lambda: defaultdict(list))
             data_by_site_grp = defaultdict(list)
