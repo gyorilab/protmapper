@@ -1,4 +1,7 @@
 language: python
+cache:
+    directories:
+        - $HOME/.cache/pip
 python:
   - "3.5"
   - "3.6"
@@ -6,8 +9,6 @@ before_install:
   - pip install nose coverage python-coveralls
 install:
   - pip install .
-before_script:
-  - python -m protmapper.resources
 script:
   - nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
 after_success:

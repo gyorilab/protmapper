@@ -25,7 +25,8 @@ def _download_from_s3(key, out_file):
     s3 = boto3.client('s3',
                       config=botocore.client.Config(
                           signature_version=botocore.UNSIGNED))
-    s3.download_file('bigmech', 'travis/%s' % key, out_file)
+    tc = boto3.s3.transfer.TransferConfig(use_threads=False)
+    s3.download_file('bigmech', 'travis/%s' % key, out_file, Config=tc)
 
 
 def download_phosphositeplus(out_file, cached=True):
