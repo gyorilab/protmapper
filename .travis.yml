@@ -10,6 +10,6 @@ before_install:
 install:
   - pip install .
 script:
-  - nosetests protmapper -s -v --with-coverage --cover-inclusive --cover-package=protmapper
+  - nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
 after_success:
   - coveralls
