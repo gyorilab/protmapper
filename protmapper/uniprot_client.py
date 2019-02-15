@@ -88,6 +88,25 @@ def is_secondary(protein_id):
     return True
 
 
+def is_reviewed(protein_id):
+    """Return True if the UniProt ID corresponds to a reviewed entry.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID to check.
+
+    Returns
+    -------
+    True if it is a reviewed entry, False otherwise.
+    """
+    # If this is an isoform, check to see if the base ID is reviewed
+    # (isoform IDs are not in the ID list)
+    if '-' in protein_id:
+        protein_id = protein_id.split('-')[0]
+    return (protein_id in um.uniprot_reviewed)
+
+
 def get_primary_id(protein_id):
     """Return a primary entry corresponding to the UniProt ID.
 
@@ -99,7 +118,7 @@ def get_primary_id(protein_id):
     Returns
     -------
     primary_id : str
-        If the given ID is primary, it is returned as is. Othwewise the primary
+        If the given ID is primary, it is returned as is. Otherwise the primary
         IDs are looked up. If there are multiple primary IDs then the first
         human one is returned. If there are no human primary IDs then the
         first primary found is returned.
@@ -669,10 +688,11 @@ class UniprotMapper(object):
 
     def initialize(self):
         maps = _build_uniprot_entries()
-        self._uniprot_gene_name, self._uniprot_mnemonic, \
-        self._uniprot_mnemonic_reverse, \
-        self._uniprot_mgi, self._uniprot_rgd, self._uniprot_mgi_reverse, \
-        self._uniprot_rgd_reverse, self._uniprot_length = maps
+        (self._uniprot_gene_name, self._uniprot_mnemonic, \
+         self._uniprot_mnemonic_reverse, self._uniprot_mgi,
+         self._uniprot_rgd, self._uniprot_mgi_reverse,
+         self._uniprot_rgd_reverse, self._uniprot_length,
+         self._uniprot_reviewed) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -732,6 +752,12 @@ class UniprotMapper(object):
         return self._uniprot_length
 
     @property
+    def uniprot_reviewed(self):
+        if not self.initialized:
+            self.initialize()
+        return self._uniprot_reviewed
+
+    @property
     def uniprot_sec(self):
         if not self.initialized:
             self.initialize()
@@ -763,12 +789,16 @@ def _build_uniprot_entries(from_pickle=True):
     uniprot_mgi_reverse = {}
     uniprot_rgd_reverse = {}
     uniprot_length = {}
+    uniprot_reviewed = set()
     with open(up_entries_file, 'r') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
         for row in csv_rows:
-            up_id, gene_name, up_mnemonic, rgd, mgi, length = row
+            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed = row
+            # Store the entry in the reviewed set
+            if reviewed == 'reviewed':
+                uniprot_reviewed.add(up_id)
             uniprot_gene_name[up_id] = gene_name
             uniprot_mnemonic[up_id] = up_mnemonic
             uniprot_mnemonic_reverse[up_mnemonic] = up_id
@@ -785,7 +815,7 @@ def _build_uniprot_entries(from_pickle=True):
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length)
+            uniprot_length, uniprot_reviewed)
 
 
 def _build_human_mouse_rat():

@@ -177,3 +177,8 @@ def test_length():
 def test_get_function():
     fun = uniprot_client.get_function('P15056')
     assert fun.startswith('Protein kinase involved in the transduction')
+
+def test_get_is_reviewed():
+    assert not uniprot_client.is_reviewed('V9HWD6')
+    assert uniprot_client.is_reviewed('P31946-1')
+
