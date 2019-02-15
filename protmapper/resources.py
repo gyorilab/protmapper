@@ -145,6 +145,14 @@ def download_isoforms(out_file, cached=False):
     _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
 
 
+def download_refseq_seq(out_file, cached=True):
+    if cached:
+        _download_from_s3('GRCh38_latest_protein.faa', out_file)
+        return
+    else:
+        raise NotImplementedError()
+
+
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
     'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
@@ -152,6 +160,7 @@ RESOURCE_MAP = {
     'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
     'swissprot': ('uniprot_sprot.fasta', download_swissprot),
     'isoforms': ('uniprot_sprot_varsplic.fasta', download_isoforms),
+    'refseq_seq': ('refseq_sequence.fasta', download_refseq_seq),
     }
 
 
@@ -198,7 +207,7 @@ class ResourceManager(object):
         return self.resource_map[resource_id][1]
 
     def has_resource_file(self, resource_id):
-        """Return True if the resource file existis for the given ID.
+        """Return True if the resource file exists for the given ID.
 
         Parameters
         ----------

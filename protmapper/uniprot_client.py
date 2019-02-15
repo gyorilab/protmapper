@@ -904,20 +904,28 @@ def _build_uniprot_sequences():
     iso_file = resource_manager.get_create_resource_file('isoforms',
                                                          cached=False)
     sequences = {}
-    logger.info("Loading protein sequences...")
-    for file in (seq_file, iso_file):
-        with open(file, 'rt') as f:
-            lines = f.readlines()
-            cur_up_id = None
-            seq_lines = []
-            for line in lines:
-                if line.startswith('>'):
-                    line_up_id = line.split('|')[1]
-                    if cur_up_id is not None:
-                        seq = ''.join(seq_lines)
-                        sequences[cur_up_id] = seq
-                        seq_lines = []
-                    cur_up_id = line_up_id
-                else:
-                    seq_lines.append(line.strip())
+    logger.info("Loading Swissprot sequences...")
+    sp_seq = load_fasta_sequences(seq_file)
+    logger.info("Loading Uniprot isoform sequences...")
+    iso_seq = load_fasta_sequences(iso_file)
+    sp_seq.update(iso_seq)
+    return sp_seq
+
+
+def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
+    sequences = {}
+    with open(seq_file, 'rt') as f:
+        lines = f.readlines()
+        cur_id = None
+        seq_lines = []
+        for line in lines:
+            if line.startswith('>'):
+                line_id = line[1:].split(id_delimiter)[id_index]
+                if cur_id is not None:
+                    seq = ''.join(seq_lines)
+                    sequences[cur_id] = seq
+                    seq_lines = []
+                cur_id = line_id
+            else:
+                seq_lines.append(line.strip())
     return sequences
