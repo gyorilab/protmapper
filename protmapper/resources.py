@@ -1,8 +1,9 @@
 import os
+import csv
 import zlib
 import logging
-from io import BytesIO
 from ftplib import FTP
+from io import BytesIO, StringIO
 import boto3
 import requests
 import botocore
@@ -32,7 +33,7 @@ def _download_from_s3(key, out_file):
     s3.download_file('bigmech', 'travis/%s' % key, out_file, Config=tc)
 
 
-def _download_ftp_gz(ftp_host, ftp_path, out_file, ftp_blocksize=33554432):
+def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432):
     ftp = FTP('ftp.uniprot.org')
     ftp.login()
     gzf_bytes = BytesIO()
@@ -41,9 +42,10 @@ def _download_ftp_gz(ftp_host, ftp_path, out_file, ftp_blocksize=33554432):
                    blocksize=ftp_blocksize)
     ret = gzf_bytes.getvalue()
     ret = zlib.decompress(ret, 16+zlib.MAX_WBITS)
-    with open(out_file, 'wb') as f:
-        f.write(ret)
-
+    if out_file is not None:
+        with open(out_file, 'wb') as f:
+            f.write(ret)
+    return ret
 
 def download_phosphositeplus(out_file, cached=True):
     logger.info("Note that PhosphoSitePlus data is not available for "
@@ -61,7 +63,7 @@ def download_uniprot_entries(out_file, cached=True):
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
         'format=tab&columns=id,genes(PREFERRED),' + \
-        'entry%20name,database(RGD),database(MGI),length'
+        'entry%20name,database(RGD),database(MGI),length,reviewed'
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
@@ -72,7 +74,7 @@ def download_uniprot_entries(out_file, cached=True):
         'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
         '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
         'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
-        'database(RGD),database(MGI),length'
+        'database(RGD),database(MGI),length,reviewed'
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
@@ -152,6 +154,26 @@ def download_refseq_seq(out_file, cached=True):
     else:
         raise NotImplementedError()
 
+def download_refseq_uniprot(out_file, cached=False):
+    if cached:
+        _download_from_s3('refseq_uniprot.csv')
+    logger.info('Downloading RefSeq->Uniprot mappings from Uniprot')
+    ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
+                 'idmapping/by_organism/HUMAN_9606_idmapping.dat.gz')
+    mappings_bytes = _download_ftp_gz('ftp.uniprot.org', ftp_path,
+                                      out_file=None)
+    logger.info('Processing RefSeq->Uniprot mappings file')
+    mappings_io = StringIO(mappings_bytes.decode('utf8'))
+    csvreader = csv.reader(mappings_io, delimiter='\t')
+    filt_rows = []
+    for up_id, other_type, other_id in csvreader:
+        if other_type == 'RefSeq':
+            filt_rows.append([other_id, up_id])
+    # Write the file with just the RefSeq->UP mappings
+    with open(out_file, 'wt') as f:
+        csvwriter = csv.writer(f)
+        csvwriter.writerows(filt_rows)
+
 
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
@@ -160,6 +182,7 @@ RESOURCE_MAP = {
     'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
     'swissprot': ('uniprot_sprot.fasta', download_swissprot),
     'isoforms': ('uniprot_sprot_varsplic.fasta', download_isoforms),
+    'refseq_uniprot': ('refseq_uniprot.csv', download_refseq_uniprot),
     'refseq_seq': ('refseq_sequence.fasta', download_refseq_seq),
     }
 
