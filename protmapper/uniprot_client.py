@@ -899,8 +899,10 @@ def _build_uniprot_sec():
 
 
 def _build_uniprot_sequences():
-    seq_file = resource_manager.get_create_resource_file('swissprot')
-    iso_file = resource_manager.get_create_resource_file('isoforms')
+    seq_file = resource_manager.get_create_resource_file('swissprot',
+                                                         cached=False)
+    iso_file = resource_manager.get_create_resource_file('isoforms',
+                                                         cached=False)
     sequences = {}
     logger.info("Loading protein sequences...")
     for file in (seq_file, iso_file):
