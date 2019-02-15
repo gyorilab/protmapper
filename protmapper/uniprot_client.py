@@ -684,8 +684,13 @@ def get_function(protein_id):
     return function.text
 
 
-def get_id_from_refseq(refseq_id):
-    return um.refseq_uniprot[refseq_id]
+def get_ids_from_refseq(refseq_id, reviewed_only=False):
+    up_ids = um.refseq_uniprot[refseq_id]
+    primaries = list(set([get_primary_id(up_id) for up_id in up_ids]))
+    if reviewed_only:
+        return [up_id for up_id in primaries if is_reviewed(up_id)]
+    else:
+        return primaries
 
 
 class UniprotMapper(object):
@@ -934,7 +939,9 @@ def _build_refseq_uniprot():
     with open(refseq_uniprot_file, 'rt') as f:
         csvreader = csv.reader(f)
         for refseq_id, up_id in csvreader:
-            refseq_up[refseq_id] = up_id
+            if refseq_id not in refseq_up:
+                refseq_up[refseq_id] = []
+            refseq_up[refseq_id].append(up_id)
     return refseq_up
 
 
