@@ -685,7 +685,10 @@ def get_function(protein_id):
 
 
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
-    up_ids = um.refseq_uniprot[refseq_id]
+    try:
+        up_ids = um.refseq_uniprot[refseq_id]
+    except KeyError:
+        return []
     primaries = list(set([get_primary_id(up_id) for up_id in up_ids]))
     if reviewed_only:
         return [up_id for up_id in primaries if is_reviewed(up_id)]
