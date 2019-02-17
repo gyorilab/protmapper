@@ -964,4 +964,7 @@ def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
                 cur_id = line_id
             else:
                 seq_lines.append(line.strip())
+        # Add the last sequence
+        seq = ''.join(seq_lines)
+        sequences[cur_id] = seq
     return sequences
