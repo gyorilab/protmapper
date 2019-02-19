@@ -219,6 +219,20 @@ class ProtMapper(object):
             pass
 
     def map_sitelist_to_human_ref(self, site_list, **kwargs):
+        """Return a list of mapped sites for a list of input sites.
+
+        Parameters
+        ----------
+        site_list : list of tuple
+            Each tuple in the list consistes of the following entries:
+            (prot_id, prot_ns, residue, position).
+
+        Returns
+        -------
+        list of :py:class:`protmapper.api.MappedSite`
+            A list of MappedSite objects, one corresponding to each site in
+            the input list.
+        """
         mapped_sites = []
         for ix, (prot_id, prot_ns, residue, position) in enumerate(site_list):
             logger.info("Mapping site %d of %d, cache size %d" %
@@ -274,7 +288,7 @@ class ProtMapper(object):
         -------
         MappedSite
             The MappedSite object gives information on results of mapping the
-            site. See :py:class:`protmapper.MappedSite` documentation for
+            site. See :py:class:`protmapper.api.MappedSite` documentation for
             details.
         """
         # Check the protein ID and namespace
@@ -437,7 +451,26 @@ class ProtMapper(object):
 
     @staticmethod
     def map_peptide_to_human_ref(prot_id, prot_ns, peptide, site_pos):
-        """site_pos is 1-indexed!!!"""
+        """Return a mapped site for a given peptide.
+
+        Parameters
+        ----------
+        prot_id : str
+            A Uniprot ID or HGNC gene symbol for the protein.
+        prot_ns : str
+            One of 'uniprot' or 'hgnc' indicating the type of ID given.
+        peptide : str
+            A string of amino acid symbols representing a peptide.
+        site_pos : str
+            A site position within the peptide. Note: site_pos is 1-indexed.
+
+        Returns
+        -------
+        MappedSite
+            The MappedSite object gives information on results of mapping the
+            site. See :py:class:`protmapper.api.MappedSite` documentation for
+            details.
+        """
         # Get the uniprot ID for the gene
         # Check the protein ID and namespace
         if prot_id is None:
