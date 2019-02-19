@@ -1,4 +1,4 @@
-.. _protmapper_modules_ref
+.. _protmapper_modules_ref:
 
 Protmapper modules reference
 ----------------------------
@@ -9,3 +9,4 @@ Protmapper modules reference
    api
    uniprot
    psp
+   resources
