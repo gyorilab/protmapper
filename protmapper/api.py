@@ -288,7 +288,7 @@ class ProtMapper(object):
         -------
         MappedSite
             The MappedSite object gives information on results of mapping the
-            site. See :py:class:`protmapper.MappedSite` documentation for
+            site. See :py:class:`protmapper.api.MappedSite` documentation for
             details.
         """
         # Check the protein ID and namespace
@@ -461,7 +461,7 @@ class ProtMapper(object):
             One of 'uniprot' or 'hgnc' indicating the type of ID given.
         peptide : str
             A string of amino acid symbols representing a peptide.
-        site_pos:
+        site_pos : str
             A site position within the peptide. Note: site_pos is 1-indexed.
 
         Returns
