@@ -426,11 +426,14 @@ class ProtMapper(object):
 
     @staticmethod
     def motif_from_position(up_id, pos, window=7):
+        seq = uniprot_client.get_sequence(up_id)
+        return ProtMapper.motif_from_position_seq(seq, pos, window)
+
+    @staticmethod
+    def motif_from_position_seq(seq, pos, window=7):
         # Validate that the position is an integer
         pos_str = str(pos)
         pos_int = int(pos)
-        # TODO: Check that the position is contained within the sequence
-        seq = uniprot_client.get_sequence(up_id)
         end_ix = pos_int + window if pos_int + window < len(seq) else len(seq)
         start_ix = pos_int - window - 1 if pos_int - window > 0 else 0
         motif = seq[start_ix:end_ix]

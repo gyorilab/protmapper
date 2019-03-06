@@ -380,12 +380,15 @@ def get_sequence(protein_id):
         protein_id = prim_ids[0]
     except KeyError:
         pass
-    url = uniprot_url + '%s.fasta' % protein_id
-    res = requests.get(url)
-    res.raise_for_status()
-    # res.text is Unicode
-    lines = res.text.splitlines()
-    seq = (''.join(lines[1:])).replace('\n','')
+    # Try to get the sequence from the downloaded sequence files
+    seq = um.uniprot_sequences.get(protein_id)
+    if seq is None:
+        url = uniprot_url + '%s.fasta' % protein_id
+        res = requests.get(url)
+        res.raise_for_status()
+        # res.text is Unicode
+        lines = res.text.splitlines()
+        seq = (''.join(lines[1:])).replace('\n','')
     return seq
 
 
@@ -681,10 +684,24 @@ def get_function(protein_id):
     return function.text
 
 
+def get_ids_from_refseq(refseq_id, reviewed_only=False):
+    try:
+        up_ids = um.refseq_uniprot[refseq_id]
+    except KeyError:
+        return []
+    primaries = list(set([get_primary_id(up_id) for up_id in up_ids]))
+    if reviewed_only:
+        return [up_id for up_id in primaries if is_reviewed(up_id)]
+    else:
+        return primaries
+
+
 class UniprotMapper(object):
     def __init__(self):
         self.initialized = False
         self.initialized_hmr = False
+        self.initialized_seq = False
+        self.initialized_refseq = False
 
     def initialize(self):
         maps = _build_uniprot_entries()
@@ -702,6 +719,14 @@ class UniprotMapper(object):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
         self.initialized_hmr = True
+
+    def initialize_seq(self):
+        self._sequences = _build_uniprot_sequences()
+        self.initialized_seq = True
+
+    def initialize_refseq(self):
+        self._refseq_uniprot = _build_refseq_uniprot()
+        self.initialized_refseq = True
 
     @property
     def uniprot_gene_name(self):
@@ -775,6 +800,17 @@ class UniprotMapper(object):
             self.initialize_hmr()
         return self._uniprot_human_rat
 
+    @property
+    def uniprot_sequences(self):
+        if not self.initialized_seq:
+            self.initialize_seq()
+        return self._sequences
+
+    @property
+    def refseq_uniprot(self):
+        if not self.initialized_refseq:
+            self.initialize_refseq()
+        return self._refseq_uniprot
 
 um = UniprotMapper()
 
@@ -883,3 +919,52 @@ def _build_uniprot_sec():
         except KeyError:
             uniprot_sec[sec_id] = [prim_id]
     return uniprot_sec
+
+
+def _build_uniprot_sequences():
+    seq_file = resource_manager.get_create_resource_file('swissprot',
+                                                         cached=False)
+    iso_file = resource_manager.get_create_resource_file('isoforms',
+                                                         cached=False)
+    sequences = {}
+    logger.info("Loading Swissprot sequences...")
+    sp_seq = load_fasta_sequences(seq_file)
+    logger.info("Loading Uniprot isoform sequences...")
+    iso_seq = load_fasta_sequences(iso_file)
+    sp_seq.update(iso_seq)
+    return sp_seq
+
+
+def _build_refseq_uniprot():
+    refseq_uniprot_file = resource_manager.get_create_resource_file(
+                                                'refseq_uniprot')
+    refseq_up = {}
+    with open(refseq_uniprot_file, 'rt') as f:
+        csvreader = csv.reader(f)
+        for refseq_id, up_id in csvreader:
+            if refseq_id not in refseq_up:
+                refseq_up[refseq_id] = []
+            refseq_up[refseq_id].append(up_id)
+    return refseq_up
+
+
+def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
+    sequences = {}
+    with open(seq_file, 'rt') as f:
+        lines = f.readlines()
+        cur_id = None
+        seq_lines = []
+        for line in lines:
+            if line.startswith('>'):
+                line_id = line[1:].split(id_delimiter)[id_index]
+                if cur_id is not None:
+                    seq = ''.join(seq_lines)
+                    sequences[cur_id] = seq
+                    seq_lines = []
+                cur_id = line_id
+            else:
+                seq_lines.append(line.strip())
+        # Add the last sequence
+        seq = ''.join(seq_lines)
+        sequences[cur_id] = seq
+    return sequences
