@@ -156,7 +156,7 @@ def download_refseq_seq(out_file, cached=True):
 
 def download_refseq_uniprot(out_file, cached=False):
     if cached:
-        _download_from_s3('refseq_uniprot.csv')
+        _download_from_s3('refseq_uniprot.csv', out_file)
     logger.info('Downloading RefSeq->Uniprot mappings from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                  'idmapping/by_organism/HUMAN_9606_idmapping.dat.gz')
