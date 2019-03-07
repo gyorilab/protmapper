@@ -135,7 +135,7 @@ def download_hgnc_entries(out_file, cached=True):
 
 def download_swissprot(out_file, cached=True):
     if cached:
-        _download_from_s3('uniprot_sprot.fasta.gz', out_file)
+        _download_from_s3('uniprot_sprot.fasta', out_file)
         return
     logger.info('Downloading reviewed protein sequences from SwissProt')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
@@ -145,7 +145,7 @@ def download_swissprot(out_file, cached=True):
 
 def download_isoforms(out_file, cached=True):
     if cached:
-        _download_from_s3('uniprot_sprot_varsplic.fasta.gz', out_file)
+        _download_from_s3('uniprot_sprot_varsplic.fasta', out_file)
         return
     logger.info('Downloading isoform sequences from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
