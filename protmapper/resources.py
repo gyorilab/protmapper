@@ -133,14 +133,20 @@ def download_hgnc_entries(out_file, cached=True):
         fh.write(res.content)
 
 
-def download_swissprot(out_file, cached=False):
+def download_swissprot(out_file, cached=True):
+    if cached:
+        _download_from_s3('uniprot_sprot.fasta', out_file)
+        return
     logger.info('Downloading reviewed protein sequences from SwissProt')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                  'complete/uniprot_sprot.fasta.gz')
     _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
 
 
-def download_isoforms(out_file, cached=False):
+def download_isoforms(out_file, cached=True):
+    if cached:
+        _download_from_s3('uniprot_sprot_varsplic.fasta', out_file)
+        return
     logger.info('Downloading isoform sequences from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                 'complete/uniprot_sprot_varsplic.fasta.gz')
@@ -154,9 +160,10 @@ def download_refseq_seq(out_file, cached=True):
     else:
         raise NotImplementedError()
 
-def download_refseq_uniprot(out_file, cached=False):
+def download_refseq_uniprot(out_file, cached=True):
     if cached:
-        _download_from_s3('refseq_uniprot.csv')
+        _download_from_s3('refseq_uniprot.csv', out_file)
+        return
     logger.info('Downloading RefSeq->Uniprot mappings from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                  'idmapping/by_organism/HUMAN_9606_idmapping.dat.gz')
