@@ -923,9 +923,9 @@ def _build_uniprot_sec():
 
 def _build_uniprot_sequences():
     seq_file = resource_manager.get_create_resource_file('swissprot',
-                                                         cached=False)
+                                                         cached=True)
     iso_file = resource_manager.get_create_resource_file('isoforms',
-                                                         cached=False)
+                                                         cached=True)
     sequences = {}
     logger.info("Loading Swissprot sequences...")
     sp_seq = load_fasta_sequences(seq_file)
