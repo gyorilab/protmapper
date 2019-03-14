@@ -1,6 +1,6 @@
 from nose.plugins.attrib import attr
-from protmapper.phosphosite_client import map_to_human_site, sites_only
-
+from protmapper.phosphosite_client import map_to_human_site, sites_only, \
+                                          PspMapping
 
 def test_map_mouse_to_human():
     mouse_up_id = 'Q61337'
@@ -42,6 +42,27 @@ def test_mapping_from_mouse_isoform():
     up_id = 'Q8CI51-3'
     pos = map_to_human_site(up_id, 'S', '105')
     assert pos == '214'
+
+
+def test_no_site_in_human_ref():
+    psp = map_to_human_site('Q01105', 'S', '9')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'Q01105-2'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '9'
+    assert psp.motif == 'SAPAAKVSKKELNSN'
+    assert psp.respos == 7
+
+
+#def test_wrong_residue():
+#    # SL6A3 T53 -> S53
+#    psp = map_to_human_site('Q01959', 'T', '53')
+#    assert isinstance(psp, PspMapping)
+#    assert psp.mapped_id == 'Q01959'
+#    assert psp.mapped_res == 'S'
+#    assert psp.mapped_pos == '53'
+#    assert psp.motif == 'TLTNPRQSPVEAQDR'
+#    assert psp.respos == 7
 
 
 def test_sites_only():

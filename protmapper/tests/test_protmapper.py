@@ -207,7 +207,6 @@ def test_sl6a3_t53():
 
 
 def test_smpd1_s508():
-    # S508 is invalid, should be mapped to S510
     pm = ProtMapper()
     motif, site_pos = pm.map_to_human_ref('P17405', 'uniprot', 'S', '508')
     assert ms == MappedSite(up_id='P17405', valid=False, orig_res='S',
@@ -217,13 +216,12 @@ def test_smpd1_s508():
 
 
 def test_set_s9():
-    # S508 is invalid, should be mapped to S510
     pm = ProtMapper()
     motif, site_pos = pm.map_to_human_ref('Q01105', 'uniprot', 'S', '9')
     assert ms == MappedSite(up_id='Q01105', valid=False, orig_res='S',
                             orig_pos='9', mapped_res='S', mapped_pos='9',
                             description='INFERRED_ALTERNATIVE_ISOFORM',
-                            gene_name='SMPD1')
+                            gene_name='SET')
 
 
 def test_repr_str():

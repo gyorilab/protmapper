@@ -13,6 +13,10 @@ PhosphoSite = namedtuple('PhosphoSite',
                           'SITE_GRP_ID', 'ORGANISM', 'MW_kD', 'DOMAIN',
                           'SITE_7_AA', 'LT_LIT', 'MS_LIT', 'MS_CST', 'CST_CAT'])
 
+PspMapping = namedtuple('PspMapping',
+                        ['mapped_id', 'mapped_res', 'mapped_pos', 'motif',
+                         'respos'])
+
 _data_by_up = None
 _data_by_site_grp = None
 _has_data = None
@@ -100,6 +104,7 @@ def map_to_human_site(up_id, mod_res, mod_pos):
         Returns amino acid position on the human reference sequence
         corresponding to the site on the given protein.
     """
+    import ipdb; ipdb.set_trace()
     (data_by_up, data_by_site_grp) = _get_phospho_site_dataset()
     sites_for_up = data_by_up.get(up_id)
     # No info in Phosphosite for this Uniprot ID
@@ -168,14 +173,20 @@ def map_to_human_site(up_id, mod_res, mod_pos):
     # If there is only one human site, take it
     else:
         human_site = human_sites[0]
+    mapped_id = human_site.ACC_ID
     human_site_str = human_site.MOD_RSD.split('-')[0]
     human_res = human_site_str[0]
     human_pos = human_site_str[1:]
-    if human_res != mod_res:
-        logger.warning("Mapped residue %s at position %s does not match "
-                       "original residue %s" % (human_res, human_pos, mod_res))
-        return None
-    return human_pos
+    motif = human_site.SITE_7_AA.upper()
+    respos = 7
+    #if human_res != mod_res:
+    #    logger.warning("Mapped residue %s at position %s does not match "
+    #                   "original residue %s" % (human_res, human_pos, mod_res))
+    #    return None
+    pspmapping = PspMapping(mapped_id=mapped_id, mapped_res=human_res,
+                            mapped_pos=human_pos,
+                            motif=motif, respos=respos)
+    return pspmapping
 
 
 def sites_only(exclude_isoforms=False):
