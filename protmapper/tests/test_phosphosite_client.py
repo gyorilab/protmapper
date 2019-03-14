@@ -82,8 +82,20 @@ def test_h2afx_s139():
     assert psp.mapped_id == 'P16104'
     assert psp.mapped_res == 'S'
     assert psp.mapped_pos == '139'
-    assert psp.motif == 'GKKAYQASQEY'
+    assert psp.motif == 'GKKATQASQEY'
     assert psp.respos == 7
+
+
+def test_motif_processing():
+    # Make sure that site motifs with prepended underscores have the residue
+    # position assigned accordingly
+    psp = map_to_human_site('P68431', 'T', '3')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P68431'
+    assert psp.mapped_res == 'T'
+    assert psp.mapped_pos == '3'
+    assert psp.motif == 'ARTKQTARKS'
+    assert psp.respos == 2
 
 
 def test_sites_only():
@@ -102,6 +114,7 @@ def test_sites_only():
 
 
 if __name__ == '__main__':
+    test_motif_processing()
     test_no_site_in_human_ref()
     test_smpd1_s508()
     test_h2afx_s139()

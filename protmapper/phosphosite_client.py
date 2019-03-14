@@ -104,7 +104,6 @@ def map_to_human_site(up_id, mod_res, mod_pos):
         Returns amino acid position on the human reference sequence
         corresponding to the site on the given protein.
     """
-    import ipdb; ipdb.set_trace()
     (data_by_up, data_by_site_grp) = _get_phospho_site_dataset()
     sites_for_up = data_by_up.get(up_id)
     # No info in Phosphosite for this Uniprot ID
@@ -165,7 +164,7 @@ def map_to_human_site(up_id, mod_res, mod_pos):
                 return None
             human_site = base_id_sites[0]
         # There is no base ID site, i.e., all mapped sites are for specific
-        # isoforms only, so skip it!
+        # isoforms only, so skip it
         else:
             logger.info('Human isoform matches, but no human ref seq match '
                         'for %s %s %s; not mapping' % (up_id, mod_res, mod_pos))
@@ -177,8 +176,7 @@ def map_to_human_site(up_id, mod_res, mod_pos):
     human_site_str = human_site.MOD_RSD.split('-')[0]
     human_res = human_site_str[0]
     human_pos = human_site_str[1:]
-    motif = human_site.SITE_7_AA.upper()
-    respos = 7
+    motif, respos = _normalize_site_motif(human_site.SITE_7_AA)
     #if human_res != mod_res:
     #    logger.warning("Mapped residue %s at position %s does not match "
     #                   "original residue %s" % (human_res, human_pos, mod_res))
@@ -200,3 +198,13 @@ def sites_only(exclude_isoforms=False):
             pos = respos[1:]
             sites.append((up_id, res, pos))
     return sites
+
+
+def _normalize_site_motif(motif):
+    """Normalize the PSP site motif to all caps with no underscores and return
+    the preprocessed motif sequence and the position of the target residue
+    in the motif (zero-indexed)."""
+    no_underscores = motif.replace('_', '')
+    offset = motif.find(no_underscores)
+    respos = 7 - offset
+    return (no_underscores.upper(), respos)
