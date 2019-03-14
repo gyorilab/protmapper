@@ -65,6 +65,27 @@ def test_no_site_in_human_ref():
 #    assert psp.respos == 7
 
 
+def test_smpd1_s508():
+    # The site is invalid, but PSP doesn't know that
+    psp = map_to_human_site('P17405', 'S', '508')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P17405'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '508'
+    assert psp.motif == 'DGNYSGSSHVVLDHE'
+    assert psp.respos == 7
+
+
+def test_h2afx_s139():
+    psp = map_to_human_site('P16104', 'S', '139')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P16104'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '139'
+    assert psp.motif == 'GKKAYQASQEY'
+    assert psp.respos == 7
+
+
 def test_sites_only():
     sites = sites_only()
     # These checks make sure that the sites are constructed from the data
@@ -79,3 +100,8 @@ def test_sites_only():
     # Check the -1 isoforms are also included
     assert ('P28661-1', 'S', '28') in sites
 
+
+if __name__ == '__main__':
+    test_no_site_in_human_ref()
+    test_smpd1_s508()
+    test_h2afx_s139()
