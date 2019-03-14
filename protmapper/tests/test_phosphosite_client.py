@@ -4,44 +4,79 @@ from protmapper.phosphosite_client import map_to_human_site, sites_only, \
 
 def test_map_mouse_to_human():
     mouse_up_id = 'Q61337'
-    pos = map_to_human_site(mouse_up_id, 'S', '112')
-    assert pos == '75'
+    psp = map_to_human_site(mouse_up_id, 'S', '112')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'Q92934' # Human ref seq
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '75'
+    assert psp.motif == 'EIRSRHSSYPAGTED'
+    assert psp.respos == 7
 
 
 def test_isoform_mapping_from_human():
     up_id = 'P29353'
-    pos = map_to_human_site(up_id, 'Y', '239')
-    assert pos == '349'
+    psp = map_to_human_site(up_id, 'Y', '239')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P29353' # Human ref seq
+    assert psp.mapped_res == 'Y'
+    assert psp.mapped_pos == '349'
+    assert psp.motif == 'EEPPDHQYYNDFPGK'
+    assert psp.respos == 7
 
 
 def test_mapping_from_human_isoform():
     up_id = 'P29353-2'
-    pos = map_to_human_site(up_id, 'Y', '239')
-    assert pos == '349'
+    psp = map_to_human_site(up_id, 'Y', '239')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P29353' # Human ref seq
+    assert psp.mapped_res == 'Y'
+    assert psp.mapped_pos == '349'
+    assert psp.motif == 'EEPPDHQYYNDFPGK'
+    assert psp.respos == 7
 
 
 def test_isoform_mapping_from_mouse():
-    up_id = 'P29353' # SHC1
-    pos = map_to_human_site(up_id, 'Y', '239')
-    assert pos == '349'
+    up_id = 'P98083' # Mouse SHC1
+    psp = map_to_human_site(up_id, 'Y', '239')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P29353' # Human ref seq
+    assert psp.mapped_res == 'Y'
+    assert psp.mapped_pos == '349'
+    assert psp.motif == 'EEPPDHQYYNDFPGK'
+    assert psp.respos == 7
 
 
 def test_mapping_from_human_ref():
     up_id = 'P29353' # SHC1
-    pos = map_to_human_site(up_id, 'Y', '349')
-    assert pos == '349'
+    psp = map_to_human_site(up_id, 'Y', '349')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P29353' # Human ref seq
+    assert psp.mapped_res == 'Y'
+    assert psp.mapped_pos == '349'
+    assert psp.motif == 'EEPPDHQYYNDFPGK'
+    assert psp.respos == 7
 
 
 def test_mapping_from_human_ref_iso_id():
     up_id = 'P29353-1' # SHC1
-    pos = map_to_human_site(up_id, 'Y', '349')
-    assert pos == '349'
+    psp = map_to_human_site(up_id, 'Y', '349')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'P29353' # Human ref seq
+    assert psp.mapped_res == 'Y'
+    assert psp.mapped_pos == '349'
+    assert psp.motif == 'EEPPDHQYYNDFPGK'
+    assert psp.respos == 7
 
 
 def test_mapping_from_mouse_isoform():
     up_id = 'Q8CI51-3'
-    pos = map_to_human_site(up_id, 'S', '105')
-    assert pos == '214'
+    psp = map_to_human_site(up_id, 'S', '105')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'Q96HC4' # Human ref seq
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '214'
+    assert psp.motif == 'PTVTSVCSETSQELA'
+    assert psp.respos == 7
 
 
 def test_no_site_in_human_ref():
@@ -113,8 +148,3 @@ def test_sites_only():
     assert ('P28661-1', 'S', '28') in sites
 
 
-if __name__ == '__main__':
-    test_motif_processing()
-    test_no_site_in_human_ref()
-    test_smpd1_s508()
-    test_h2afx_s139()
