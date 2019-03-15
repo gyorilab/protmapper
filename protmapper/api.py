@@ -350,9 +350,10 @@ class ProtMapper(object):
             # First, look for other entries in phosphosite for this protein
             # where this sequence position is legit (i.e., other isoforms)
             if do_isoform_mapping and up_id and human_prot:
-                human_pos = phosphosite_client.map_to_human_site(
+                pspmapping = phosphosite_client.map_to_human_site(
                               up_id, residue, position)
-                if human_pos:
+                if pspmapping:
+                    human_pos = pspmapping.mapped_pos
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,
@@ -365,9 +366,10 @@ class ProtMapper(object):
                 # Get the mouse ID for this protein
                 up_mouse = uniprot_client.get_mouse_id(up_id)
                 # Get mouse sequence
-                human_pos = phosphosite_client.map_to_human_site(
+                pspmapping = phosphosite_client.map_to_human_site(
                               up_mouse, residue, position)
-                if human_pos:
+                if pspmapping:
+                    human_pos = pspmapping.mapped_pos
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,
@@ -377,9 +379,10 @@ class ProtMapper(object):
                     return mapped_site
                 # Try the rat sequence
                 up_rat = uniprot_client.get_rat_id(up_id)
-                human_pos = phosphosite_client.map_to_human_site(
+                pspmapping = phosphosite_client.map_to_human_site(
                               up_rat, residue, position)
-                if human_pos:
+                if pspmapping:
+                    human_pos = pspmapping.mapped_pos
                     mapped_site = (residue, human_pos, 'INFERRED_RAT_SITE')
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
@@ -391,11 +394,12 @@ class ProtMapper(object):
             # Check for methionine offset (off by one)
             if do_methionine_offset and up_id and human_prot:
                 offset_pos = str(int(position) + 1)
-                human_pos = phosphosite_client.map_to_human_site(
+                pspmapping = phosphosite_client.map_to_human_site(
                               up_id, residue, offset_pos)
                 # If it's valid at the offset position, create the mapping
                 # and continue
-                if human_pos:
+                if pspmapping:
+                    human_pos = pspmapping.mapped_pos
                     mapped_site = \
                          MappedSite(up_id, False, residue, position,
                                     mapped_res=residue, mapped_pos=human_pos,

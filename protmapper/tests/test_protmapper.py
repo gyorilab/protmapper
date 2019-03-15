@@ -191,15 +191,16 @@ def test_map_invalid_from_sitemap():
 
 def test_h2afx_s139():
     pm = ProtMapper()
-    motif, site_pos = pm.map_to_human_ref('P16104', 'uniprot', 'S', '139')
+    ms = pm.map_to_human_ref('P16104', 'uniprot', 'S', '139')
     assert ms == MappedSite(up_id='P16104', valid=False, orig_res='S',
                             orig_pos='139', mapped_res='S', mapped_pos='140',
                             description='SEQ_MISMATCH_PSP_UP',
                             gene_name='H2AFX')
 
+
 def test_sl6a3_t53():
     pm = ProtMapper()
-    motif, site_pos = pm.map_to_human_ref('Q01959', 'uniprot', 'T', '53')
+    ms = pm.map_to_human_ref('Q01959', 'uniprot', 'T', '53')
     assert ms == MappedSite(up_id='Q01959', valid=False, orig_res='T',
                             orig_pos='53', mapped_res='S', mapped_pos='53',
                             description='INFERRED_WRONG_RESIDUE',
@@ -208,7 +209,7 @@ def test_sl6a3_t53():
 
 def test_smpd1_s508():
     pm = ProtMapper()
-    motif, site_pos = pm.map_to_human_ref('P17405', 'uniprot', 'S', '508')
+    ms = pm.map_to_human_ref('P17405', 'uniprot', 'S', '508')
     assert ms == MappedSite(up_id='P17405', valid=False, orig_res='S',
                             orig_pos='508', mapped_res='S', mapped_pos='510',
                             description='INFERRED_ALTERNATIVE_ISOFORM',
@@ -217,7 +218,7 @@ def test_smpd1_s508():
 
 def test_set_s9():
     pm = ProtMapper()
-    motif, site_pos = pm.map_to_human_ref('Q01105', 'uniprot', 'S', '9')
+    ms = pm.map_to_human_ref('Q01105', 'uniprot', 'S', '9')
     assert ms == MappedSite(up_id='Q01105', valid=False, orig_res='S',
                             orig_pos='9', mapped_res='S', mapped_pos='9',
                             description='INFERRED_ALTERNATIVE_ISOFORM',
