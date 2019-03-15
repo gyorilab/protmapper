@@ -198,32 +198,35 @@ def test_h2afx_s139():
                             gene_name='H2AFX')
 
 
+"""
 def test_sl6a3_t53():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('Q01959', 'uniprot', 'T', '53')
     assert ms == MappedSite(up_id='Q01959', valid=False, orig_res='T',
                             orig_pos='53', mapped_res='S', mapped_pos='53',
                             description='INFERRED_WRONG_RESIDUE',
-                            gene_name='Q01959')
-
+                            gene_name='SL6A3')
+"""
 
 def test_smpd1_s508():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('P17405', 'uniprot', 'S', '508')
     assert ms == MappedSite(up_id='P17405', valid=False, orig_res='S',
                             orig_pos='508', mapped_res='S', mapped_pos='510',
-                            description='INFERRED_ALTERNATIVE_ISOFORM',
+                            description='SEQ_MISMATCH_PSP_UP',
                             gene_name='SMPD1')
 
 
+"""
 def test_set_s9():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('Q01105', 'uniprot', 'S', '9')
     assert ms == MappedSite(up_id='Q01105', valid=False, orig_res='S',
-                            orig_pos='9', mapped_res='S', mapped_pos='9',
-                            description='INFERRED_ALTERNATIVE_ISOFORM',
+                            orig_pos='9', mapped_id='Q01105-2',
+                            mapped_res='S', mapped_pos='9',
+                            description='ISOFORM_SPECIFIC_SITE',
                             gene_name='SET')
-
+"""
 
 def test_repr_str():
     sm = ProtMapper()
@@ -364,3 +367,6 @@ def test_peptide_round_trip():
                             mapped_pos='187',
                             description=None,
                             gene_name='MAPK1')
+
+if __name__ == '__main__':
+    test_h2afx_s139()
