@@ -350,69 +350,40 @@ class ProtMapper(object):
             # First, look for other entries in phosphosite for this protein
             # where this sequence position is legit (i.e., other isoforms)
             if do_isoform_mapping and up_id and human_prot:
-                mapped_site = ProtMapper.get_psp_mapping(
+                mapped_site = self.get_psp_mapping(
                         up_id, gene_name, residue, position,
                         'INFERRED_ALTERNATIVE_ISOFORM')
                 if mapped_site:
-                    self._cache[site_key] = mapped_site
                     return mapped_site
             # Try looking for rat or mouse sites
             if do_orthology_mapping and up_id and human_prot:
                 # Get the mouse ID for this protein
                 up_mouse = uniprot_client.get_mouse_id(up_id)
                 # Get mouse sequence
-                pspmapping = phosphosite_client.map_to_human_site(
-                              up_mouse, residue, position)
-                if pspmapping:
-                    human_pos = pspmapping.mapped_pos
-                    mapped_site = \
-                         MappedSite(up_id, False, residue, position,
-                                    mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_MOUSE_SITE',
-                                    gene_name=gene_name)
-                    self._cache[site_key] = mapped_site
+                mapped_site = self.get_psp_mapping(
+                                    up_mouse, gene_name, residue, position,
+                                    'INFERRED_MOUSE_SITE')
+                if mapped_site
                     return mapped_site
                 # Try the rat sequence
                 up_rat = uniprot_client.get_rat_id(up_id)
-                pspmapping = phosphosite_client.map_to_human_site(
-                              up_rat, residue, position)
-                if pspmapping:
-                    human_pos = pspmapping.mapped_pos
-                    mapped_site = (residue, human_pos, 'INFERRED_RAT_SITE')
-                    mapped_site = \
-                         MappedSite(up_id, False, residue, position,
-                                    mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_RAT_SITE',
-                                    gene_name=gene_name)
-                    self._cache[site_key] = mapped_site
+                mapped_site = self.get_psp_mapping(
+                                    up_rat, gene_name, residue, position,
+                                    'INFERRED_RAT_SITE')
+                if mapped_site
                     return mapped_site
             # Check for methionine offset (off by one)
             if do_methionine_offset and up_id and human_prot:
                 offset_pos = str(int(position) + 1)
-                pspmapping = phosphosite_client.map_to_human_site(
-                              up_id, residue, offset_pos)
-                # If it's valid at the offset position, create the mapping
-                # and continue
-                if pspmapping:
-                    human_pos = pspmapping.mapped_pos
-                    mapped_site = \
-                         MappedSite(up_id, False, residue, position,
-                                    mapped_res=residue, mapped_pos=human_pos,
-                                    description='INFERRED_METHIONINE_CLEAVAGE',
-                                    gene_name=gene_name)
-                    self._cache[site_key] = mapped_site
+                mapped_site = self.get_psp_mapping(
+                                    up_id, gene_name, residue, offset_pos,
+                                    'INFERRED_METHIONINE_CLEAVAGE')
+                if mapped_site:
                     return mapped_site
         # Now check the site map
         mapped_site = self.site_map.get(site_key, None)
-        # No entry in the site map; set site info to None
-        if mapped_site is None:
-            mapped_site = MappedSite(up_id, False, residue, position,
-                                     description='NO_MAPPING_FOUND',
-                                     gene_name=gene_name)
-            self._cache[site_key] = mapped_site
-            return mapped_site
         # Manually mapped in the site map
-        else:
+        if mapped_site is not None:
             mapped_res, mapped_pos, description = mapped_site
             # Convert empty strings to None
             mapped_site = MappedSite(up_id, False, residue, position,
@@ -422,9 +393,20 @@ class ProtMapper(object):
                                      gene_name=gene_name)
             self._cache[site_key] = mapped_site
             return mapped_site
+        # No entry in the site map; set site info to None
+        else:
+            mapped_site = MappedSite(up_id, False, residue, position,
+                                     description='NO_MAPPING_FOUND',
+                                     gene_name=gene_name)
+            self._cache[site_key] = mapped_site
+            return mapped_site
 
-    @staticmethod
-    def get_psp_mapping(up_id, gene_name, residue, position, mapping_code):
+    def get_psp_mapping(self, up_id, gene_name, residue, position,
+                        mapping_code):
+        """TODO: DOCS
+
+        STILL WIP
+        """
         pspmapping = phosphosite_client.map_to_human_site(up_id, residue,
                                                           position)
         # If no mapping, return None
@@ -438,22 +420,25 @@ class ProtMapper(object):
                             up_id, pspmapping.mapped_res, pspmapping.mapped_pos)
         # If the mapped site is valid, we're done!
         if site_valid:
-            return MappedSite(up_id, False, residue, position,
+            mapped_site = MappedSite(up_id, False, residue, position,
                               mapped_res=mapped_res, mapped_pos=mapped_pos,
                               description=mapping_code, gene_name=gene_name)
-        # If the mapped site is invalid, we attempt to re-map based on the seq
-        updated_pos = ProtMapper.map_peptide(up_id, pspmapping.motif,
-                                             pspmapping.respos)
-        # If the re-mapping fails, we give up
-        if updated_pos is None:
-            return None
-        # Otherwise, we update to the mapped position
-        updated_pos_1x = str(updated_pos + 1)
-        return MappedSite(up_id, False, residue, position,
-                          mapped_res=pspmapping.mapped_res,
-                          mapped_pos=updated_pos_1x, # Switch to 1-indexed
-                          description='SEQ_MISMATCH_PSP_UP',
-                          gene_name=gene_name)
+        else:
+            # If mapped site is invalid, attempt to re-map based on the seq
+            updated_pos = ProtMapper.map_peptide(up_id, pspmapping.motif,
+                                                 pspmapping.respos)
+            # If the re-mapping fails, we give up
+            if updated_pos is None:
+                return None
+            # Otherwise, we update to the mapped position
+            updated_pos_1x = str(updated_pos + 1)
+            mapped_site = MappedSite(up_id, False, residue, position,
+                              mapped_res=pspmapping.mapped_res,
+                              mapped_pos=updated_pos_1x, # Switch to 1-indexed
+                              description='SEQ_MISMATCH_PSP_UP',
+                              gene_name=gene_name)
+        self._cache[site_key] = mapped_site
+        return mapped_site
 
     @staticmethod
     def motif_from_position(up_id, pos, window=7):
