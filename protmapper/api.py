@@ -205,7 +205,6 @@ class ProtMapper(object):
             else:
                 print("No cache found at %s, one will be created." %
                       self._cache_path)
-        self._sitecount = {}
 
     def save_cache(self):
         with open(self._cache_path, 'wb') as f:
@@ -315,8 +314,6 @@ class ProtMapper(object):
         # Get the gene name from Uniprot
         gene_name = uniprot_client.get_gene_name(up_id)
         site_key = (up_id, residue, position)
-        # Increase our count for this site
-        self._sitecount[site_key] = self._sitecount.get(site_key, 0) + 1
         # First, check the cache to potentially avoid a costly sequence
         # lookup
         cached_site = self._cache.get(site_key)
@@ -363,14 +360,14 @@ class ProtMapper(object):
                 mapped_site = self.get_psp_mapping(
                                     up_mouse, gene_name, residue, position,
                                     'INFERRED_MOUSE_SITE')
-                if mapped_site
+                if mapped_site:
                     return mapped_site
                 # Try the rat sequence
                 up_rat = uniprot_client.get_rat_id(up_id)
                 mapped_site = self.get_psp_mapping(
                                     up_rat, gene_name, residue, position,
                                     'INFERRED_RAT_SITE')
-                if mapped_site
+                if mapped_site:
                     return mapped_site
             # Check for methionine offset (off by one)
             if do_methionine_offset and up_id and human_prot:
@@ -420,10 +417,15 @@ class ProtMapper(object):
                             up_id, pspmapping.mapped_res, pspmapping.mapped_pos)
         # If the mapped site is valid, we're done!
         if site_valid:
+            # If the residue is different, change the code accordingly
+            if residue != pspmapping.mapped_pos:
+                mapping_code = 'INFERRED_WRONG_RESIDUE'
             mapped_site = MappedSite(up_id, False, residue, position,
-                              mapped_res=mapped_res, mapped_pos=mapped_pos,
+                              mapped_res=pspmapping.mapped_res,
+                              mapped_pos=human_pos,
                               description=mapping_code, gene_name=gene_name)
         else:
+            import ipdb; ipdb.set_trace()
             # If mapped site is invalid, attempt to re-map based on the seq
             updated_pos = ProtMapper.map_peptide(up_id, pspmapping.motif,
                                                  pspmapping.respos)
@@ -437,6 +439,7 @@ class ProtMapper(object):
                               mapped_pos=updated_pos_1x, # Switch to 1-indexed
                               description='SEQ_MISMATCH_PSP_UP',
                               gene_name=gene_name)
+        site_key = (up_id, residue, position)
         self._cache[site_key] = mapped_site
         return mapped_site
 

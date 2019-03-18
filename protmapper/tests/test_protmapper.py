@@ -198,15 +198,14 @@ def test_h2afx_s139():
                             gene_name='H2AFX')
 
 
-"""
 def test_sl6a3_t53():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('Q01959', 'uniprot', 'T', '53')
     assert ms == MappedSite(up_id='Q01959', valid=False, orig_res='T',
                             orig_pos='53', mapped_res='S', mapped_pos='53',
                             description='INFERRED_WRONG_RESIDUE',
-                            gene_name='SL6A3')
-"""
+                            gene_name='SLC6A3')
+
 
 def test_smpd1_s508():
     pm = ProtMapper()
@@ -369,4 +368,4 @@ def test_peptide_round_trip():
                             gene_name='MAPK1')
 
 if __name__ == '__main__':
-    test_h2afx_s139()
+    test_sl6a3_t53()
