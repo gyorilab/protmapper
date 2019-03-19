@@ -148,3 +148,29 @@ def test_sites_only():
     assert ('P28661-1', 'S', '28') in sites
 
 
+def test_explicit_ref_isoforms():
+    psp = map_to_human_site('Q9Y2K2', 'S', '551')
+    assert psp.mapped_id == 'Q9Y2K2'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '493'
+
+    psp = map_to_human_site('Q14155', 'S', '672')
+    assert psp.mapped_id == 'Q14155'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '694'
+
+    psp = map_to_human_site('O15027', 'T', '220')
+    assert psp.mapped_id == 'O15027'
+    assert psp.mapped_res == 'T'
+    assert psp.mapped_pos == '415'
+
+    psp = map_to_human_site('Q16555', 'S', '627')
+    assert psp.mapped_id == 'Q16555'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '522'
+
+
+
+if __name__ == '__main__':
+    test_explicit_ref_isoforms()
+

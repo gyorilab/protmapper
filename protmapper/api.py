@@ -425,7 +425,6 @@ class ProtMapper(object):
                               mapped_pos=human_pos,
                               description=mapping_code, gene_name=gene_name)
         else:
-            import ipdb; ipdb.set_trace()
             # If mapped site is invalid, attempt to re-map based on the seq
             updated_pos = ProtMapper.map_peptide(up_id, pspmapping.motif,
                                                  pspmapping.respos)

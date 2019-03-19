@@ -22,6 +22,24 @@ _data_by_site_grp = None
 _has_data = None
 
 
+
+# An explicit mapping of Uniprot IDs representing reference isoforms of their
+# respective proteins in cases where there is ambiguity (i.e., other isoforms
+# have IDs without a hyphen).
+_iso_to_ref_map = {
+    'J3KPC8': 'Q9Y2K2', # SIK3/QSK
+    'Q5W9H1': 'Q14155', # ARHGEF7
+    'A4QN18': 'O15027', # SEC16A
+    'J3KNL6': 'O15027', # SEC16A
+    'NP_001184222': 'Q16555', # DPYSL2/CRMP-2
+}
+
+
+# An easily indexed list of the reference isoforms mapped to, above
+_ref_isoforms = set(_iso_to_ref_map.values())
+
+
+
 def has_data():
     """Check if the PhosphoSite data is available and can be loaded.
 
@@ -78,6 +96,11 @@ def _get_phospho_site_dataset():
                 # protein
                 if base_acc_id != site.ACC_ID:
                     data_by_up[base_acc_id][res_pos].append(site)
+                # Catch the handful of isoforms that have a Uniprot ID without
+                # the hyphen
+                elif site.ACC_ID in _iso_to_ref_map:
+                    ref_id = _iso_to_ref_map[site.ACC_ID]
+                    data_by_up[ref_id][res_pos].append(site)
                 # To catch additional cases, include an entry for the -1 base ID
                 else:
                     data_by_up['%s-1' % base_acc_id] = data_by_up[base_acc_id]
@@ -150,15 +173,21 @@ def map_to_human_site(up_id, mod_res, mod_pos):
     # Check for a human protein in the list
     human_sites = [s for s in site_grp_list if s.ORGANISM == 'human']
     if not human_sites:
+        print("No corresponding human site for %s" % site_info.SITE_GRP_ID)
+        # FIXME Return mapped ID??
         return None
     # If there are multiple isoforms, choose the base one
     # (no hyphen in the accession ID)
     if len(human_sites) > 1:
-        # We assume that multiple human sites only arise from multiple isoforms
-        # of the same protein, which will share an accession ID, and that
-        # only one of these will be the reference sequence (with no hyphen)
+        # In general we assume that multiple human sites only arise from
+        # multiple isoforms of the same protein, which will share an accession
+        # ID, and that only one of these will be the reference sequence (with
+        # no hyphen).  However, in a small number of cases the isoform-specific
+        # identifier will have a Uniprot ID without the hyphen, e.g. J3KPC8
+        # for QSK iso5 (ref protein with ID Q9Y2K2).
         base_id_sites = [site for site in human_sites
-                         if site.ACC_ID.find('-') == -1]
+                         if site.ACC_ID.find('-') == -1 and
+                            site.ACC_ID not in _iso_to_ref_map]
         if base_id_sites:
             if len(base_id_sites) != 1:
                 logger.warning("There is more than one apparent ref seq: %s" %
