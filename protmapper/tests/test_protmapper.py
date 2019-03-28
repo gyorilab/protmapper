@@ -194,10 +194,21 @@ def test_h2afx_s139():
     ms = pm.map_to_human_ref('P16104', 'uniprot', 'S', '139')
     assert ms == MappedSite(up_id='P16104', valid=False, orig_res='S',
                             orig_pos='139', mapped_res='S', mapped_pos='140',
-                            description='SEQ_MISMATCH_PSP_UP',
+                            description='REMAPPED_FROM_PSP_SEQUENCE',
                             gene_name='H2AFX')
 
 
+def test_myl9_s19():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('P24844', 'uniprot', 'S', '19')
+    assert ms == MappedSite(up_id='P24844', error_code=None, valid=False,
+                            orig_res='S', orig_pos='19', mapped_res='S',
+                            mapped_pos='20',
+                            description='INFERRED_METHIONINE_CLEAVAGE',
+                            gene_name='MYL9')
+
+
+"""
 def test_sl6a3_t53():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('Q01959', 'uniprot', 'T', '53')
@@ -205,7 +216,7 @@ def test_sl6a3_t53():
                             orig_pos='53', mapped_res='S', mapped_pos='53',
                             description='INFERRED_WRONG_RESIDUE',
                             gene_name='SLC6A3')
-
+"""
 
 def test_smpd1_s508():
     pm = ProtMapper()
@@ -225,6 +236,19 @@ def test_set_s9():
                             mapped_res='S', mapped_pos='9',
                             description='ISOFORM_SPECIFIC_SITE',
                             gene_name='SET')
+"""
+
+
+"""
+def test_remapping_non_human():
+    # No mapping (sequence differs)
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('P42261', 'uniprot', 'S', '881')
+    assert ms == MappedSite(up_id='P42261', valid=False, orig_res='S',
+                            orig_pos='881', mapped_id='P23818',
+                            mapped_res='S', mapped_pos='881',
+                            description='NON_HUMAN_SITE',
+                            gene_name='GRIA1')
 """
 
 def test_repr_str():
@@ -367,5 +391,3 @@ def test_peptide_round_trip():
                             description=None,
                             gene_name='MAPK1')
 
-if __name__ == '__main__':
-    test_sl6a3_t53()
