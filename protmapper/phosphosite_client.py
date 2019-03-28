@@ -141,10 +141,10 @@ def map_to_human_site(up_id, mod_res, mod_pos):
     # At this point site_info_list contains a list of PhosphoSite objects
     # for the given protein with an entry for the given site, however, they
     # may be different isoforms; they may also not contain the reference
-    # isoform; or they may only contain a single isoform
+    # isoform; or they may only contain a single isoform.
     # If it's a single isoform, take it!
     if len(site_info_list) == 1:
-        site_info = site_info_list[0]
+        site_grp = site_info_list[0].SITE_GRP_ID
     # If there is more than one entry for this site, take the one from the
     # reference sequence, if it's in there (for example, a site that is present
     # in a mouse isoform as well as the mouse reference sequence)
@@ -152,33 +152,47 @@ def map_to_human_site(up_id, mod_res, mod_pos):
         logger.debug('More than one entry in PhosphoSite for %s, site %s%s' %
                     (up_id, mod_res, mod_pos))
         ref_site_info = None
+        si_by_grp = defaultdict(list)
         for si in site_info_list:
             logger.debug('\tSite info: acc_id %s, site_grp_id %s' %
                         (si.ACC_ID, si.SITE_GRP_ID))
+            si_by_grp[si.SITE_GRP_ID].append(si)
             if si.ACC_ID == up_id:
-                logger.info('\tFound entry matching reference acc id')
                 ref_site_info = si
+        # If the reference sequence is not there but we have more than one
+        # site_info in the list, this means there is more than one isoform
+        # that has a phosphorylated site at the given position. The main thing
+        # is whether there is more than one site group.
         if ref_site_info is None:
-            site_info = site_info_list[0]
-            logger.info('Reference sequence match not found, choosing first '
-                         'entry, acc_id %s site_grp %s' %
-                         (site_info.ACC_ID, site_info.SITE_GRP_ID))
+            # If there's only one unique site group, take it
+            if len(si_by_grp) == 1:
+                site_grp = site_info_list[0].SITE_GRP_ID
+            # Otherwise, take the first
+            else:
+                first_si = sorted(list(site_info_list.keys()))[0]
+                site_grp = first_si.SITE_GRP_ID
+                logger.info('More than one non-reference site group found for '
+                            '(%s, %s, %s), choosing first entry: '
+                            'acc_id %s site_grp %s' %
+                            (up_id, mod_res, mod_pos, first_si.ACC_ID,
+                             site_grp))
         else:
-            site_info = ref_site_info
+            site_grp = ref_site_info.SITE_GRP_ID
     # Look up site group
-    site_grp_list = data_by_site_grp.get(site_info.SITE_GRP_ID)
+    site_grp_list = data_by_site_grp[site_grp]
     # If an empty list, then return None (is unlikely to happen)
     if not site_grp_list:
         return None
     # Check for a human protein in the list
     human_sites = [s for s in site_grp_list if s.ORGANISM == 'human']
     if not human_sites:
-        print("No corresponding human site for %s" % site_info.SITE_GRP_ID)
-        # FIXME Return mapped ID??
+        logger.debug("No corresponding human site for %s, choosing first: %s" %
+                     (site_grp, site_grp_list[0].ORGANISM))
+        #ref_site = site_grp_list[0]
         return None
     # If there are multiple isoforms, choose the base one
     # (no hyphen in the accession ID)
-    if len(human_sites) > 1:
+    elif len(human_sites) > 1:
         # In general we assume that multiple human sites only arise from
         # multiple isoforms of the same protein, which will share an accession
         # ID, and that only one of these will be the reference sequence (with
@@ -190,28 +204,24 @@ def map_to_human_site(up_id, mod_res, mod_pos):
                             site.ACC_ID not in _iso_to_ref_map]
         if base_id_sites:
             if len(base_id_sites) != 1:
-                logger.warning("There is more than one apparent ref seq: %s" %
-                               base_id_sites)
-                return None
-            human_site = base_id_sites[0]
+                logger.warning("There is more than one apparent ref seq, "
+                               "choosing first: %s" % base_id_sites)
+            ref_site = base_id_sites[0]
         # There is no base ID site, i.e., all mapped sites are for specific
         # isoforms only, so skip it
         else:
             logger.info('Human isoform matches, but no human ref seq match '
-                        'for %s %s %s; not mapping' % (up_id, mod_res, mod_pos))
-            return None
+                        'for %s %s %s; choosing first' %
+                        (up_id, mod_res, mod_pos))
+            ref_site = human_sites[0]
     # If there is only one human site, take it
     else:
-        human_site = human_sites[0]
-    mapped_id = human_site.ACC_ID
-    human_site_str = human_site.MOD_RSD.split('-')[0]
+        ref_site = human_sites[0]
+    mapped_id = ref_site.ACC_ID
+    human_site_str = ref_site.MOD_RSD.split('-')[0]
     human_res = human_site_str[0]
     human_pos = human_site_str[1:]
-    motif, respos = _normalize_site_motif(human_site.SITE_7_AA)
-    #if human_res != mod_res:
-    #    logger.warning("Mapped residue %s at position %s does not match "
-    #                   "original residue %s" % (human_res, human_pos, mod_res))
-    #    return None
+    motif, respos = _normalize_site_motif(ref_site.SITE_7_AA)
     pspmapping = PspMapping(mapped_id=mapped_id, mapped_res=human_res,
                             mapped_pos=human_pos,
                             motif=motif, respos=respos)
