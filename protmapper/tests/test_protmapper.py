@@ -223,7 +223,7 @@ def test_smpd1_s508():
     ms = pm.map_to_human_ref('P17405', 'uniprot', 'S', '508')
     assert ms == MappedSite(up_id='P17405', valid=False, orig_res='S',
                             orig_pos='508', mapped_res='S', mapped_pos='510',
-                            description='SEQ_MISMATCH_PSP_UP',
+                            description='REMAPPED_FROM_PSP_SEQUENCE',
                             gene_name='SMPD1')
 
 

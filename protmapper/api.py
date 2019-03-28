@@ -348,7 +348,7 @@ class ProtMapper(object):
             # where this sequence position is legit (i.e., other isoforms)
             if do_isoform_mapping and up_id and human_prot:
                 mapped_site = self.get_psp_mapping(
-                        up_id, gene_name, residue, position,
+                        up_id, up_id, gene_name, residue, position, position,
                         'INFERRED_ALTERNATIVE_ISOFORM')
                 if mapped_site:
                     return mapped_site
@@ -358,23 +358,23 @@ class ProtMapper(object):
                 up_mouse = uniprot_client.get_mouse_id(up_id)
                 # Get mouse sequence
                 mapped_site = self.get_psp_mapping(
-                                    up_mouse, gene_name, residue, position,
-                                    'INFERRED_MOUSE_SITE')
+                                    up_id, up_mouse, gene_name, residue,
+                                    position, position, 'INFERRED_MOUSE_SITE')
                 if mapped_site:
                     return mapped_site
                 # Try the rat sequence
                 up_rat = uniprot_client.get_rat_id(up_id)
                 mapped_site = self.get_psp_mapping(
-                                    up_rat, gene_name, residue, position,
-                                    'INFERRED_RAT_SITE')
+                                    up_id, up_rat, gene_name, residue, position,
+                                    position, 'INFERRED_RAT_SITE')
                 if mapped_site:
                     return mapped_site
             # Check for methionine offset (off by one)
             if do_methionine_offset and up_id and human_prot:
                 offset_pos = str(int(position) + 1)
                 mapped_site = self.get_psp_mapping(
-                                    up_id, gene_name, residue, offset_pos,
-                                    'INFERRED_METHIONINE_CLEAVAGE')
+                                    up_id, up_id, gene_name, residue, position,
+                                    offset_pos, 'INFERRED_METHIONINE_CLEAVAGE')
                 if mapped_site:
                     return mapped_site
         # Now check the site map
@@ -398,14 +398,14 @@ class ProtMapper(object):
             self._cache[site_key] = mapped_site
             return mapped_site
 
-    def get_psp_mapping(self, up_id, gene_name, residue, position,
-                        mapping_code):
+    def get_psp_mapping(self, orig_id, query_id, gene_name, res, pos,
+                        query_pos, mapping_code):
         """TODO: DOCS
 
         STILL WIP
         """
-        pspmapping = phosphosite_client.map_to_human_site(up_id, residue,
-                                                          position)
+        pspmapping = phosphosite_client.map_to_human_site(query_id, res,
+                                                          query_pos)
         # If no mapping, return None
         if pspmapping is None:
             return None
@@ -413,32 +413,33 @@ class ProtMapper(object):
         # reference sequence
         human_pos = pspmapping.mapped_pos
         # Check if the site mapped from PSP is valid in the Uniprot sequence
-        site_valid = uniprot_client.verify_location(
-                            up_id, pspmapping.mapped_res, pspmapping.mapped_pos)
+        # for the ID that we're interested in
+        site_valid = uniprot_client.verify_location(orig_id,
+                                  pspmapping.mapped_res, pspmapping.mapped_pos)
         # If the mapped site is valid, we're done!
         if site_valid:
             # If the residue is different, change the code accordingly
-            if residue != pspmapping.mapped_pos:
+            if res != pspmapping.mapped_res:
                 mapping_code = 'INFERRED_WRONG_RESIDUE'
-            mapped_site = MappedSite(up_id, False, residue, position,
+            mapped_site = MappedSite(orig_id, False, res, pos,
                               mapped_res=pspmapping.mapped_res,
                               mapped_pos=human_pos,
                               description=mapping_code, gene_name=gene_name)
         else:
             # If mapped site is invalid, attempt to re-map based on the seq
-            updated_pos = ProtMapper.map_peptide(up_id, pspmapping.motif,
+            updated_pos = ProtMapper.map_peptide(orig_id, pspmapping.motif,
                                                  pspmapping.respos)
             # If the re-mapping fails, we give up
             if updated_pos is None:
                 return None
             # Otherwise, we update to the mapped position
             updated_pos_1x = str(updated_pos + 1)
-            mapped_site = MappedSite(up_id, False, residue, position,
+            mapped_site = MappedSite(orig_id, False, res, pos,
                               mapped_res=pspmapping.mapped_res,
                               mapped_pos=updated_pos_1x, # Switch to 1-indexed
                               description='REMAPPED_FROM_PSP_SEQUENCE',
                               gene_name=gene_name)
-        site_key = (up_id, residue, position)
+        site_key = (orig_id, res, pos)
         self._cache[site_key] = mapped_site
         return mapped_site
 

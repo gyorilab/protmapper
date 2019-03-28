@@ -89,7 +89,7 @@ def _get_phospho_site_dataset():
             for row in reader:
                 site = PhosphoSite(*row)
                 res_pos = site.MOD_RSD.split('-')[0]
-                res_pos = res_pos[1:] # FIXME FIXME FIXME
+                #res_pos = res_pos[1:] # DANGEROUS: lookup based on pos alone
                 base_acc_id = site.ACC_ID.split('-')[0]
                 data_by_up[site.ACC_ID][res_pos].append(site)
                 # If the ID was isoform specific, add to the dict for the whole
@@ -133,8 +133,9 @@ def map_to_human_site(up_id, mod_res, mod_pos):
     # No info in Phosphosite for this Uniprot ID
     if not sites_for_up:
         return None
-    #site_info_list = sites_for_up.get('%s%s' % (mod_res, mod_pos)) # FIXME
-    site_info_list = sites_for_up.get('%s' % mod_pos) # FIXME FIXME
+    site_info_list = sites_for_up.get('%s%s' % (mod_res, mod_pos))
+    # DANGER: lookup based on pos alone
+    # site_info_list = sites_for_up.get('%s' % mod_pos)
     # If this site doesn't exist for this protein, will return an empty list
     if not site_info_list:
         return None
