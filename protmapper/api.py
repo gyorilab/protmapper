@@ -436,7 +436,7 @@ class ProtMapper(object):
             mapped_site = MappedSite(up_id, False, residue, position,
                               mapped_res=pspmapping.mapped_res,
                               mapped_pos=updated_pos_1x, # Switch to 1-indexed
-                              description='SEQ_MISMATCH_PSP_UP',
+                              description='REMAPPED_FROM_PSP_SEQUENCE',
                               gene_name=gene_name)
         site_key = (up_id, residue, position)
         self._cache[site_key] = mapped_site
