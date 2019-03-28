@@ -89,15 +89,17 @@ def test_no_site_in_human_ref():
     assert psp.respos == 7
 
 
-#def test_wrong_residue():
-#    # SL6A3 T53 -> S53
-#    psp = map_to_human_site('Q01959', 'T', '53')
-#    assert isinstance(psp, PspMapping)
-#    assert psp.mapped_id == 'Q01959'
-#    assert psp.mapped_res == 'S'
-#    assert psp.mapped_pos == '53'
-#    assert psp.motif == 'TLTNPRQSPVEAQDR'
-#    assert psp.respos == 7
+"""
+def test_wrong_residue():
+    # SL6A3 T53 -> S53
+    psp = map_to_human_site('Q01959', 'T', '53')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'Q01959'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '53'
+    assert psp.motif == 'TLTNPRQSPVEAQDR'
+    assert psp.respos == 7
+"""
 
 
 def test_smpd1_s508():
@@ -170,7 +172,9 @@ def test_explicit_ref_isoforms():
     assert psp.mapped_pos == '522'
 
 
-
-if __name__ == '__main__':
-    test_explicit_ref_isoforms()
+def test_ref_seq_not_found():
+    psp = map_to_human_site('P10636', 'S', '202')
+    assert psp.mapped_id == 'P10636'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '519'
 
