@@ -51,6 +51,11 @@ class MappedSite(object):
         The original amino acid residue that was mapped.
     orig_pos : str
         The original amino acid position that was mapped.
+    mapped_id : str
+        The Uniprot ID for the protein containing the mapped site. If `up_id`
+        is the Uniprot ID for the human reference sequence, in most cases
+        this will match; however, exceptions will occur if the site position
+        refers to a site that is unique to a particular isoform.
     mapped_res : str
         The mapped amino acid residue.
     mapped_pos : str
@@ -62,13 +67,14 @@ class MappedSite(object):
         The standard (HGNC) gene name of the protein that was mapped.
     """
     def __init__(self, up_id, valid, orig_res, orig_pos,
-                 error_code=None, mapped_res=None, mapped_pos=None,
-                 description=None, gene_name=None):
+                 error_code=None, mapped_id=None, mapped_res=None,
+                 mapped_pos=None, description=None, gene_name=None):
         self.up_id = up_id
         self.error_code = error_code
         self.valid = valid
         self.orig_res = orig_res
         self.orig_pos = orig_pos
+        self.mapped_id = mapped_id
         self.mapped_res = mapped_res
         self.mapped_pos = mapped_pos
         self.description = description
@@ -78,17 +84,19 @@ class MappedSite(object):
         quote_args = lambda args: tuple([a if a in (None, True, False)
                                            else ("'%s'" % a) for a in args])
         return ("MappedSite(up_id=%s, error_code=%s, valid=%s, "
-                    "orig_res=%s, orig_pos=%s, mapped_res=%s, "
+                    "orig_res=%s, orig_pos=%s, mapped_id=%s, mapped_res=%s, "
                     "mapped_pos=%s, description=%s, gene_name=%s)" %
                 quote_args([self.up_id, self.error_code, self.valid,
-                           self.orig_res, self.orig_pos, self.mapped_res,
-                           self.mapped_pos, self.description, self.gene_name]))
+                            self.orig_res, self.orig_pos, self.mapped_id,
+                            self.mapped_res, self.mapped_pos, self.description,
+                            self.gene_name]))
 
     def __eq__(self, other):
         if (self.up_id == other.up_id and self.valid == other.valid and
             self.error_code == other.error_code and
             self.orig_res == other.orig_res and
             self.orig_pos == other.orig_pos and
+            self.mapped_id == other.mapped_id and
             self.mapped_res == other.mapped_res and
             self.mapped_pos == other.mapped_pos and
             self.description == other.description and
@@ -102,12 +110,13 @@ class MappedSite(object):
 
     def __hash__(self):
         return hash((self.up_id, self.error_code, self.valid, self.orig_res,
-                     self.orig_pos, self.mapped_res, self.mapped_pos,
-                     self.description, self.gene_name))
+                     self.orig_pos, self.mapped_id, self.mapped_res,
+                     self.mapped_pos, self.description, self.gene_name))
 
     def to_json(self):
         keys = ('up_id', 'error_code', 'valid', 'orig_res', 'orig_pos',
-                'mapped_res', 'mapped_pos', 'description', 'gene_name')
+                'mapped_id', 'mapped_res', 'mapped_pos', 'description',
+                'gene_name')
         jd = {key: self.__dict__.get(key) for key in keys}
         return jd
 
@@ -304,7 +313,7 @@ class ProtMapper(object):
             assert prot_ns == 'hgnc' and prot_id is not None
             return MappedSite(None, None, residue, position,
                               gene_name=prot_id, error_code='NO_UNIPROT_ID')
-        # Make sure the sites are valid
+        # Make sure the sites are proper amino acids/positions
         try:
             valid_res, valid_pos = _validate_site(residue, position)
         except InvalidSiteException as ex:
@@ -384,6 +393,7 @@ class ProtMapper(object):
             mapped_res, mapped_pos, description = mapped_site
             # Convert empty strings to None
             mapped_site = MappedSite(up_id, False, residue, position,
+                                     mapped_id=up_id,
                                      mapped_res=mapped_res,
                                      mapped_pos=mapped_pos,
                                      description=description,
@@ -414,14 +424,17 @@ class ProtMapper(object):
         human_pos = pspmapping.mapped_pos
         # Check if the site mapped from PSP is valid in the Uniprot sequence
         # for the ID that we're interested in
-        site_valid = uniprot_client.verify_location(orig_id,
+        site_valid = uniprot_client.verify_location(pspmapping.mapped_id,
                                   pspmapping.mapped_res, pspmapping.mapped_pos)
         # If the mapped site is valid, we're done!
         if site_valid:
             # If the residue is different, change the code accordingly
             if res != pspmapping.mapped_res:
                 mapping_code = 'INFERRED_WRONG_RESIDUE'
+            if pspmapping.mapped_id != orig_id:
+                mapping_code = 'ISOFORM_SPECIFIC_SITE'
             mapped_site = MappedSite(orig_id, False, res, pos,
+                              mapped_id=pspmapping.mapped_id,
                               mapped_res=pspmapping.mapped_res,
                               mapped_pos=human_pos,
                               description=mapping_code, gene_name=gene_name)
@@ -435,6 +448,7 @@ class ProtMapper(object):
             # Otherwise, we update to the mapped position
             updated_pos_1x = str(updated_pos + 1)
             mapped_site = MappedSite(orig_id, False, res, pos,
+                              mapped_id=pspmapping.mapped_id,
                               mapped_res=pspmapping.mapped_res,
                               mapped_pos=updated_pos_1x, # Switch to 1-indexed
                               description='REMAPPED_FROM_PSP_SEQUENCE',
@@ -521,6 +535,7 @@ class ProtMapper(object):
             ms.valid = False
         else:
             ms.valid = True
+            ms.mapped_id = up_id
             ms.mapped_res = peptide[site_pos - 1]
             ms.mapped_pos = str(mapped_pos)
         return ms
