@@ -113,6 +113,14 @@ def test_smpd1_s508():
     assert psp.respos == 7
 
 
+def test_set_s9():
+    psp = map_to_human_site('Q01105', 'S', '9')
+    assert isinstance(psp, PspMapping)
+    assert psp.mapped_id == 'Q01105-2'
+    assert psp.mapped_res == 'S'
+    assert psp.mapped_pos == '9'
+
+
 def test_h2afx_s139():
     psp = map_to_human_site('P16104', 'S', '139')
     assert isinstance(psp, PspMapping)

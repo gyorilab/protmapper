@@ -227,7 +227,6 @@ def test_smpd1_s508():
                             gene_name='SMPD1')
 
 
-"""
 def test_set_s9():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('Q01105', 'uniprot', 'S', '9')
@@ -236,7 +235,6 @@ def test_set_s9():
                             mapped_res='S', mapped_pos='9',
                             description='ISOFORM_SPECIFIC_SITE',
                             gene_name='SET')
-"""
 
 
 """
