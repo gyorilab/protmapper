@@ -170,13 +170,10 @@ def map_to_human_site(up_id, mod_res, mod_pos):
                 site_grp = site_info_list[0].SITE_GRP_ID
             # Otherwise, take the first
             else:
-                first_si = sorted(list(site_info_list.keys()))[0]
-                site_grp = first_si.SITE_GRP_ID
-                logger.info('More than one non-reference site group found for '
-                            '(%s, %s, %s), choosing first entry: '
-                            'acc_id %s site_grp %s' %
-                            (up_id, mod_res, mod_pos, first_si.ACC_ID,
-                             site_grp))
+                logger.warning('More than one non-reference site group found '
+                               'for (%s, %s, %s), not mapping' %
+                               (up_id, mod_res, mod_pos))
+                return None
         else:
             site_grp = ref_site_info.SITE_GRP_ID
     # Look up site group

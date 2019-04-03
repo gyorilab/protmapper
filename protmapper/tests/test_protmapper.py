@@ -401,3 +401,22 @@ def test_peptide_round_trip():
                             mapped_res='Y', mapped_pos='187',
                             description=None, gene_name='MAPK1')
 
+def test_tau_sites():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('P10636', 'uniprot', 'S', '320')
+    assert isinstance(ms, MappedSite)
+    assert ms == MappedSite(up_id='P10636', error_code=None, valid=False,
+                            orig_res='S', orig_pos='320', mapped_id='P10636',
+                            mapped_res='S', mapped_pos='637',
+                            description='position from isoform 8',
+                            gene_name='MAPT')
+
+    ms = pm.map_to_human_ref('P10636', 'uniprot', 'T', '153')
+    assert isinstance(ms, MappedSite)
+    assert ms == MappedSite(up_id='P10636', error_code=None, valid=False,
+                            orig_res='T', orig_pos='153', mapped_id='P10636-8',
+                            mapped_res='T', mapped_pos='153',
+                            description='ISOFORM_SPECIFIC_SITE',
+                            gene_name='MAPT')
+
+
