@@ -410,9 +410,51 @@ class ProtMapper(object):
 
     def get_psp_mapping(self, orig_id, query_id, gene_name, res, pos,
                         query_pos, mapping_code):
-        """TODO: DOCS
+        """
+        Wrapper around Phosphosite queries that performs peptide remapping.
 
-        STILL WIP
+        The function is called with a uniprot ID, residue, and position
+        combination that is used to query the phosphosite_client for a valid
+        corresponding site on the human reference protein. The `mapping_code`
+        is provided by the caller to indicate the type of mapping being
+        attempted (e.g., human isoform, mouse, rat, methionine). If a valid
+        mapping is obtained, this is the error code that is applied.  If a
+        valid mapping is obtained but it is for a human isoform, this indicates
+        that the queried site exists only on a human isoform and not on the
+        human reference protein, and the code `ISOFORM_SPECIFIC_SITE` is used.
+        If the site returned by the phosphosite_client is at a position that
+        does not match the Uniprot reference sequence (which can happen when
+        the queried site and the PhosphositePlus protein sequences both exclude
+        the initial methionine), the site is remapped to the Uniprot reference
+        sequence using the peptide information for the site in PhosphositePlus.
+        In these cases, the mapping code `REMAPPED_FROM_PSP_SEQUENCE` is used.
+
+        Parameters
+        ----------
+        orig_id : str
+            Original Uniprot ID of the protein to be mapped.
+        query_id : str
+            Uniprot ID of the protein being queried for sites. This may differ
+            from `orig_id` if the orthologous mouse or rat protein is being
+            checked for sites.
+        gene_name : str
+            Gene name of the protein.
+        res : str
+            Residue of the site to be mapped.
+        pos : str
+            Position of the site to be mapped.
+        query_pos : str
+            Position being queried for a mapping. This differs from `pos`
+            when off-by-one (methionine) errors are being checked.
+        mapping_code : str
+            Mapping code to apply in case of a successful mapping, e.g.
+            `INFERRED_ALTERNATIVE_ISOFORM`, `INFERRED_MOUSE_SITE`, etc.
+
+        Returns
+        -------
+        MappedSite or None
+            MappedSite object containing the mapping, or None indicating
+            that no mapping was found.
         """
         pspmapping = phosphosite_client.map_to_human_site(query_id, res,
                                                           query_pos)
@@ -429,8 +471,6 @@ class ProtMapper(object):
         # If the mapped site is valid, we're done!
         if site_valid:
             # If the residue is different, change the code accordingly
-            if res != pspmapping.mapped_res:
-                mapping_code = 'INFERRED_WRONG_RESIDUE'
             if pspmapping.mapped_id != orig_id:
                 mapping_code = 'ISOFORM_SPECIFIC_SITE'
             mapped_site = MappedSite(orig_id, False, res, pos,
