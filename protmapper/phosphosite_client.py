@@ -230,6 +230,19 @@ def map_to_human_site(up_id, mod_res, mod_pos):
 
 
 def sites_only(exclude_isoforms=False):
+    """Return PhosphositePlus data as a flat list of proteins and sites.
+
+    Parameters
+    ----------
+    exclude_isoforms : bool
+        Whether to exclude sites for protein isoforms. Default is False
+        (includes isoforms).
+
+    Returns
+    -------
+    list of tuples
+        Each tuple consists of (uniprot_id, residue, position).
+    """
     sites = []
     (data_by_up, data_by_site_grp) = _get_phospho_site_dataset()
     for up_id, respos_dict in data_by_up.items():
