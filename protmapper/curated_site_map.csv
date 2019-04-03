@@ -160,3 +160,9 @@ P62753,RPS6,T,389,,,probable reading error: site on RPS6KB1
 P62753,RPS6,S,473,,,probable reading error: AKT S473
 P62753,RPS6,T,412,,,probable reading error: site on RPS6KB1
 P62753,RPS6,S,2448,,,probable reading error: site on MTOR
+P08069,IGF1R,Y,950,Y,980,numbering after 30-residue signaling peptide removed
+P08069,IGF1R,Y,1131,Y,1161,numbering after 30-residue signaling peptide removed
+P08069,IGF1R,Y,1135,Y,1165,numbering after 30-residue signaling peptide removed
+P08069,IGF1R,Y,1136,Y,1166,numbering after 30-residue signaling peptide removed
+P08069,IGF1R,Y,1248,Y,1278,numbering after 30-residue signaling peptide removed
+P08069,IGF1R,Y,1252,Y,1282,numbering after 30-residue signaling peptide removed
