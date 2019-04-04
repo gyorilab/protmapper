@@ -719,7 +719,7 @@ def get_function(protein_id):
     return function.text
 
 
-def get_signal_peptide(protein_id):
+def get_signal_peptide(protein_id, web_fallback=True):
     """Return the position of a signal peptide for the given protein.
 
     Parameters
@@ -727,6 +727,9 @@ def get_signal_peptide(protein_id):
     protein_id : str
         The UniProt ID of the protein whose signal peptide position
         is to be returned.
+    web_fallback : Optional[bool]
+        If True the UniProt web service is used to download information when
+        the local resource file doesn't contain the right information.
 
     Returns
     -------
@@ -736,7 +739,7 @@ def get_signal_peptide(protein_id):
     """
     # Note, we use False here to differentiate from None
     entry = um.signal_peptide.get(protein_id, False)
-    if entry is not False:
+    if entry is not False or not web_fallback:
         return entry
     et = query_protein_xml(protein_id)
     if et is None:
@@ -949,12 +952,14 @@ def _build_uniprot_entries():
                 if rgd_ids:
                     uniprot_rgd[up_id] = rgd_ids[0]
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
+            uniprot_signal_peptide[up_id] = (None, None)
             if signal_peptide:
                 match = re.match(r'SIGNAL (\d+) (\d+) ', signal_peptide)
                 if match:
                     beg_pos, end_pos = match.groups()
                     uniprot_signal_peptide[up_id] = \
                         (int(beg_pos), int(end_pos))
+
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
             uniprot_length, uniprot_reviewed, uniprot_signal_peptide)

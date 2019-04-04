@@ -366,7 +366,7 @@ class ProtMapper(object):
         # There is no manual mapping, next we try to see if UniProt
         # reports a signal peptide that could be responsible for the position
         # being shifted
-        signal_peptide = uniprot_client.get_signal_peptide(up_id)
+        signal_peptide = uniprot_client.get_signal_peptide(up_id, False)
         # If there is valid signal peptide information from UniProt
         if signal_peptide and signal_peptide[0] == 1 and \
                 signal_peptide[1] is not None:
