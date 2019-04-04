@@ -362,8 +362,28 @@ class ProtMapper(object):
                                      gene_name=gene_name)
             self._cache[site_key] = mapped_site
             return mapped_site
-        # ...there's no manually curated site, so do mapping via PhosphoSite
-        # if the data is available:
+
+        # There is no manual mapping, next we try to see if UniProt
+        # reports a signal peptide that could be responsible for the position
+        # being shifted
+        signal_peptide = uniprot_client.get_signal_peptide(up_id)
+        # If there is valid signal peptide information from UniProt
+        if signal_peptide and signal_peptide[0] == 1:
+            # The end position of the signal peptide
+            sp_end_pos = signal_peptide[1]
+            mapped_pos = str(int(position) + sp_end_pos)
+            mapped_res = residue
+            site_valid = uniprot_client.verify_location(up_id, mapped_res,
+                                                        mapped_pos)
+            if site_valid:
+                return MappedSite(up_id, False, residue, position,
+                                  mapped_id=up_id,
+                                  mapped_res=mapped_res,
+                                  mapped_pos=mapped_pos,
+                                  description='SIGNAL_PEPTIDE_REMOVED',
+                                  gene_name=gene_name)
+        # ...there's no manually curated site or signal peptide, so do mapping
+        # via PhosphoSite if the data is available:
         human_prot = uniprot_client.is_human(up_id)
         if phosphosite_client.has_data():
             # First, look for other entries in phosphosite for this protein

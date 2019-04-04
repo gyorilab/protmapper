@@ -433,3 +433,13 @@ def test_manual_vs_methionine():
             description='numbering after 24-residue signaling peptide removed',
             gene_name='EGFR')
 
+
+def test_signal_peptide():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('P04626', 'uniprot', 'Y', '1226')
+    assert isinstance(ms, MappedSite)
+    assert ms == MappedSite(up_id='P04626', error_code=None, valid=False,
+                            orig_res='Y', orig_pos='1226', mapped_id='P04626',
+                            mapped_res='Y', mapped_pos='1248',
+                            description='SIGNAL_PEPTIDE_REMOVED',
+                            gene_name='ERBB2'), ms
