@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import rdflib
 import logging
@@ -728,6 +729,10 @@ def get_signal_peptide(protein_id):
         THe beginning and end position of the signal peptide as a tuple
         of integers.
     """
+    # Note, we use False here to differentiate from None
+    entry = um.signal_peptide.get(protein_id, False)
+    if entry is not False:
+        return entry
     et = query_protein_xml(protein_id)
     location = et.find(
         'up:entry/up:feature[@type="signal peptide"]/up:location',
@@ -788,7 +793,7 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed) = maps
+         self._uniprot_reviewed, self._uniprot_signal_peptide) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -891,10 +896,17 @@ class UniprotMapper(object):
             self.initialize_refseq()
         return self._refseq_uniprot
 
+    @property
+    def signal_peptide(self):
+        if not self.initialized:
+            self.initialize()
+        return self._uniprot_signal_peptide
+
+
 um = UniprotMapper()
 
 
-def _build_uniprot_entries(from_pickle=True):
+def _build_uniprot_entries():
     up_entries_file = resource_manager.get_create_resource_file('up')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
@@ -904,13 +916,15 @@ def _build_uniprot_entries(from_pickle=True):
     uniprot_mgi_reverse = {}
     uniprot_rgd_reverse = {}
     uniprot_length = {}
+    uniprot_signal_peptide = {}
     uniprot_reviewed = set()
     with open(up_entries_file, 'r') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
         for row in csv_rows:
-            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed = row
+            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
+                signal_peptide = row
             # Store the entry in the reviewed set
             if reviewed == 'reviewed':
                 uniprot_reviewed.add(up_id)
@@ -928,9 +942,15 @@ def _build_uniprot_entries(from_pickle=True):
                 if rgd_ids:
                     uniprot_rgd[up_id] = rgd_ids[0]
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
+            if signal_peptide:
+                match = re.match(r'SIGNAL (\d+) (\d+) ', signal_peptide)
+                if match:
+                    beg_pos, end_pos = match.groups()
+                    uniprot_signal_peptide[up_id] = \
+                        (int(beg_pos), int(end_pos))
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed)
+            uniprot_length, uniprot_reviewed, uniprot_signal_peptide)
 
 
 def _build_human_mouse_rat():
@@ -1005,7 +1025,6 @@ def _build_uniprot_sequences():
                                                          cached=True)
     iso_file = resource_manager.get_create_resource_file('isoforms',
                                                          cached=True)
-    sequences = {}
     logger.info("Loading Swissprot sequences...")
     sp_seq = load_fasta_sequences(seq_file)
     logger.info("Loading Uniprot isoform sequences...")
