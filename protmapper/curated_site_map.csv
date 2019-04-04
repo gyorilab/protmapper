@@ -12,9 +12,7 @@ Q8IVT5,KSR1,S,443,S,458,mouse sequence
 Q02750,MAP2K1,S,217,S,218,off by one
 Q02750,MAP2K1,S,221,S,222,off by one
 P28482,MAPK1,T,182,T,185,off by three
-P28482,MAPK1,T,183,T,185,off by two; mouse sequence
 P28482,MAPK1,Y,184,Y,187,off by three
-P28482,MAPK1,Y,185,Y,187,off by two: mouse sequence
 P27361,MAPK3,T,201,T,202,off by one
 P27361,MAPK3,Y,203,Y,204,off by one
 Q13164,MAPK7,T,218,T,219,off by one

@@ -401,6 +401,7 @@ def test_peptide_round_trip():
                             mapped_res='Y', mapped_pos='187',
                             description=None, gene_name='MAPK1')
 
+
 def test_tau_sites():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('P10636', 'uniprot', 'S', '320')
@@ -419,4 +420,16 @@ def test_tau_sites():
                             description='ISOFORM_SPECIFIC_SITE',
                             gene_name='MAPT')
 
+
+def test_manual_vs_methionine():
+    # Make sure the manual mapping for EGFR 1068 is used instead of the
+    # methionine off-by-one mapping
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('P00533', 'uniprot', 'Y', '1068')
+    assert isinstance(ms, MappedSite)
+    assert ms == MappedSite(up_id='P00533', error_code=None, valid=False,
+            orig_res='Y', orig_pos='1068', mapped_id='P00533',
+            mapped_res='Y', mapped_pos='1092',
+            description='numbering after 24-residue signaling peptide removed',
+            gene_name='EGFR')
 
