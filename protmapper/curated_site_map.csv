@@ -54,7 +54,6 @@ P10275,AR,Y,363,Y,365,off by 2
 Q92934,BAD,S,112,S,75,numbering from mouse sequence
 Q92934,BAD,S,136,S,99,numbering from mouse sequence
 Q92934,BAD,S,155,S,118,numbering from mouse sequence
-Q92934,BAD,T,201,,,site present in mouse but not in human sequence (corresponds to human A165)
 Q92934,BAD,S,119,S,118,numbering from bovine sequence
 P51451,BLK,Y,388,Y,389,off by 1
 P15056,BRAF,S,445,S,446,off by 1
@@ -133,3 +132,4 @@ P08069,IGF1R,Y,1136,Y,1166,numbering after 30-residue signaling peptide removed
 P08069,IGF1R,Y,1248,Y,1278,numbering after 30-residue signaling peptide removed
 P08069,IGF1R,Y,1252,Y,1282,numbering after 30-residue signaling peptide removed
 P10636,MAPT,S,320,S,637,position from isoform 8
+P06400,RB1,D,1,,,probable reading error: cyclin D1

@@ -350,10 +350,10 @@ class ProtMapper(object):
             self._cache[site_key] = mapped_site
             return mapped_site
         # If it's not a valid site, check the site map first
-        mapped_site = self.site_map.get(site_key, None)
+        curated_site = self.site_map.get(site_key, None)
         # Manually mapped in the site map
-        if mapped_site is not None:
-            mapped_res, mapped_pos, description = mapped_site
+        if curated_site is not None:
+            mapped_res, mapped_pos, description = curated_site
             mapped_site = MappedSite(up_id, False, residue, position,
                                      mapped_id=up_id,
                                      mapped_res=mapped_res,
