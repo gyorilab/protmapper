@@ -195,9 +195,15 @@ def test_get_ids_from_refseq():
 
 @attr('webservice')
 def test_get_signal_peptide():
+    # This is a valid entry local to the resource file
     bp, ep = uniprot_client.get_signal_peptide('P00533')
     assert bp == 1, bp
     assert ep == 24, ep
+    # This one requires a web lookup
     bp, ep = uniprot_client.get_signal_peptide('P00534')
+    assert bp is None, bp
+    assert ep is None, ep
+    # This one errors when doing web lookup
+    bp, ep = uniprot_client.get_signal_peptide('Q9H7H1')
     assert bp is None, bp
     assert ep is None, ep

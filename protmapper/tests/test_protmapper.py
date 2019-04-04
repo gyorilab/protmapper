@@ -443,3 +443,8 @@ def test_signal_peptide():
                             mapped_res='Y', mapped_pos='1248',
                             description='SIGNAL_PEPTIDE_REMOVED',
                             gene_name='ERBB2'), ms
+
+
+def test_signal_peptide_no_error():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('Q9RI12', 'uniprot', 'S', '38')

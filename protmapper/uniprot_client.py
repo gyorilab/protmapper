@@ -688,8 +688,11 @@ def query_protein_xml(protein_id):
     except KeyError:
         pass
     url = uniprot_url + protein_id + '.xml'
-    ret = requests.get(url)
-    et = ElementTree.fromstring(ret.content)
+    try:
+        ret = requests.get(url)
+        et = ElementTree.fromstring(ret.content)
+    except Exception as e:
+        return None
     return et
 
 
@@ -707,6 +710,8 @@ def get_function(protein_id):
         The function description of the protein.
     """
     et = query_protein_xml(protein_id)
+    if et is None:
+        return None
     function = et.find('up:entry/up:comment[@type="function"]/up:text',
                        namespaces={'up': 'http://uniprot.org/uniprot'})
     if function is None:
@@ -734,6 +739,8 @@ def get_signal_peptide(protein_id):
     if entry is not False:
         return entry
     et = query_protein_xml(protein_id)
+    if et is None:
+        return None, None
     location = et.find(
         'up:entry/up:feature[@type="signal peptide"]/up:location',
         namespaces=xml_ns)
