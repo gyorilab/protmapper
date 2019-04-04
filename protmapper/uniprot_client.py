@@ -714,6 +714,20 @@ def get_function(protein_id):
 
 
 def get_signal_peptide(protein_id):
+    """Return the position of a signal peptide for the given protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein whose signal peptide position
+        is to be returned.
+
+    Returns
+    -------
+    tuple of int
+        THe beginning and end position of the signal peptide as a tuple
+        of integers.
+    """
     et = query_protein_xml(protein_id)
     location = et.find(
         'up:entry/up:feature[@type="signal peptide"]/up:location',
@@ -724,13 +738,32 @@ def get_signal_peptide(protein_id):
         begin = location.find('up:begin', namespaces=xml_ns)
         if begin is not None:
             begin_pos = begin.attrib.get('position')
+            if begin_pos is not None:
+                begin_pos = int(begin_pos)
         end = location.find('up:end', namespaces=xml_ns)
         if end is not None:
             end_pos = end.attrib.get('position')
+            if end_pos is not None:
+                end_pos = int(end_pos)
     return begin_pos, end_pos
 
 
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
+    """Return UniProt IDs from a RefSeq ID".
+
+    Parameters
+    ----------
+    refseq_id : str
+        The RefSeq ID of the protein to map.
+    reviewed_only : Optional[bool]
+        If True, only reviewed UniProt IDs are returned.
+        Default: False
+
+    Returns
+    -------
+    list of str
+        A list of UniProt IDs corresponding to the RefSeq ID.
+    """
     try:
         up_ids = um.refseq_uniprot[refseq_id]
     except KeyError:
