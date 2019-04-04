@@ -12,9 +12,7 @@ Q8IVT5,KSR1,S,443,S,458,mouse sequence
 Q02750,MAP2K1,S,217,S,218,off by one
 Q02750,MAP2K1,S,221,S,222,off by one
 P28482,MAPK1,T,182,T,185,off by three
-P28482,MAPK1,T,183,T,185,off by two; mouse sequence
 P28482,MAPK1,Y,184,Y,187,off by three
-P28482,MAPK1,Y,185,Y,187,off by two: mouse sequence
 P27361,MAPK3,T,201,T,202,off by one
 P27361,MAPK3,Y,203,Y,204,off by one
 Q13164,MAPK7,T,218,T,219,off by one
@@ -56,7 +54,6 @@ P10275,AR,Y,363,Y,365,off by 2
 Q92934,BAD,S,112,S,75,numbering from mouse sequence
 Q92934,BAD,S,136,S,99,numbering from mouse sequence
 Q92934,BAD,S,155,S,118,numbering from mouse sequence
-Q92934,BAD,T,201,,,site present in mouse but not in human sequence (corresponds to human A165)
 Q92934,BAD,S,119,S,118,numbering from bovine sequence
 P51451,BLK,Y,388,Y,389,off by 1
 P15056,BRAF,S,445,S,446,off by 1
@@ -99,8 +96,6 @@ P06213,INSR,Y,1151,Y,1190,off by 39 (cleavage?)
 P06213,INSR,Y,1150,Y,1189,off by 39 (cleavage?)
 P06213,INSR,Y,960,Y,999,off by 39 (cleavage?)
 P06213,INSR,Y,1146,Y,1185,off by 39 (cleavage?)
-P35568,IRS1,Y,1158,,,error! sites from insulin receptor
-P35568,IRS1,Y,1162,,,error! sites from insulin receptor
 P06239,LCK,Y,393,Y,394,off by 1 (methionine removed)
 P07948,LYN,Y,507,Y,508,off by 1 (methionine removed)
 P07948,LYN,Y,396,Y,397,off by 1 (methionine removed)
@@ -121,45 +116,15 @@ Q06124,PTPN11,Y,542,Y,546,off by 4
 Q06124,PTPN11,Y,580,Y,584,off by 4
 O75385,ULK1,S,757,S,758,numbering from mouse sequence
 Q8IVT5,KSR1,S,392,S,406,numbering from mouse sequence
-O60674,JAK2,E,47,,,E47 confused with alias for gene TCF3
-O60674,JAK2,Y,485,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,468,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,504,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,489,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,426,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,456,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,454,,,Wrong gene; binding site for JAK2 on EPOR
-O60674,JAK2,Y,368,,,Wrong gene; binding site for JAK2 on EPOR
 P23443,RPS6KB1,T,389,T,412,numbering from isoform alpha 2
 P23443,RPS6KB1,S,424,S,447,numbering from isoform alpha 2
 P23443,RPS6KB1,S,371,S,394,numbering from isoform alpha 2
 P23443,RPS6KB1,T,421,T,444,numbering from isoform alpha 2
 P23443,RPS6KB1,T,229,T,252,numbering from isoform alpha 2
-P23443,RPS6KB1,E,4,,,incorrect
-P23443,RPS6KB1,S,473,,,probable reading error: AKT S473
 P23443,RPS6KB1,S,389,T,412,numbering from isoform alpha 2; wrong residue
-P23443,RPS6KB1,S,65,,,incorrect
 P23443,RPS6KB1,S,411,S,434,numbering from isoform alpha 2
-P23443,RPS6KB1,A,549,,,probable reading error: cell line A549
-P23443,RPS6KB1,S,2448,,,probable reading error: site on MTOR
-P23443,RPS6KB1,H,358,,,incorrect
-P23443,RPS6KB1,S,757,,,incorrect
-P23443,RPS6KB1,G,1,,,probable reading error: cell cycle
-P23443,RPS6KB1,S,308,,,probable reading error: AKT T308
-P23443,RPS6KB1,S,6,,,probable reading error: gene name S6
 P23443,RPS6KB1,T,424,S,447,probable wrong residue; numbering from isoform alpha 2
-P23443,RPS6KB1,T,308,,,probable reading error: AKT T308
-P06400,RB1,D,1,,,probable reading error: cyclin D1
-P06400,RB1,G,1,,,probable reading error: cell cycle G1
-P06400,RB1,Y,79,,,probable reading error: cell line Y79
-P06400,RB1,G,0,,,probable reading error: cell cycle G0
-P06400,RB1,T,160,,,probable reading error: site T160 on CDK2
-P06400,RB1,S,81,,,incorrect
 P04637,TP53,S,389,S,392,numbering from off-by-one mouse sequence
-P62753,RPS6,T,389,,,probable reading error: site on RPS6KB1
-P62753,RPS6,S,473,,,probable reading error: AKT S473
-P62753,RPS6,T,412,,,probable reading error: site on RPS6KB1
-P62753,RPS6,S,2448,,,probable reading error: site on MTOR
 P08069,IGF1R,Y,950,Y,980,numbering after 30-residue signaling peptide removed
 P08069,IGF1R,Y,1131,Y,1161,numbering after 30-residue signaling peptide removed
 P08069,IGF1R,Y,1135,Y,1165,numbering after 30-residue signaling peptide removed
@@ -167,3 +132,4 @@ P08069,IGF1R,Y,1136,Y,1166,numbering after 30-residue signaling peptide removed
 P08069,IGF1R,Y,1248,Y,1278,numbering after 30-residue signaling peptide removed
 P08069,IGF1R,Y,1252,Y,1282,numbering after 30-residue signaling peptide removed
 P10636,MAPT,S,320,S,637,position from isoform 8
+P06400,RB1,D,1,,,probable reading error: cyclin D1

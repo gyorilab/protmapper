@@ -232,7 +232,7 @@ class ProtMapper(object):
         Parameters
         ----------
         site_list : list of tuple
-            Each tuple in the list consistes of the following entries:
+            Each tuple in the list consists of the following entries:
             (prot_id, prot_ns, residue, position).
 
         Returns
@@ -349,8 +349,21 @@ class ProtMapper(object):
                                      gene_name=gene_name)
             self._cache[site_key] = mapped_site
             return mapped_site
-        # NOTE: The following lookups can only be performed if the
-        # Phosphosite Data is available.
+        # If it's not a valid site, check the site map first
+        curated_site = self.site_map.get(site_key, None)
+        # Manually mapped in the site map
+        if curated_site is not None:
+            mapped_res, mapped_pos, description = curated_site
+            mapped_site = MappedSite(up_id, False, residue, position,
+                                     mapped_id=up_id,
+                                     mapped_res=mapped_res,
+                                     mapped_pos=mapped_pos,
+                                     description=description,
+                                     gene_name=gene_name)
+            self._cache[site_key] = mapped_site
+            return mapped_site
+        # ...there's no manually curated site, so do mapping via PhosphoSite
+        # if the data is available:
         human_prot = uniprot_client.is_human(up_id)
         if phosphosite_client.has_data():
             # First, look for other entries in phosphosite for this protein
@@ -386,27 +399,13 @@ class ProtMapper(object):
                                     offset_pos, 'INFERRED_METHIONINE_CLEAVAGE')
                 if mapped_site:
                     return mapped_site
-        # Now check the site map
-        mapped_site = self.site_map.get(site_key, None)
-        # Manually mapped in the site map
-        if mapped_site is not None:
-            mapped_res, mapped_pos, description = mapped_site
-            # Convert empty strings to None
-            mapped_site = MappedSite(up_id, False, residue, position,
-                                     mapped_id=up_id,
-                                     mapped_res=mapped_res,
-                                     mapped_pos=mapped_pos,
-                                     description=description,
-                                     gene_name=gene_name)
-            self._cache[site_key] = mapped_site
-            return mapped_site
-        # No entry in the site map; set site info to None
-        else:
-            mapped_site = MappedSite(up_id, False, residue, position,
-                                     description='NO_MAPPING_FOUND',
-                                     gene_name=gene_name)
-            self._cache[site_key] = mapped_site
-            return mapped_site
+        # If we've gotten here, the entry is 1) not in the site map, and
+        # 2) we either don't have PSP data or no mapping was found using PSP
+        mapped_site = MappedSite(up_id, False, residue, position,
+                                 description='NO_MAPPING_FOUND',
+                                 gene_name=gene_name)
+        self._cache[site_key] = mapped_site
+        return mapped_site
 
     def get_psp_mapping(self, orig_id, query_id, gene_name, res, pos,
                         query_pos, mapping_code):
