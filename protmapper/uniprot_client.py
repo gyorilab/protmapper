@@ -21,6 +21,8 @@ rdf_prefixes = """
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> """
 
+xml_ns = {'up': 'http://uniprot.org/uniprot'}
+
 
 @lru_cache(maxsize=10000)
 def query_protein(protein_id):
@@ -709,6 +711,23 @@ def get_function(protein_id):
     if function is None:
         return None
     return function.text
+
+
+def get_signal_peptide(protein_id):
+    et = query_protein_xml(protein_id)
+    location = et.find(
+        'up:entry/up:feature[@type="signal peptide"]/up:location',
+        namespaces=xml_ns)
+    begin_pos = None
+    end_pos = None
+    if location is not None:
+        begin = location.find('up:begin', namespaces=xml_ns)
+        if begin is not None:
+            begin_pos = begin.attrib.get('position')
+        end = location.find('up:end', namespaces=xml_ns)
+        if end is not None:
+            end_pos = end.attrib.get('position')
+    return begin_pos, end_pos
 
 
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
