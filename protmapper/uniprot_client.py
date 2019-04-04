@@ -661,6 +661,35 @@ def get_length(protein_id):
     return um.uniprot_length.get(protein_id)
 
 
+@lru_cache(maxsize=10000)
+def query_protein_xml(protein_id):
+    """Retrieve the XML entry for a given protein.
+
+    Some information is only available in the XML entry for UniProt
+    proteins (not RDF), therefore this endpoint is necessary.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein to look up.
+
+    Returns
+    -------
+    xml.etree.ElementTree
+        An ElementTree representation of the XML entry for the
+        protein.
+    """
+    try:
+        prim_ids = um.uniprot_sec[protein_id]
+        protein_id = prim_ids[0]
+    except KeyError:
+        pass
+    url = uniprot_url + protein_id + '.xml'
+    ret = requests.get(url)
+    et = ElementTree.fromstring(ret.content)
+    return et
+
+
 def get_function(protein_id):
     """Return the function description of a given protein.
 
@@ -674,9 +703,7 @@ def get_function(protein_id):
     str
         The function description of the protein.
     """
-    url = uniprot_url + protein_id + '.xml'
-    ret = requests.get(url)
-    et = ElementTree.fromstring(ret.content)
+    et = query_protein_xml(protein_id)
     function = et.find('up:entry/up:comment[@type="function"]/up:text',
                        namespaces={'up': 'http://uniprot.org/uniprot'})
     if function is None:
