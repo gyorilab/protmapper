@@ -370,20 +370,13 @@ class ProtMapper(object):
         # If there is valid signal peptide information from UniProt
         if signal_peptide and signal_peptide[0] == 1 and \
                 signal_peptide[1] is not None:
-            # The end position of the signal peptide
-            sp_end_pos = signal_peptide[1]
-            if sp_end_pos is not None:
-                mapped_pos = str(int(position) + sp_end_pos)
-                mapped_res = residue
-                site_valid = uniprot_client.verify_location(up_id, mapped_res,
-                                                            mapped_pos)
-                if site_valid:
-                    return MappedSite(up_id, False, residue, position,
-                                      mapped_id=up_id,
-                                      mapped_res=mapped_res,
-                                      mapped_pos=mapped_pos,
-                                      description='SIGNAL_PEPTIDE_REMOVED',
-                                      gene_name=gene_name)
+            offset_pos = str(int(position) + signal_peptide[1])
+            # Check to see if the offset position is known to be phosphorylated
+            mapped_site = self.get_psp_mapping(
+                                up_id, up_id, gene_name, residue, position,
+                                offset_pos, 'SIGNAL_PEPTIDE_REMOVED')
+            if mapped_site:
+                return mapped_site
         # ...there's no manually curated site or signal peptide, so do mapping
         # via PhosphoSite if the data is available:
         human_prot = uniprot_client.is_human(up_id)
@@ -492,8 +485,6 @@ class ProtMapper(object):
         # If the mapped site is valid, we're done!
         if site_valid:
             # If the residue is different, change the code accordingly
-            if pspmapping.mapped_id != orig_id:
-                mapping_code = 'ISOFORM_SPECIFIC_SITE'
             mapped_site = MappedSite(orig_id, False, res, pos,
                               mapped_id=pspmapping.mapped_id,
                               mapped_res=pspmapping.mapped_res,
