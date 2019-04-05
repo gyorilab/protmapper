@@ -734,7 +734,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
     Returns
     -------
     tuple of int
-        THe beginning and end position of the signal peptide as a tuple
+        The beginning and end position of the signal peptide as a tuple
         of integers.
     """
     # Note, we use False here to differentiate from None
