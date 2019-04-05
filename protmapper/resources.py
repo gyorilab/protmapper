@@ -47,6 +47,7 @@ def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432):
             f.write(ret)
     return ret
 
+
 def download_phosphositeplus(out_file, cached=True):
     logger.info("Note that PhosphoSitePlus data is not available for "
                 "commercial use; please see full terms and conditions at: "
@@ -59,11 +60,14 @@ def download_uniprot_entries(out_file, cached=True):
         _download_from_s3('uniprot_entries.tsv', out_file)
         return
 
+    columns = ['id', 'genes(PREFERRED)', 'entry%20name', 'database(RGD)',
+               'database(MGI)', 'length', 'reviewed', 'feature(SIGNAL)']
+    columns_str = ','.join(columns)
+
     logger.info('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
-        'format=tab&columns=id,genes(PREFERRED),' + \
-        'entry%20name,database(RGD),database(MGI),length,reviewed'
+        'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
@@ -73,8 +77,7 @@ def download_uniprot_entries(out_file, cached=True):
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
         '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
-        'format=tab&columns=id,genes(PREFERRED),entry%20name,' + \
-        'database(RGD),database(MGI),length,reviewed'
+        'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:

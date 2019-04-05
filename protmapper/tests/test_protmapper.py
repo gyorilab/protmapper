@@ -246,7 +246,7 @@ def test_set_s9():
     assert ms == MappedSite(up_id='Q01105', valid=False, orig_res='S',
                             orig_pos='9', mapped_id='Q01105-2',
                             mapped_res='S', mapped_pos='9',
-                            description='ISOFORM_SPECIFIC_SITE',
+                            description='INFERRED_ALTERNATIVE_ISOFORM',
                             gene_name='SET')
 
 
@@ -417,7 +417,7 @@ def test_tau_sites():
     assert ms == MappedSite(up_id='P10636', error_code=None, valid=False,
                             orig_res='T', orig_pos='153', mapped_id='P10636-8',
                             mapped_res='T', mapped_pos='153',
-                            description='ISOFORM_SPECIFIC_SITE',
+                            description='INFERRED_ALTERNATIVE_ISOFORM',
                             gene_name='MAPT')
 
 
@@ -432,4 +432,30 @@ def test_manual_vs_methionine():
             mapped_res='Y', mapped_pos='1092',
             description='numbering after 24-residue signaling peptide removed',
             gene_name='EGFR')
+
+
+def test_signal_peptide():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('P04626', 'uniprot', 'Y', '1226')
+    assert isinstance(ms, MappedSite)
+    assert ms == MappedSite(up_id='P04626', error_code=None, valid=False,
+                            orig_res='Y', orig_pos='1226', mapped_id='P04626',
+                            mapped_res='Y', mapped_pos='1248',
+                            description='SIGNAL_PEPTIDE_REMOVED',
+                            gene_name='ERBB2'), ms
+
+
+def test_signal_peptide_no_error():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('Q9RI12', 'uniprot', 'S', '38')
+
+
+def test_egfr_mouse_1068_to_human_1092():
+    pm = ProtMapper()
+    ms = pm.map_to_human_ref('Q01279', 'uniprot', 'Y', '1068')
+    assert ms == MappedSite(up_id='Q01279', error_code=None, valid=False,
+            orig_res='Y', orig_pos='1068', mapped_id='P00533',
+            mapped_res='Y', mapped_pos='1092',
+            description='SIGNAL_PEPTIDE_REMOVED',
+            gene_name='Egfr')
 

@@ -173,14 +173,17 @@ def test_rat_from_human():
 def test_length():
     assert uniprot_client.get_length('P15056') == 766
 
+
 @attr('webservice')
 def test_get_function():
     fun = uniprot_client.get_function('P15056')
     assert fun.startswith('Protein kinase involved in the transduction')
 
+
 def test_get_is_reviewed():
     assert not uniprot_client.is_reviewed('V9HWD6')
     assert uniprot_client.is_reviewed('P31946-1')
+
 
 def test_get_ids_from_refseq():
     up_ids = uniprot_client.get_ids_from_refseq('NP_003395.1')
@@ -189,3 +192,18 @@ def test_get_ids_from_refseq():
                                                 reviewed_only=True)
     assert up_ids == ['P31946-1']
 
+
+@attr('webservice')
+def test_get_signal_peptide():
+    # This is a valid entry local to the resource file
+    bp, ep = uniprot_client.get_signal_peptide('P00533')
+    assert bp == 1, bp
+    assert ep == 24, ep
+    # This one requires a web lookup
+    bp, ep = uniprot_client.get_signal_peptide('P00534')
+    assert bp is None, bp
+    assert ep is None, ep
+    # This one errors when doing web lookup
+    bp, ep = uniprot_client.get_signal_peptide('Q9H7H1')
+    assert bp is None, bp
+    assert ep is None, ep

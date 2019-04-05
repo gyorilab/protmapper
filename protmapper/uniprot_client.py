@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import rdflib
 import logging
@@ -20,6 +21,8 @@ rdf_prefixes = """
     PREFIX faldo: <http://biohackathon.org/resource/faldo#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> """
+
+xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
 
 @lru_cache(maxsize=10000)
@@ -661,6 +664,38 @@ def get_length(protein_id):
     return um.uniprot_length.get(protein_id)
 
 
+@lru_cache(maxsize=10000)
+def query_protein_xml(protein_id):
+    """Retrieve the XML entry for a given protein.
+
+    Some information is only available in the XML entry for UniProt
+    proteins (not RDF), therefore this endpoint is necessary.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein to look up.
+
+    Returns
+    -------
+    xml.etree.ElementTree
+        An ElementTree representation of the XML entry for the
+        protein.
+    """
+    try:
+        prim_ids = um.uniprot_sec[protein_id]
+        protein_id = prim_ids[0]
+    except KeyError:
+        pass
+    url = uniprot_url + protein_id + '.xml'
+    try:
+        ret = requests.get(url)
+        et = ElementTree.fromstring(ret.content)
+    except Exception as e:
+        return None
+    return et
+
+
 def get_function(protein_id):
     """Return the function description of a given protein.
 
@@ -674,9 +709,9 @@ def get_function(protein_id):
     str
         The function description of the protein.
     """
-    url = uniprot_url + protein_id + '.xml'
-    ret = requests.get(url)
-    et = ElementTree.fromstring(ret.content)
+    et = query_protein_xml(protein_id)
+    if et is None:
+        return None
     function = et.find('up:entry/up:comment[@type="function"]/up:text',
                        namespaces={'up': 'http://uniprot.org/uniprot'})
     if function is None:
@@ -684,7 +719,66 @@ def get_function(protein_id):
     return function.text
 
 
+def get_signal_peptide(protein_id, web_fallback=True):
+    """Return the position of a signal peptide for the given protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein whose signal peptide position
+        is to be returned.
+    web_fallback : Optional[bool]
+        If True the UniProt web service is used to download information when
+        the local resource file doesn't contain the right information.
+
+    Returns
+    -------
+    tuple of int
+        The beginning and end position of the signal peptide as a tuple
+        of integers.
+    """
+    # Note, we use False here to differentiate from None
+    entry = um.signal_peptide.get(protein_id, False)
+    if entry is not False or not web_fallback:
+        return entry
+    et = query_protein_xml(protein_id)
+    if et is None:
+        return None, None
+    location = et.find(
+        'up:entry/up:feature[@type="signal peptide"]/up:location',
+        namespaces=xml_ns)
+    begin_pos = None
+    end_pos = None
+    if location is not None:
+        begin = location.find('up:begin', namespaces=xml_ns)
+        if begin is not None:
+            begin_pos = begin.attrib.get('position')
+            if begin_pos is not None:
+                begin_pos = int(begin_pos)
+        end = location.find('up:end', namespaces=xml_ns)
+        if end is not None:
+            end_pos = end.attrib.get('position')
+            if end_pos is not None:
+                end_pos = int(end_pos)
+    return begin_pos, end_pos
+
+
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
+    """Return UniProt IDs from a RefSeq ID".
+
+    Parameters
+    ----------
+    refseq_id : str
+        The RefSeq ID of the protein to map.
+    reviewed_only : Optional[bool]
+        If True, only reviewed UniProt IDs are returned.
+        Default: False
+
+    Returns
+    -------
+    list of str
+        A list of UniProt IDs corresponding to the RefSeq ID.
+    """
     try:
         up_ids = um.refseq_uniprot[refseq_id]
     except KeyError:
@@ -709,7 +803,7 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed) = maps
+         self._uniprot_reviewed, self._uniprot_signal_peptide) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -812,10 +906,17 @@ class UniprotMapper(object):
             self.initialize_refseq()
         return self._refseq_uniprot
 
+    @property
+    def signal_peptide(self):
+        if not self.initialized:
+            self.initialize()
+        return self._uniprot_signal_peptide
+
+
 um = UniprotMapper()
 
 
-def _build_uniprot_entries(from_pickle=True):
+def _build_uniprot_entries():
     up_entries_file = resource_manager.get_create_resource_file('up')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
@@ -825,13 +926,15 @@ def _build_uniprot_entries(from_pickle=True):
     uniprot_mgi_reverse = {}
     uniprot_rgd_reverse = {}
     uniprot_length = {}
+    uniprot_signal_peptide = {}
     uniprot_reviewed = set()
     with open(up_entries_file, 'r') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
         for row in csv_rows:
-            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed = row
+            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
+                signal_peptide = row
             # Store the entry in the reviewed set
             if reviewed == 'reviewed':
                 uniprot_reviewed.add(up_id)
@@ -849,9 +952,17 @@ def _build_uniprot_entries(from_pickle=True):
                 if rgd_ids:
                     uniprot_rgd[up_id] = rgd_ids[0]
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
+            uniprot_signal_peptide[up_id] = (None, None)
+            if signal_peptide:
+                match = re.match(r'SIGNAL (\d+) (\d+) ', signal_peptide)
+                if match:
+                    beg_pos, end_pos = match.groups()
+                    uniprot_signal_peptide[up_id] = \
+                        (int(beg_pos), int(end_pos))
+
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed)
+            uniprot_length, uniprot_reviewed, uniprot_signal_peptide)
 
 
 def _build_human_mouse_rat():
@@ -926,7 +1037,6 @@ def _build_uniprot_sequences():
                                                          cached=True)
     iso_file = resource_manager.get_create_resource_file('isoforms',
                                                          cached=True)
-    sequences = {}
     logger.info("Loading Swissprot sequences...")
     sp_seq = load_fasta_sequences(seq_file)
     logger.info("Loading Uniprot isoform sequences...")
