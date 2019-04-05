@@ -5,7 +5,7 @@ def main():
     install_list = ['requests', 'rdflib', 'boto3']
 
     setup(name='protmapper',
-          version='0.0.4',
+          version='0.0.6',
           description='Map protein sites to human reference sequence.',
           long_description=('The protmapper is a tool to map inconsistent '
                             'protein sites (i.e., not matching the human '
