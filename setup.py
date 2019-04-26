@@ -1,11 +1,12 @@
 import sys
 from setuptools import setup
 
+
 def main():
     install_list = ['requests', 'rdflib', 'boto3']
 
     setup(name='protmapper',
-          version='0.0.6',
+          version='0.0.7',
           description='Map protein sites to human reference sequence.',
           long_description=('The protmapper is a tool to map inconsistent '
                             'protein sites (i.e., not matching the human '
@@ -26,7 +27,6 @@ def main():
             ],
           keywords=['protein', 'proteomics', 'sequence', 'alignment',
                     'assembly', 'post-translational', 'modification'],
-          #project_urls={'Documentation': 'https://protmapper.readthedocs.io'},
           packages=['protmapper'],
           install_requires=install_list,
           tests_require=['nose'],
