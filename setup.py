@@ -1,6 +1,7 @@
 import sys
 from setuptools import setup
 
+
 def main():
     install_list = ['requests', 'rdflib', 'boto3']
 
@@ -26,7 +27,6 @@ def main():
             ],
           keywords=['protein', 'proteomics', 'sequence', 'alignment',
                     'assembly', 'post-translational', 'modification'],
-          #project_urls={'Documentation': 'https://protmapper.readthedocs.io'},
           packages=['protmapper'],
           install_requires=install_list,
           tests_require=['nose'],

@@ -1,13 +1,14 @@
 import os
 import csv
 import zlib
-import logging
-from ftplib import FTP
-from io import BytesIO, StringIO
 import boto3
+import logging
 import requests
 import botocore
+from ftplib import FTP
+from io import BytesIO, StringIO
 from urllib.request import urlretrieve
+from . import __version__
 
 
 logger = logging.getLogger('protmapper.resources')
@@ -15,7 +16,7 @@ logger = logging.getLogger('protmapper.resources')
 
 # If the protmapper resource directory does not exist, try to create it
 home_dir = os.path.expanduser('~')
-resource_dir = os.path.join(home_dir, '.protmapper')
+resource_dir = os.path.join(home_dir, '.protmapper', __version__)
 
 
 if not os.path.isdir(resource_dir):
@@ -162,6 +163,7 @@ def download_refseq_seq(out_file, cached=True):
         return
     else:
         raise NotImplementedError()
+
 
 def download_refseq_uniprot(out_file, cached=True):
     if cached:
