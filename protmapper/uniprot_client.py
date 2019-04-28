@@ -376,14 +376,19 @@ def get_synonyms(protein_id):
     return ret
 
 
-@lru_cache(maxsize=1000)
+@lru_cache(maxsize=10000)
 def get_sequence(protein_id):
+    # Get the primary ID
     try:
         prim_ids = um.uniprot_sec[protein_id]
         protein_id = prim_ids[0]
     except KeyError:
         pass
     # Try to get the sequence from the downloaded sequence files
+    if '-' in protein_id:
+        base, iso = protein_id.split('-')
+        if iso == '1':
+            protein_id = base
     seq = um.uniprot_sequences.get(protein_id)
     if seq is None:
         url = uniprot_url + '%s.fasta' % protein_id
