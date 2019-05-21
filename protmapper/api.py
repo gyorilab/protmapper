@@ -480,8 +480,20 @@ class ProtMapper(object):
         human_pos = pspmapping.mapped_pos
         # Check if the site mapped from PSP is valid in the Uniprot sequence
         # for the ID that we're interested in
-        site_valid = uniprot_client.verify_location(pspmapping.mapped_id,
-                                  pspmapping.mapped_res, pspmapping.mapped_pos)
+        try:
+            site_valid = uniprot_client.verify_location(pspmapping.mapped_id,
+                                      pspmapping.mapped_res,
+                                      pspmapping.mapped_pos)
+        except HTTPError as ex:
+            if ex.response.status_code == 404:
+                error_code = 'UNIPROT_HTTP_NOT_FOUND'
+            else:
+                error_code = 'UNIPROT_HTTP_OTHER'
+            # Set error_code; valid will set to None, not True/False
+            mapped_site = MappedSite(up_id, None, residue, position,
+                                     error_code=error_code)
+            return mapped_site
+
         # If the mapped site is valid, we're done!
         if site_valid:
             # If the residue is different, change the code accordingly
