@@ -321,7 +321,7 @@ class ProtMapper(object):
                               error_code='INVALID_SITE',
                               description=str(ex))
         # Get the gene name from Uniprot
-        gene_name = uniprot_client.get_gene_name(up_id)
+        gene_name = uniprot_client.get_gene_name(up_id, web_fallback=False)
         site_key = (up_id, residue, position)
         # First, check the cache to potentially avoid a costly sequence
         # lookup
