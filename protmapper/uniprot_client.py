@@ -259,17 +259,15 @@ def get_gene_name(protein_id, web_fallback=True):
     protein_id = get_primary_id(protein_id)
     try:
         gene_name = um.uniprot_gene_name[protein_id]
-        # There are cases when the entry is in the resource
-        # table but the gene name is empty. Often this gene
-        # name is actually available in the web service RDF
-        # so here we return only if the gene name is not None
-        # and not empty string.
+        # We only get here if the protein_id was in the dict
         if gene_name:
             return gene_name
+        # We do it this way to return None for empty strings
+        else:
+            return None
     except KeyError:
-        pass
-    if not web_fallback:
-        return None
+        if not web_fallback:
+            return None
 
     g = query_protein(protein_id)
     if g is None:
@@ -284,9 +282,8 @@ def get_gene_name(protein_id, web_fallback=True):
     res = g.query(query)
     if res:
         gene_name = [r for r in res][0][0].toPython()
-        if not gene_name:
-            return None
-        return gene_name
+        if gene_name:
+            return gene_name
     return None
 
 
