@@ -478,8 +478,16 @@ class ProtMapper(object):
         # If there is a mapping, check to make sure that it is valid wrt to the
         # reference sequence
         human_pos = pspmapping.mapped_pos
+
         # Check if the site mapped from PSP is valid in the Uniprot sequence
         # for the ID that we're interested in
+        # PSP sometimes returns a non-UP ID like NP_001184222 which we want
+        # to control for here, we do that by looking up the mnemonic
+        if not uniprot_client.get_mnemonic(pspmapping.mapped_id,
+                                           web_fallback=False):
+            return MappedSite(orig_id, None, res, pos,
+                              error_code='PSP_MAPPED_ID_NOT_UP')
+        # At this point the ID is supposed to be valid UP
         try:
             site_valid = uniprot_client.verify_location(pspmapping.mapped_id,
                                       pspmapping.mapped_res,
