@@ -490,7 +490,7 @@ class ProtMapper(object):
             else:
                 error_code = 'UNIPROT_HTTP_OTHER'
             # Set error_code; valid will set to None, not True/False
-            mapped_site = MappedSite(up_id, None, residue, position,
+            mapped_site = MappedSite(orig_id, None, res, pos,
                                      error_code=error_code)
             return mapped_site
 
