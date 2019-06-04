@@ -192,6 +192,7 @@ def get_mnemonic(protein_id, web_fallback=False):
     mnemonic : str
         The UniProt mnemonic corresponding to the given Uniprot ID.
     """
+    protein_id = protein_id.split('-', maxsplit=1)[0]
     try:
         mnemonic = um.uniprot_mnemonic[protein_id]
         return mnemonic

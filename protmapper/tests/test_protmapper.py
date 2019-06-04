@@ -410,7 +410,7 @@ def test_tau_sites():
                             orig_res='S', orig_pos='320', mapped_id='P10636',
                             mapped_res='S', mapped_pos='637',
                             description='position from isoform 8',
-                            gene_name='MAPT')
+                            gene_name='MAPT'), ms
 
     ms = pm.map_to_human_ref('P10636', 'uniprot', 'T', '153')
     assert isinstance(ms, MappedSite)
@@ -418,7 +418,7 @@ def test_tau_sites():
                             orig_res='T', orig_pos='153', mapped_id='P10636-8',
                             mapped_res='T', mapped_pos='153',
                             description='INFERRED_ALTERNATIVE_ISOFORM',
-                            gene_name='MAPT')
+                            gene_name='MAPT'), ms
 
 
 def test_manual_vs_methionine():
