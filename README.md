@@ -18,7 +18,7 @@ Alternatively, the Protmapper Docker container can be run to expose it as
 a REST API as:
 
 ```
-docker run -d -p 8008:8008 protmapper:latest
+docker run -d -p 8008:8008 labsyspharm/protmapper:latest
 ```
 
 ## Documentation
