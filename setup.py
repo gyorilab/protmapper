@@ -27,7 +27,7 @@ def main():
             ],
           keywords=['protein', 'proteomics', 'sequence', 'alignment',
                     'assembly', 'post-translational', 'modification'],
-          packages=['protmapper'],
+          packages=['protmapper', 'protmapper.rest_api'],
           install_requires=install_list,
           tests_require=['nose'],
           extras_require={'rest_api': ['flask', 'flask_cors']},
