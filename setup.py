@@ -30,6 +30,7 @@ def main():
           packages=['protmapper'],
           install_requires=install_list,
           tests_require=['nose'],
+          extras_require={'rest_api': ['flask', 'flask_cors']},
           include_package_data=True,
         )
 
