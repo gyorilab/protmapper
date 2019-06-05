@@ -10,6 +10,7 @@ Protmapper documentation
    :maxdepth: 3
 
    modules/index
+   rest_api
 
 
 * :ref:`genindex`
