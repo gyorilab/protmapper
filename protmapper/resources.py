@@ -31,11 +31,14 @@ def _download_from_s3(key, out_file):
                       config=botocore.client.Config(
                           signature_version=botocore.UNSIGNED))
     tc = boto3.s3.transfer.TransferConfig(use_threads=False)
-    s3.download_file('bigmech', 'travis/%s' % key, out_file, Config=tc)
+    # Path to the versioned resource file
+    full_key = 'protmapper/%s/%s' % (__version__, key)
+    print(full_key)
+    s3.download_file('bigmech', full_key, out_file, Config=tc)
 
 
 def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432):
-    ftp = FTP('ftp.uniprot.org')
+    ftp = FTP(ftp_host)
     ftp.login()
     gzf_bytes = BytesIO()
     ftp.retrbinary('RETR %s' % ftp_path,
@@ -159,10 +162,11 @@ def download_isoforms(out_file, cached=True):
 
 def download_refseq_seq(out_file, cached=True):
     if cached:
-        _download_from_s3('GRCh38_latest_protein.faa', out_file)
+        _download_from_s3('refseq_sequence.fasta', out_file)
         return
-    else:
-        raise NotImplementedError()
+    ftp_path = ('/refseq/H_sapiens/annotation/GRCh38_latest/'
+                'refseq_identifiers/GRCh38_latest_protein.faa.gz')
+    _download_ftp_gz('ftp.ncbi.nlm.nih.gov', ftp_path, out_file)
 
 
 def download_refseq_uniprot(out_file, cached=True):
@@ -309,4 +313,4 @@ resource_manager = ResourceManager(RESOURCE_MAP)
 if __name__ == '__main__':
     resource_ids = resource_manager.get_resource_ids()
     for resource_id in resource_ids:
-        resource_manager.get_create_resource_file(resource_id)
+        resource_manager.get_create_resource_file(resource_id, cached=True)
