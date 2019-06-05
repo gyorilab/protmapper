@@ -4,11 +4,21 @@ sequence based on UniProt, PhosphoSitePlus, and manual curation.
 
 
 ## Installation
+
+### Python package
 The Protmapper is a Python package that is available on PyPI and can be
 installed as:
 
 ```
 pip install protmapper
+```
+
+### Docker container
+Alternatively, the Protmapper Docker container can be run to expose it as
+a REST API as:
+
+```
+docker run -d -p 8008:8008 protmapper:latest
 ```
 
 ## Documentation
