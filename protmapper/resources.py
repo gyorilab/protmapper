@@ -33,7 +33,6 @@ def _download_from_s3(key, out_file):
     tc = boto3.s3.transfer.TransferConfig(use_threads=False)
     # Path to the versioned resource file
     full_key = 'protmapper/%s/%s' % (__version__, key)
-    print(full_key)
     s3.download_file('bigmech', full_key, out_file, Config=tc)
 
 
