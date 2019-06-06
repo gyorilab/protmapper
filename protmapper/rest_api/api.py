@@ -53,7 +53,3 @@ def map_sitelist_to_human_ref():
 
     ms_list = pm.map_sitelist_to_human_ref(**arg_values)
     return jsonify([ms.to_json() for ms in ms_list])
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8008)

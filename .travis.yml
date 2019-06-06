@@ -8,7 +8,7 @@ python:
 before_install:
   - pip install nose coverage python-coveralls
 install:
-  - pip install .
+  - pip install .[rest_api]
 script:
   - nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
 after_success:
