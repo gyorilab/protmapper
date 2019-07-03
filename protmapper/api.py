@@ -698,9 +698,9 @@ def _get_uniprot_id(prot_id, prot_ns):
         # Try to get UniProt ID from HGNC
         up_id = uniprot_ids.get(hgnc_id)
         # If the UniProt ID is a list then choose the first one.
-        if up_id and (not isinstance(up_id, basestring) and
-                      isinstance(up_id[0], basestring)):
-            up_id = up_id[0]
+        parts = up_id.split(', ')
+        if len(parts) > 1:
+            up_id = parts[0]
     return up_id
 
 

@@ -4,7 +4,7 @@ from os.path import join, abspath, dirname, isfile
 import pickle
 from nose.tools import raises
 from protmapper.api import ProtMapper, _validate_site, MappedSite, \
-                           InvalidSiteException
+                           InvalidSiteException, _get_uniprot_id
 
 
 @raises(InvalidSiteException)
@@ -459,3 +459,10 @@ def test_egfr_mouse_1068_to_human_1092():
             description='SIGNAL_PEPTIDE_REMOVED',
             gene_name='Egfr')
 
+
+def test_mutliple_up_ids():
+    up_id = _get_uniprot_id('TMPO', 'hgnc')
+    assert up_id == 'P42166'
+    pm = ProtMapper()
+    ms = pm.map_peptide_to_human_ref('TMPO', 'hgnc', 'RKVPRLSEKSVEE', 7)
+    assert ms.up_id == 'P42166'
