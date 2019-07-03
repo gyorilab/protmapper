@@ -7,14 +7,6 @@ from protmapper.resources import resource_dir
 from protmapper import phosphosite_client, uniprot_client
 
 
-# Python 2
-try:
-    basestring
-# Python 3
-except:
-    basestring = str
-
-
 logger = logging.getLogger(__name__)
 
 
