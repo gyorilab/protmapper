@@ -561,7 +561,7 @@ class ProtMapper(object):
             One of 'uniprot' or 'hgnc' indicating the type of ID given.
         peptide : str
             A string of amino acid symbols representing a peptide.
-        site_pos : str
+        site_pos : int
             A site position within the peptide. Note: site_pos is 1-indexed.
 
         Returns
