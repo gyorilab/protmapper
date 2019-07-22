@@ -23,3 +23,6 @@ docker run -d -p 8008:8008 labsyspharm/protmapper:latest
 
 ## Documentation
 For a detailed documentation of the Protmapper, visit http://protmapper.readthedocs.io
+
+## Funding
+The development of protmapper is funded under the DARPA Automated Scientific Discovery Framework project (ARO grant W911NF018-1-0124).
