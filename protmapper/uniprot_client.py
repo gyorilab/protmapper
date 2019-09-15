@@ -792,8 +792,8 @@ def get_ids_from_refseq(refseq_id, reviewed_only=False):
 class UniprotMapper(object):
     def __init__(self):
         self.initialized = False
-        self.initialized_hmr = False
         self.initialized_seq = False
+        self.initialized_hgnc = False
         self.initialized_refseq = False
 
     def initialize(self):
@@ -808,10 +808,11 @@ class UniprotMapper(object):
 
         self.initialized = True
 
-    def initialize_hmr(self):
+    def initialize_hgnc(self):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
-        self.initialized_hmr = True
+        _, _, self._uniprot_hgnc = _build_hgnc_mappings()
+        self.initialized_hgnc = True
 
     def initialize_seq(self):
         self._sequences = _build_uniprot_sequences()
@@ -826,6 +827,12 @@ class UniprotMapper(object):
         if not self.initialized:
             self.initialize()
         return self._uniprot_gene_name
+
+    @property
+    def uniprot_hgnc(self):
+        if not self.initialized:
+            self.initialize()
+        return self._uniprot_hgnc
 
     @property
     def uniprot_mnemonic(self):
@@ -883,14 +890,14 @@ class UniprotMapper(object):
 
     @property
     def uniprot_human_mouse(self):
-        if not self.initialized_hmr:
-            self.initialize_hmr()
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
         return self._uniprot_human_mouse
 
     @property
     def uniprot_human_rat(self):
-        if not self.initialized_hmr:
-            self.initialize_hmr()
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
         return self._uniprot_human_rat
 
     @property
