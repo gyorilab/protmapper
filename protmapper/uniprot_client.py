@@ -846,7 +846,7 @@ class UniprotMapper(object):
 
     @property
     def uniprot_hgnc(self):
-        if not self.initialized:
+        if not self.initialized_hgnc:
             self.initialize_hgnc()
         return self._uniprot_hgnc
 
