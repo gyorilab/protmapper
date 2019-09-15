@@ -3,6 +3,7 @@ import csv
 import zlib
 import boto3
 import logging
+import argparse
 import requests
 import botocore
 from ftplib import FTP
@@ -310,6 +311,20 @@ resource_manager = ResourceManager(RESOURCE_MAP)
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    # By default we use the cache
+    parser.add_argument('--uncached', action='store_true')
+    # By default we use get_create which doesn't do anything if the resource
+    # already exists. With the download flag, we force re-download.
+    parser.add_argument('--download', action='store_true')
+    args = parser.parse_args()
     resource_ids = resource_manager.get_resource_ids()
     for resource_id in resource_ids:
-        resource_manager.get_create_resource_file(resource_id, cached=True)
+        if not args.download:
+            resource_manager.get_create_resource_file(resource_id,
+                                                      cached=(not
+                                                              args.uncached))
+        else:
+            resource_manager.download_resource_file(resource_id,
+                                                    cached=(not args.uncached))
+
