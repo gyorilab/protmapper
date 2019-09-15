@@ -684,11 +684,11 @@ def _get_uniprot_id(prot_id, prot_ns):
     # Otherwise, we get the Uniprot ID from the HGNC name
     elif prot_ns == 'hgnc':
         # Get the HGNC ID
-        hgnc_id = hgnc_ids.get(prot_id)
+        hgnc_id = hgnc_name_to_id.get(prot_id)
         if not hgnc_id:
             return None
         # Try to get UniProt ID from HGNC
-        up_id = uniprot_ids.get(hgnc_id)
+        up_id = hgnc_id_to_up.get(hgnc_id)
         # If the UniProt ID is a list then choose the first one.
         parts = up_id.split(', ')
         if len(parts) > 1:
@@ -706,4 +706,5 @@ default_mapper = ProtMapper(default_site_map)
 information found in resources/curated_site_map.csv'."""
 
 
-hgnc_ids, uniprot_ids = uniprot_client._build_hgnc_mappings()
+hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id = \
+     uniprot_client._build_hgnc_mappings()

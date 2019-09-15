@@ -207,3 +207,13 @@ def test_get_signal_peptide():
     bp, ep = uniprot_client.get_signal_peptide('Q9H7H1')
     assert bp is None, bp
     assert ep is None, ep
+
+
+def test_get_hgnc_id():
+    hgnc_id = uniprot_client.get_hgnc_id('P07305')
+    assert hgnc_id == '4714', hgnc_id
+    # NRXN2: ['P58401', 'Q9P2S2'] 8009
+    hgnc_id = uniprot_client.get_hgnc_id('P58401')
+    assert hgnc_id == '8009', hgnc_id
+    hgnc_id = uniprot_client.get_hgnc_id('Q9P2S2')
+    assert hgnc_id == '8009', hgnc_id

@@ -240,10 +240,6 @@ def get_id_from_mnemonic(uniprot_mnemonic):
 def get_gene_name(protein_id, web_fallback=True):
     """Return the gene name for the given UniProt ID.
 
-    This is an alternative to get_hgnc_name and is useful when
-    HGNC name is not availabe (for instance, when the organism
-    is not homo sapiens).
-
     Parameters
     ----------
     protein_id : str
@@ -555,6 +551,22 @@ def is_rat(protein_id):
     return _is_organism(protein_id, 'RAT')
 
 
+def get_hgnc_id(protein_id):
+    """Return the HGNC ID given the protein id of a human protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        UniProt ID of the human protein
+
+    Returns
+    -------
+    hgnc_id : str
+        HGNC ID of the human protein
+    """
+    return um.uniprot_hgnc.get(protein_id)
+
+
 def get_mgi_id(protein_id):
     """Return the MGI ID given the protein id of a mouse protein.
 
@@ -796,8 +808,8 @@ def get_ids_from_refseq(refseq_id, reviewed_only=False):
 class UniprotMapper(object):
     def __init__(self):
         self.initialized = False
-        self.initialized_hmr = False
         self.initialized_seq = False
+        self.initialized_hgnc = False
         self.initialized_refseq = False
 
     def initialize(self):
@@ -812,10 +824,11 @@ class UniprotMapper(object):
 
         self.initialized = True
 
-    def initialize_hmr(self):
+    def initialize_hgnc(self):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
-        self.initialized_hmr = True
+        _, _, self._uniprot_hgnc = _build_hgnc_mappings()
+        self.initialized_hgnc = True
 
     def initialize_seq(self):
         self._sequences = _build_uniprot_sequences()
@@ -830,6 +843,12 @@ class UniprotMapper(object):
         if not self.initialized:
             self.initialize()
         return self._uniprot_gene_name
+
+    @property
+    def uniprot_hgnc(self):
+        if not self.initialized:
+            self.initialize_hgnc()
+        return self._uniprot_hgnc
 
     @property
     def uniprot_mnemonic(self):
@@ -887,14 +906,14 @@ class UniprotMapper(object):
 
     @property
     def uniprot_human_mouse(self):
-        if not self.initialized_hmr:
-            self.initialize_hmr()
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
         return self._uniprot_human_mouse
 
     @property
     def uniprot_human_rat(self):
-        if not self.initialized_hmr:
-            self.initialize_hmr()
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
         return self._uniprot_human_rat
 
     @property
@@ -1002,18 +1021,22 @@ def _build_hgnc_mappings():
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
-        hgnc_ids = {}
-        uniprot_ids = {}
+        hgnc_name_to_id = {}
+        hgnc_id_to_up = {}
+        up_to_hgnc_id = {}
         for row in csv_rows:
             hgnc_id = row[0][5:]
             hgnc_status = row[3]
             if hgnc_status == 'Approved':
                 hgnc_name = row[1]
-                hgnc_ids[hgnc_name] = hgnc_id
+                hgnc_name_to_id[hgnc_name] = hgnc_id
             # Uniprot
             uniprot_id = row[6]
-            uniprot_ids[hgnc_id] = uniprot_id
-    return hgnc_ids, uniprot_ids
+            hgnc_id_to_up[hgnc_id] = uniprot_id
+            uniprot_ids = uniprot_id.split(', ')
+            for upid in uniprot_ids:
+                up_to_hgnc_id[upid] = hgnc_id
+    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id
 
 
 def _build_uniprot_sec():
