@@ -240,10 +240,6 @@ def get_id_from_mnemonic(uniprot_mnemonic):
 def get_gene_name(protein_id, web_fallback=True):
     """Return the gene name for the given UniProt ID.
 
-    This is an alternative to get_hgnc_name and is useful when
-    HGNC name is not availabe (for instance, when the organism
-    is not homo sapiens).
-
     Parameters
     ----------
     protein_id : str
@@ -1002,18 +998,22 @@ def _build_hgnc_mappings():
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
-        hgnc_ids = {}
-        uniprot_ids = {}
+        hgnc_name_to_id = {}
+        hgnc_id_to_up = {}
+        up_to_hgnc_id = {}
         for row in csv_rows:
             hgnc_id = row[0][5:]
             hgnc_status = row[3]
             if hgnc_status == 'Approved':
                 hgnc_name = row[1]
-                hgnc_ids[hgnc_name] = hgnc_id
+                hgnc_name_to_id[hgnc_name] = hgnc_id
             # Uniprot
             uniprot_id = row[6]
-            uniprot_ids[hgnc_id] = uniprot_id
-    return hgnc_ids, uniprot_ids
+            hgnc_id_to_up[hgnc_id] = uniprot_id
+            uniprot_ids = uniprot_id.split(', ')
+            for upid in uniprot_ids:
+                up_to_hgnc_id[upid] = hgnc_id
+    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id
 
 
 def _build_uniprot_sec():
