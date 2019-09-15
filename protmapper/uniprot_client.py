@@ -551,6 +551,22 @@ def is_rat(protein_id):
     return _is_organism(protein_id, 'RAT')
 
 
+def get_hgnc_id(protein_id):
+    """Return the HGNC ID given the protein id of a human protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        UniProt ID of the human protein
+
+    Returns
+    -------
+    hgnc_id : str
+        HGNC ID of the human protein
+    """
+    return um.uniprot_hgnc.get(protein_id)
+
+
 def get_mgi_id(protein_id):
     """Return the MGI ID given the protein id of a mouse protein.
 
@@ -831,7 +847,7 @@ class UniprotMapper(object):
     @property
     def uniprot_hgnc(self):
         if not self.initialized:
-            self.initialize()
+            self.initialize_hgnc()
         return self._uniprot_hgnc
 
     @property
