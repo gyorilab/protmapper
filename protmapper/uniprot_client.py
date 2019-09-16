@@ -126,6 +126,13 @@ def get_primary_id(protein_id):
         human one is returned. If there are no human primary IDs then the
         first primary found is returned.
     """
+    parts = protein_id.split('-', maxsplit=1)
+    protein_id = parts[0]
+    isoform = None
+    if len(parts) == 2:
+        if re.match(r'\d+', parts[1]):
+            isoform = parts[1]
+    protein_id = [0]
     primaries = um.uniprot_sec.get(protein_id)
     if primaries:
         if len(primaries) > 1:
@@ -139,6 +146,9 @@ def get_primary_id(protein_id):
         # If we haven't returned anything then we just return the
         # first primary id
         return primaries[0]
+    if isoform:
+        protein_id = '%s-%s' % (protein_id, isoform)
+
     # If there is not secondary entry the we assume this is a primary entry
     return protein_id
 
@@ -192,7 +202,7 @@ def get_mnemonic(protein_id, web_fallback=False):
     mnemonic : str
         The UniProt mnemonic corresponding to the given Uniprot ID.
     """
-    protein_id = protein_id.split('-', maxsplit=1)[0]
+    protein_id = get_primary_id(protein_id)
     try:
         mnemonic = um.uniprot_mnemonic[protein_id]
         return mnemonic
@@ -372,17 +382,12 @@ def get_synonyms(protein_id):
 
 @lru_cache(maxsize=10000)
 def get_sequence(protein_id):
-    # Get the primary ID
-    try:
-        prim_ids = um.uniprot_sec[protein_id]
-        protein_id = prim_ids[0]
-    except KeyError:
-        pass
     # Try to get the sequence from the downloaded sequence files
     if '-' in protein_id:
         base, iso = protein_id.split('-')
         if iso == '1':
             protein_id = base
+    protein_id = get_primary_id(protein_id)
     seq = um.uniprot_sequences.get(protein_id)
     if seq is None:
         url = uniprot_url + '%s.fasta' % protein_id
@@ -564,6 +569,7 @@ def get_hgnc_id(protein_id):
     hgnc_id : str
         HGNC ID of the human protein
     """
+    protein_id = get_primary_id(protein_id)
     return um.uniprot_hgnc.get(protein_id)
 
 
@@ -580,6 +586,7 @@ def get_mgi_id(protein_id):
     mgi_id : str
         MGI ID of the mouse protein
     """
+    protein_id = get_primary_id(protein_id)
     return um.uniprot_mgi.get(protein_id)
 
 
@@ -596,6 +603,7 @@ def get_rgd_id(protein_id):
     rgd_id : str
         RGD ID of the rat protein
     """
+    protein_id = get_primary_id(protein_id)
     return um.uniprot_rgd.get(protein_id)
 
 
@@ -644,6 +652,7 @@ def get_mouse_id(human_protein_id):
     mouse_protein_id : str
         The UniProt ID of a mouse protein orthologous to the given human protein
     """
+    protein_id = get_primary_id(human_protein_id)
     return um.uniprot_human_mouse.get(human_protein_id)
 
 
@@ -660,6 +669,7 @@ def get_rat_id(human_protein_id):
     rat_protein_id : str
         The UniProt ID of a rat protein orthologous to the given human protein
     """
+    protein_id = get_primary_id(human_protein_id)
     return um.uniprot_human_rat.get(human_protein_id)
 
 
@@ -676,6 +686,7 @@ def get_length(protein_id):
     length : int
         The length of the protein in amino acids.
     """
+    protein_id = get_primary_id(protein_id)
     return um.uniprot_length.get(protein_id)
 
 
@@ -753,6 +764,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
         of integers.
     """
     # Note, we use False here to differentiate from None
+    protein_id = get_primary_id(protein_id)
     entry = um.signal_peptide.get(protein_id, False)
     if entry is not False or not web_fallback:
         return entry

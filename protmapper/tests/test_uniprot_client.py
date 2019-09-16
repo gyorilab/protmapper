@@ -187,7 +187,7 @@ def test_get_is_reviewed():
 
 def test_get_ids_from_refseq():
     up_ids = uniprot_client.get_ids_from_refseq('NP_003395.1')
-    assert set(up_ids) == set(['V9HWD6', 'P31946-1'])
+    assert set(up_ids) == {'V9HWD6', 'P31946-1'}, set(up_ids)
     up_ids = uniprot_client.get_ids_from_refseq('NP_003395.1',
                                                 reviewed_only=True)
     assert up_ids == ['P31946-1']
