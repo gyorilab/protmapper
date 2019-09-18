@@ -37,7 +37,12 @@ def main():
         help=('Path to the output file to be generated. Each line of the '
               'output file corresponds to a line in the input file. Each line'
               'represents a mapped site produced by Protmapper.'))
-
+    parser.add_argument('--peptide',
+        help=('If given, the third element of each row of the input file is a '
+              'peptide (amino acid sequence) rather than a single amino acid '
+              'residue. In this case, peptide-oriented mappings are '
+              'applied. In this mode the following boolean arguments are '
+              'ignored.'), action='store_true')
     parser.add_argument('--no_methionine_offset', help=(
         'If given, will not check for off-by-one errors in site position ('
         'possibly) attributable to site numbering from mature proteins after '
@@ -60,7 +65,10 @@ def main():
 
     pm = ProtMapper()
     sites = process_input(args.input)
-    mapped_sites = pm.map_sitelist_to_human_ref(sites, **mapping_kwargs)
+    if args.peptide:
+        mapped_sites = [pm.map_peptide_to_human_ref(*site) for site in sites]
+    else:
+        mapped_sites = pm.map_sitelist_to_human_ref(sites, **mapping_kwargs)
     dump_output(args.output, mapped_sites)
 
 
