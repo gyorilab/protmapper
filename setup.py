@@ -32,6 +32,8 @@ def main():
           tests_require=['nose'],
           extras_require={'rest_api': ['flask', 'flask_cors']},
           include_package_data=True,
+          entry_points={'console_scripts':
+                        ['protmapper = protmapper.cli:main']},
         )
 
 

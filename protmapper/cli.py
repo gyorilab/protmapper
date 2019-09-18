@@ -21,8 +21,7 @@ def dump_output(fname, mapped_sites):
         writer = csv.writer(fh)
         writer.writerows(rows)
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description='Run Protmapper on a list of proteins with residues and '
                     'sites provided in a text file.')
@@ -43,3 +42,7 @@ if __name__ == '__main__':
     sites = process_input(args.input)
     mapped_sites = pm.map_sitelist_to_human_ref(sites)
     dump_output(args.output, mapped_sites)
+
+
+if __name__ == '__main__':
+    main()
