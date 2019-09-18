@@ -58,6 +58,9 @@ class MappedSite(object):
     gene_name : str
         The standard (HGNC) gene name of the protein that was mapped.
     """
+    attrs = ('up_id', 'error_code', 'valid', 'orig_res', 'orig_pos',
+             'mapped_id', 'mapped_res', 'mapped_pos', 'description',
+             'gene_name')
     def __init__(self, up_id, valid, orig_res, orig_pos,
                  error_code=None, mapped_id=None, mapped_res=None,
                  mapped_pos=None, description=None, gene_name=None):
@@ -76,41 +79,28 @@ class MappedSite(object):
         quote_args = lambda args: tuple([a if a in (None, True, False)
                                            else ("'%s'" % a) for a in args])
         return ("MappedSite(up_id=%s, error_code=%s, valid=%s, "
-                    "orig_res=%s, orig_pos=%s, mapped_id=%s, mapped_res=%s, "
-                    "mapped_pos=%s, description=%s, gene_name=%s)" %
+                "orig_res=%s, orig_pos=%s, mapped_id=%s, mapped_res=%s, "
+                "mapped_pos=%s, description=%s, gene_name=%s)" %
                 quote_args([self.up_id, self.error_code, self.valid,
                             self.orig_res, self.orig_pos, self.mapped_id,
                             self.mapped_res, self.mapped_pos, self.description,
                             self.gene_name]))
 
     def __eq__(self, other):
-        if (self.up_id == other.up_id and self.valid == other.valid and
-            self.error_code == other.error_code and
-            self.orig_res == other.orig_res and
-            self.orig_pos == other.orig_pos and
-            self.mapped_id == other.mapped_id and
-            self.mapped_res == other.mapped_res and
-            self.mapped_pos == other.mapped_pos and
-            self.description == other.description and
-            self.gene_name == other.gene_name):
-            return True
-        else:
-            return False
+        return hash(self) == hash(other)
 
     def __ne__(self, other):
         return not(self == other)
 
     def __hash__(self):
-        return hash((self.up_id, self.error_code, self.valid, self.orig_res,
-                     self.orig_pos, self.mapped_id, self.mapped_res,
-                     self.mapped_pos, self.description, self.gene_name))
+        return hash(tuple(self.to_list()))
 
     def to_json(self):
-        keys = ('up_id', 'error_code', 'valid', 'orig_res', 'orig_pos',
-                'mapped_id', 'mapped_res', 'mapped_pos', 'description',
-                'gene_name')
-        jd = {key: self.__dict__.get(key) for key in keys}
+        jd = {a: self.__dict__.get(a) for a in self.attrs}
         return jd
+
+    def to_list(self):
+        return [self.__getattribute__(a) for a in self.attrs]
 
     def not_invalid(self):
         """Return True if the original site is not known to be invalid.
