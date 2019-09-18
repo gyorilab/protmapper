@@ -226,7 +226,7 @@ class ProtMapper(object):
         mapped_sites = []
         for ix, (prot_id, prot_ns, residue, position) in enumerate(site_list):
             logger.info("Mapping site %d of %d, cache size %d" %
-                        (ix, len(site_list), len(self._cache)))
+                        (ix + 1, len(site_list), len(self._cache)))
             try:
                 ms = self.map_to_human_ref(prot_id, prot_ns, residue, position,
                                            **kwargs)
