@@ -15,6 +15,7 @@ def main():
           version='0.0.13',
           description='Map protein sites to human reference sequence.',
           long_description=long_description,
+          long_description_content_type='text/markdown',
           author='John A. Bachman',
           author_email='john_bachman@hms.harvard.edu',
           url='https://github.com/indralab/protmapper',
