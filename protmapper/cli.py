@@ -21,6 +21,7 @@ def dump_output(fname, mapped_sites):
         writer = csv.writer(fh)
         writer.writerows(rows)
 
+
 def main():
     parser = argparse.ArgumentParser(
         description='Run Protmapper on a list of proteins with residues and '
@@ -36,11 +37,30 @@ def main():
         help=('Path to the output file to be generated. Each line of the '
               'output file corresponds to a line in the input file. Each line'
               'represents a mapped site produced by Protmapper.'))
+
+    parser.add_argument('--no_methionine_offset', help=(
+        'If given, will not check for off-by-one errors in site position ('
+        'possibly) attributable to site numbering from mature proteins after '
+        'cleavage of the initial methionine.'), action='store_true')
+    parser.add_argument('--no_orthology_mapping', help=(
+        'If given, will not check sequence positions for known modification '
+        'sites in mouse or rat sequences (based on PhosphoSitePlus data).'),
+        action='store_true')
+    parser.add_argument('--no_isoform_mapping', help=(
+        'If given, will not check sequence positions for known modifications '
+        'in other human isoforms of the protein (based on PhosphoSitePlus '
+        'data).'), action='store_true')
     args = parser.parse_args()
+
+    mapping_kwargs = {
+        'do_methionine_offset': False if args.no_methionine_offset else True,
+        'do_orthology_mapping': False if args.no_orthology_mapping else True,
+        'do_isoform_mapping': False if args.no_isoform_mapping else True
+    }
 
     pm = ProtMapper()
     sites = process_input(args.input)
-    mapped_sites = pm.map_sitelist_to_human_ref(sites)
+    mapped_sites = pm.map_sitelist_to_human_ref(sites, **mapping_kwargs)
     dump_output(args.output, mapped_sites)
 
 
