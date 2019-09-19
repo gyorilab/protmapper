@@ -217,3 +217,13 @@ def test_get_hgnc_id():
     assert hgnc_id == '8009', hgnc_id
     hgnc_id = uniprot_client.get_hgnc_id('Q9P2S2')
     assert hgnc_id == '8009', hgnc_id
+
+
+def test_is_mouse():
+    assert uniprot_client.is_mouse('P28028-1') is True
+    assert uniprot_client.is_mouse('P07305') is False
+
+
+def test_is_rat():
+    assert uniprot_client.is_rat('P11345-1') is True
+    assert uniprot_client.is_rat('P28028') is False
