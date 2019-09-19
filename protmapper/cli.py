@@ -56,7 +56,11 @@ def main():
         'in other human isoforms of the protein (based on PhosphoSitePlus '
         'data).'), action='store_true')
     args = parser.parse_args()
+    # Separate call to make function testable
+    run_main(args)
 
+
+def run_main(args):
     mapping_kwargs = {
         'do_methionine_offset': False if args.no_methionine_offset else True,
         'do_orthology_mapping': False if args.no_orthology_mapping else True,
