@@ -70,6 +70,8 @@ def run_main(args):
     pm = ProtMapper()
     sites = process_input(args.input)
     if args.peptide:
+        # We have to make the positions ints here
+        sites = [tuple(s[:3] + [int(s[3])]) for s in sites]
         mapped_sites = [pm.map_peptide_to_human_ref(*site) for site in sites]
     else:
         mapped_sites = pm.map_sitelist_to_human_ref(sites, **mapping_kwargs)
