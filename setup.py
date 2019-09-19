@@ -1,5 +1,11 @@
-import sys
+import os
 from setuptools import setup
+
+
+readme_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                           'README.md')
+with open(readme_path, 'r', encoding='utf-8') as fh:
+    long_description = fh.read()
 
 
 def main():
@@ -8,11 +14,8 @@ def main():
     setup(name='protmapper',
           version='0.0.13',
           description='Map protein sites to human reference sequence.',
-          long_description=('The protmapper is a tool to map inconsistent '
-                            'protein sites (i.e., not matching the human '
-                            'reference sequence) found in PTM databases and '
-                            'the scientific literature to corresponding '
-                            'positions on the human reference sequence.'),
+          long_description=long_description,
+          long_description_content_type='text/markdown',
           author='John A. Bachman',
           author_email='john_bachman@hms.harvard.edu',
           url='https://github.com/indralab/protmapper',
@@ -32,6 +35,8 @@ def main():
           tests_require=['nose'],
           extras_require={'rest_api': ['flask', 'flask_cors']},
           include_package_data=True,
+          entry_points={'console_scripts':
+                        ['protmapper = protmapper.cli:main']},
         )
 
 
