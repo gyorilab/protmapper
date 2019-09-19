@@ -21,7 +21,7 @@ a REST API as:
 docker run -d -p 8008:8008 labsyspharm/protmapper:latest
 ```
 
-## CLI
+## Command line interface
 In addition to supporting usage via a Python API and a REST service,
 Protmapper also provides a command line interface that can be used as follows.
 
