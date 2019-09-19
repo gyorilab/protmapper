@@ -10,6 +10,10 @@ before_install:
 install:
   - pip install .[rest_api]
 script:
+  # Regular unit tests
   - nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
+  # Smoke tests to check that CLI works
+  - protmapper protmapper/tests/cli_input.csv output.csv --no_methionine_offset --no_orthology_mapping --no_isoform_mapping
+  - protmapper protmapper/tests/cli_input_peptide.csv output.csv --peptide
 after_success:
   - coveralls
