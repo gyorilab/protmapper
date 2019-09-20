@@ -458,7 +458,6 @@ def verify_location(protein_id, residue, location):
     True if the given residue is at the given position in the sequence
     corresponding to the given UniProt ID, otherwise False.
     """
-    protein_id = get_primary_id(protein_id)
     seq = get_sequence(protein_id)
     # If we couldn't get the sequence (can happen due to web service hiccups)
     # don't throw the statement away by default
@@ -497,7 +496,6 @@ def verify_modification(protein_id, residue, location=None):
     If location is not given, we only check if there is any residue of the
     given type that is modified.
     """
-    protein_id = get_primary_id(protein_id)
     mods = get_modifications(protein_id)
     mod_locs = [m[1] for m in mods]
     if location:
