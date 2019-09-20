@@ -12,7 +12,7 @@ def main():
     install_list = ['requests', 'rdflib', 'boto3']
 
     setup(name='protmapper',
-          version='0.0.13',
+          version='0.0.14',
           description='Map protein sites to human reference sequence.',
           long_description=long_description,
           long_description_content_type='text/markdown',
