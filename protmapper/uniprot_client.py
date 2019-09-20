@@ -73,6 +73,27 @@ def query_protein(protein_id):
     return g
 
 
+def _strip_isoform(protein_id):
+    return protein_id.split('-')[0]
+
+
+def _split_isoform(protein_id):
+    parts = protein_id.split('-', maxsplit=1)
+    protein_id = parts[0]
+    isoform = None
+    if len(parts) == 2:
+        if re.match(r'\d+', parts[1]):
+            isoform = parts[1]
+    return protein_id, isoform
+
+
+def _reattach_isoform(pid, iso):
+    if iso is not None:
+        return '%s-%s' % (pid, iso)
+    else:
+        return pid
+
+
 def is_secondary(protein_id):
     """Return True if the UniProt ID corresponds to a secondary accession.
 
@@ -85,7 +106,7 @@ def is_secondary(protein_id):
     -------
     True if it is a secondary accessing entry, False otherwise.
     """
-    entry = um.uniprot_sec.get(protein_id)
+    entry = um.uniprot_sec.get(_strip_isoform(protein_id))
     if not entry:
         return False
     return True
@@ -103,11 +124,7 @@ def is_reviewed(protein_id):
     -------
     True if it is a reviewed entry, False otherwise.
     """
-    # If this is an isoform, check to see if the base ID is reviewed
-    # (isoform IDs are not in the ID list)
-    if '-' in protein_id:
-        protein_id = protein_id.split('-')[0]
-    return (protein_id in um.uniprot_reviewed)
+    return _strip_isoform(protein_id) in um.uniprot_reviewed
 
 
 def get_primary_id(protein_id):
@@ -126,20 +143,21 @@ def get_primary_id(protein_id):
         human one is returned. If there are no human primary IDs then the
         first primary found is returned.
     """
-    primaries = um.uniprot_sec.get(protein_id)
+    base_id, isoform = _split_isoform(protein_id)
+    primaries = um.uniprot_sec.get(base_id)
     if primaries:
         if len(primaries) > 1:
-            logger.debug('More than 1 primary ID for %s.' % protein_id)
+            logger.debug('More than 1 primary ID for %s.' % base_id)
             for primary in primaries:
                 # Often secondary IDs were broken into multiple primary IDs
                 # for different organisms. In this case we return the human
                 # one if it exists.
                 if is_human(primary):
-                    return primary
+                    return _reattach_isoform(primary, isoform)
         # If we haven't returned anything then we just return the
         # first primary id
-        return primaries[0]
-    # If there is not secondary entry the we assume this is a primary entry
+        return _reattach_isoform(primaries[0], isoform)
+    # If there is no secondary entry then we assume this is a primary entry
     return protein_id
 
 
@@ -192,7 +210,7 @@ def get_mnemonic(protein_id, web_fallback=False):
     mnemonic : str
         The UniProt mnemonic corresponding to the given Uniprot ID.
     """
-    protein_id = protein_id.split('-', maxsplit=1)[0]
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     try:
         mnemonic = um.uniprot_mnemonic[protein_id]
         return mnemonic
@@ -253,7 +271,7 @@ def get_gene_name(protein_id, web_fallback=True):
     gene_name : str
         The gene name corresponding to the given Uniprot ID.
     """
-    protein_id = get_primary_id(protein_id)
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     try:
         gene_name = um.uniprot_gene_name[protein_id]
         # We only get here if the protein_id was in the dict
@@ -300,6 +318,7 @@ def get_gene_synonyms(protein_id):
     synonyms : list[str]
         The list of synonyms of the gene corresponding to the protein
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     g = query_protein(protein_id)
     if g is None:
         return None
@@ -332,6 +351,7 @@ def get_protein_synonyms(protein_id):
     synonyms : list[str]
         The list of synonyms of the protein
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     g = query_protein(protein_id)
     if g is None:
         return None
@@ -360,6 +380,7 @@ def get_synonyms(protein_id):
     synonyms : list[str]
         The list of synonyms of the protein and its associated gene.
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     ret = []
     gene_syms = get_gene_synonyms(protein_id)
     if gene_syms:
@@ -372,17 +393,12 @@ def get_synonyms(protein_id):
 
 @lru_cache(maxsize=10000)
 def get_sequence(protein_id):
-    # Get the primary ID
-    try:
-        prim_ids = um.uniprot_sec[protein_id]
-        protein_id = prim_ids[0]
-    except KeyError:
-        pass
+    base, iso = _split_isoform(get_primary_id(protein_id))
     # Try to get the sequence from the downloaded sequence files
-    if '-' in protein_id:
-        base, iso = protein_id.split('-')
-        if iso == '1':
-            protein_id = base
+    if iso == '1':
+        protein_id = base
+    else:
+        protein_id = _reattach_isoform(base, iso)
     seq = um.uniprot_sequences.get(protein_id)
     if seq is None:
         url = uniprot_url + '%s.fasta' % protein_id
@@ -395,6 +411,7 @@ def get_sequence(protein_id):
 
 
 def get_modifications(protein_id):
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     g = query_protein(protein_id)
     if g is None:
         return None
@@ -498,6 +515,7 @@ def verify_modification(protein_id, residue, location=None):
 
 
 def _is_organism(protein_id, organism_suffix):
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     mnemonic = get_mnemonic(protein_id)
     if mnemonic is None:
         return False
@@ -518,6 +536,7 @@ def is_human(protein_id):
     -------
     True if the protein_id corresponds to a human protein, otherwise False.
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return _is_organism(protein_id, 'HUMAN')
 
 
@@ -533,6 +552,7 @@ def is_mouse(protein_id):
     -------
     True if the protein_id corresponds to a mouse protein, otherwise False.
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return _is_organism(protein_id, 'MOUSE')
 
 
@@ -548,6 +568,7 @@ def is_rat(protein_id):
     -------
     True if the protein_id corresponds to a rat protein, otherwise False.
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return _is_organism(protein_id, 'RAT')
 
 
@@ -564,6 +585,7 @@ def get_hgnc_id(protein_id):
     hgnc_id : str
         HGNC ID of the human protein
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return um.uniprot_hgnc.get(protein_id)
 
 
@@ -580,6 +602,7 @@ def get_mgi_id(protein_id):
     mgi_id : str
         MGI ID of the mouse protein
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return um.uniprot_mgi.get(protein_id)
 
 
@@ -596,6 +619,7 @@ def get_rgd_id(protein_id):
     rgd_id : str
         RGD ID of the rat protein
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return um.uniprot_rgd.get(protein_id)
 
 
@@ -644,6 +668,7 @@ def get_mouse_id(human_protein_id):
     mouse_protein_id : str
         The UniProt ID of a mouse protein orthologous to the given human protein
     """
+    human_protein_id = get_primary_id(_strip_isoform(human_protein_id))
     return um.uniprot_human_mouse.get(human_protein_id)
 
 
@@ -660,6 +685,7 @@ def get_rat_id(human_protein_id):
     rat_protein_id : str
         The UniProt ID of a rat protein orthologous to the given human protein
     """
+    human_protein_id = get_primary_id(_strip_isoform(human_protein_id))
     return um.uniprot_human_rat.get(human_protein_id)
 
 
@@ -676,6 +702,7 @@ def get_length(protein_id):
     length : int
         The length of the protein in amino acids.
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     return um.uniprot_length.get(protein_id)
 
 
@@ -697,11 +724,7 @@ def query_protein_xml(protein_id):
         An ElementTree representation of the XML entry for the
         protein.
     """
-    try:
-        prim_ids = um.uniprot_sec[protein_id]
-        protein_id = prim_ids[0]
-    except KeyError:
-        pass
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     url = uniprot_url + protein_id + '.xml'
     try:
         ret = requests.get(url)
@@ -752,6 +775,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
         The beginning and end position of the signal peptide as a tuple
         of integers.
     """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
     # Note, we use False here to differentiate from None
     entry = um.signal_peptide.get(protein_id, False)
     if entry is not False or not web_fallback:

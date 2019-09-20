@@ -247,7 +247,7 @@ def test_set_s9():
                             orig_pos='9', mapped_id='Q01105-2',
                             mapped_res='S', mapped_pos='9',
                             description='INFERRED_ALTERNATIVE_ISOFORM',
-                            gene_name='SET')
+                            gene_name='SET'), ms
 
 
 """

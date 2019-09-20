@@ -187,7 +187,7 @@ def test_get_is_reviewed():
 
 def test_get_ids_from_refseq():
     up_ids = uniprot_client.get_ids_from_refseq('NP_003395.1')
-    assert set(up_ids) == set(['V9HWD6', 'P31946-1'])
+    assert set(up_ids) == {'V9HWD6', 'P31946-1'}, set(up_ids)
     up_ids = uniprot_client.get_ids_from_refseq('NP_003395.1',
                                                 reviewed_only=True)
     assert up_ids == ['P31946-1']
@@ -217,3 +217,13 @@ def test_get_hgnc_id():
     assert hgnc_id == '8009', hgnc_id
     hgnc_id = uniprot_client.get_hgnc_id('Q9P2S2')
     assert hgnc_id == '8009', hgnc_id
+
+
+def test_is_mouse():
+    assert uniprot_client.is_mouse('P28028-1') is True
+    assert uniprot_client.is_mouse('P07305') is False
+
+
+def test_is_rat():
+    assert uniprot_client.is_rat('P11345-1') is True
+    assert uniprot_client.is_rat('P28028') is False
