@@ -32,7 +32,9 @@ class MappedSite(object):
         a Uniprot ID; 'UNIPROT_HTTP_NOT_FOUND' if the given Uniprot ID resulted
         in a 404 Not Found error from the Uniprot web service; or
         'UNIPROT_HTTP_OTHER' if it was any other type of Uniprot web service
-        error. If the error code is not None, the `orig_res` and `orig_pos`
+        error. Any other unexpected errors in getting the sequence are assigned
+        the 'UNIPROT_OTHER' code.
+        If the error code is not None, the `orig_res` and `orig_pos`
         fields will be set (based on the query arguments) but all other fields
         will be None.
     valid : bool
@@ -479,6 +481,7 @@ class ProtMapper(object):
             site_valid = uniprot_client.verify_location(pspmapping.mapped_id,
                                       pspmapping.mapped_res,
                                       pspmapping.mapped_pos)
+            error_code = None
         except HTTPError as ex:
             if ex.response.status_code == 404:
                 error_code = 'UNIPROT_HTTP_NOT_FOUND'
