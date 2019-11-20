@@ -315,11 +315,16 @@ class ProtMapper(object):
         try:
             site_valid = uniprot_client.verify_location(up_id, residue,
                                                         position)
+            error_code = None
         except HTTPError as ex:
             if ex.response.status_code == 404:
                 error_code = 'UNIPROT_HTTP_NOT_FOUND'
             else:
                 error_code = 'UNIPROT_HTTP_OTHER'
+        except Exception as ex:
+            error_code = 'UNIPROT_OTHER'
+            logger.error(ex)
+        if error_code:
             # Set error_code; valid will set to None, not True/False
             mapped_site = MappedSite(up_id, None, residue, position,
                                      error_code=error_code)
@@ -479,6 +484,10 @@ class ProtMapper(object):
                 error_code = 'UNIPROT_HTTP_NOT_FOUND'
             else:
                 error_code = 'UNIPROT_HTTP_OTHER'
+        except Exception as ex:
+            error_code = 'UNIPROT_OTHER'
+            logger.error(ex)
+        if error_code:
             # Set error_code; valid will set to None, not True/False
             mapped_site = MappedSite(orig_id, None, res, pos,
                                      error_code=error_code)
