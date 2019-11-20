@@ -107,7 +107,7 @@ P29353,SHC1,Y,239,Y,349,numbering from isoform p52
 P29353,SHC1,Y,317,Y,427,numbering from isoform p52
 P29353,SHC1,Y,240,Y,350,numbering from isoform p52
 P12931,SRC,Y,416,Y,419,off by 3
-P12931,SRC,Y,418,Y,418,off by 1
+P12931,SRC,Y,418,Y,419,off by 1
 P12931,SRC,Y,215,Y,216,off by 1
 Q05655,PRKCD,Y,311,Y,313,off by 2
 O43521,BCL2L11,S,65,S,69,numbering from mouse sequence
