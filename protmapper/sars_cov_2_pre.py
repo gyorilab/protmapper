@@ -1,11 +1,12 @@
 import wget
 import argparse
-from bs4 import BeautifulSoup
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 pre_release_url = \
     'ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/coronavirus.xml'
 SARS_NAME = 'SARS-CoV-2'
+UP_NS = '{http://uniprot.org/uniprot}'
 
 
 def _ftp_download(path='.', url=pre_release_url):
@@ -18,7 +19,7 @@ def process_entry(entry):
 
     Parameters
     ----------
-    entry : bs4.element.Tag
+    entry : xml.etree.ElementTree.Element
 
     Returns
     -------
@@ -29,8 +30,7 @@ def process_entry(entry):
     name_mapping = []
 
     # Get the UP ID
-    acc_tag = entry.find('accession')
-    up_id = acc_tag.text
+    up_id = entry.find(UP_NS + 'accession').text
 
     # Get the tag after <accession>, the <name> tag
     name_tag = acc_tag.findNextSibling()
@@ -40,25 +40,25 @@ def process_entry(entry):
     # protein -> recommendedname; alternativename
     #            recommendedname -> fullname; shortname
     #            alternativename -> fullname; shortname
-    protein = entry.protein
-    for tag in protein.children:
-        if tag.name in {'recommendedname', 'alternativename'}:
-            for fullname_tag in tag.findAll('fullname'):
+    protein = entry.find(UP_NS + 'protein')
+    for child_tag in protein:
+        if child_tag.tag.lower() in {UP_NS + 'recommendedname',
+                                     UP_NS + 'alternativename'}:
+            for fullname_tag in child_tag.findall(UP_NS + 'fullName'):
                 name_mapping.append((fullname_tag.text, up_id, SARS_NAME))
-            for shortname_tag in tag.findAll('shortname'):
+            for shortname_tag in child_tag.findall(UP_NS + 'shortName'):
                 name_mapping.append((shortname_tag.text, up_id, SARS_NAME))
 
     return name_mapping
 
 
 def process_xml(fname):
-    # Read file into bs4
-    with open(fname, 'r') as xmlf:
-        soup = BeautifulSoup(xmlf, 'lxml')
+    # Read file into xml.etree.ElementTree
+    et = ET.parse(fname)
 
     # Process xml
     name_mappings = []
-    for entry in soup.findAll('entry'):
+    for entry in et.findall(UP_NS + 'entry'):
         name_mappings.extend(process_entry(entry))
 
     return name_mappings
