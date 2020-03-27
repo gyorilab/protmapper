@@ -37,9 +37,9 @@ def process_entry(entry):
     name_mapping.append((name_tag.text, up_id, SARS_NAME))
 
     # Get all names:
-    # protein -> recommendedname; alternativename
-    #            recommendedname -> fullname; shortname
-    #            alternativename -> fullname; shortname
+    # protein -> recommendedName; alternativeName
+    #            recommendedName -> fullName; shortName
+    #            alternativeName -> fullName; shortName
     protein = entry.find(UP_NS + 'protein')
     for child_tag in protein:
         if child_tag.tag.lower() in {UP_NS + 'recommendedname',
