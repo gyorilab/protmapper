@@ -32,9 +32,10 @@ def process_entry(entry):
     # Get the UP ID
     up_id = entry.find(UP_NS + 'accession').text
 
-    # Get the tag after <accession>, the <name> tag
-    name_tag = acc_tag.findNextSibling()
-    name_mapping.append((name_tag.text, up_id, SARS_NAME))
+    # NOTE: skip the <name> tag for now
+    # Get the <name> tag
+    # name_ = entry.find(UP_NS + 'name').text
+    # name_mapping.append((name_, up_id, SARS_NAME))
 
     # Get all names:
     # protein -> recommendedName; alternativeName
