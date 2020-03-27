@@ -38,6 +38,7 @@ def process_entry(entry):
 
     # Get the UP ID
     up_id = entry.find(UP_NS + 'accession').text
+    logger.info('Processing uniprot id %s' % up_id)
 
     # NOTE: skip the <name> tag for now
     # Get the <name> tag
@@ -73,8 +74,15 @@ def process_xml(fname):
 
 
 def main(tsv_outfile, ftp_path=None):
-    # Download file
     fname = SARS_NAME + '_prerelease.xml'
+
+    # Download file
+    if ftp_path:
+        path = Path(ftp_path).joinpath(fname)
+        if not path.parent.is_dir():
+            logger.info('The path %s does not exist. Creating... ' %
+                        path.parent.as_posix())
+            path.parent.mkdir(parents=True)
     _ftp_download(fname)
 
     # Get name mappings
