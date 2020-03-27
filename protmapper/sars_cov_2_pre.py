@@ -1,7 +1,12 @@
-import wget
+import shutil
+import logging
 import argparse
 from pathlib import Path
+from contextlib import closing
+from urllib.request import urlopen
 from xml.etree import ElementTree as ET
+
+logger = logging.getLogger(__name__)
 
 pre_release_url = \
     'ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/coronavirus.xml'
@@ -9,9 +14,11 @@ SARS_NAME = 'SARS-CoV-2'
 UP_NS = '{http://uniprot.org/uniprot}'
 
 
-def _ftp_download(path='.', url=pre_release_url):
-    outdir = Path(path)
-    wget.download(url, out=outdir.as_posix())
+def _ftp_download(fname, url=pre_release_url):
+    with closing(urlopen(url)) as req:
+        with open(fname, 'wb') as fo:
+            logger.info('Writing xml file to %s' % fname)
+            shutil.copyfileobj(req, fo)
 
 
 def process_entry(entry):
