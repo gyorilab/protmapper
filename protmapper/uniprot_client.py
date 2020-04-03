@@ -771,18 +771,22 @@ def get_signal_peptide(protein_id, web_fallback=True):
 
     Returns
     -------
-    tuple of int
-        The beginning and end position of the signal peptide as a tuple
-        of integers.
+    Feature
+        A Feature named tuple representing the signal peptide.
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
     # Note, we use False here to differentiate from None
-    entry = um.signal_peptide.get(protein_id, False)
-    if entry is not False or not web_fallback:
-        return entry
+    if protein_id not in um.features:
+        return None
+    sp = [f for f in um.features[protein_id] if f.type == 'SIGNAL']
+    if sp:
+        return sp[0]
+    elif not web_fallback:
+        return False
+
     et = query_protein_xml(protein_id)
     if et is None:
-        return None, None
+        return None
     location = et.find(
         'up:entry/up:feature[@type="signal peptide"]/up:location',
         namespaces=xml_ns)
@@ -799,7 +803,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
             end_pos = end.attrib.get('position')
             if end_pos is not None:
                 end_pos = int(end_pos)
-    return begin_pos, end_pos
+    return Feature('SIGNAL', begin_pos, end_pos, None, None)
 
 
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
@@ -842,7 +846,7 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed, self.features) = maps
+         self._uniprot_reviewed, self._features) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -953,22 +957,10 @@ class UniprotMapper(object):
         return self._refseq_uniprot
 
     @property
-    def signal_peptide(self):
+    def features(self):
         if not self.initialized:
             self.initialize()
-        return self._uniprot_signal_peptide
-
-    @property
-    def chains(self):
-        if not self.initialized:
-            self.initialize()
-        return self._uniprot_chains
-
-    @property
-    def propeptides(self):
-        if not self.initialized:
-            self.initialize()
-        return self._uniprot_propeptides
+        return self._features
 
 
 um = UniprotMapper()
@@ -1017,7 +1009,10 @@ def _build_uniprot_entries():
             ]
             uniprot_features[up_id] = []
             for feature_type, feature_str in feature_structure:
-                uniprot_features[up_id] += _process_feature(feature_str)
+                if not feature_str.strip():
+                    continue
+                uniprot_features[up_id] += \
+                    _process_feature(feature_type, feature_str)
 
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
@@ -1028,6 +1023,9 @@ Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
 
 
 def _process_feature(feature_type, feature_str):
+    """
+    https://www.uniprot.org/help/sequence_annotation
+    """
     parts = feature_str.split(';  ')
     chunk_ids = [idx for idx, part in enumerate(parts)
                  if part.startswith(feature_type)] + [len(parts)]
@@ -1039,8 +1037,16 @@ def _process_feature(feature_type, feature_str):
         begin = end = name = pid = None
         for part in chunk:
             if part.startswith(feature_type):
-                match = re.match(r'%s (\d+)..(\d+)' % feature_type, part)
-                begin, end = int(match.groups()[0]), int(match.groups()[1])
+                match = re.match(r'%s (?:\?|<?)(\d+|\?)..(?:\?|>?)(\d+|\?)' %
+                                 feature_type, part)
+                if match:
+                    beg, end = match.groups()
+                else:
+                    match = re.match(r'%s (\d+)' % feature_type, part)
+                    beg = match.groups()[0]
+                    end = beg
+                begin = int(beg) if beg != '?' else None
+                end = int(end) if end != '?' else None
             elif part.startswith('/note'):
                 match = re.match(r'/note="(.+)"', part)
                 name = match.groups()[0]

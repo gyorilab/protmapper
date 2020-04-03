@@ -193,25 +193,18 @@ def test_get_ids_from_refseq():
     assert up_ids == ['P31946-1']
 
 
-def test_process_signal_peptide():
-    sp = uniprot_client.um.signal_peptide['P04626']
-    assert sp == (1, 22), sp
-
-
 @attr('webservice')
 def test_get_signal_peptide():
     # This is a valid entry local to the resource file
-    bp, ep = uniprot_client.get_signal_peptide('P00533')
-    assert bp == 1, bp
-    assert ep == 24, ep
+    sp = uniprot_client.get_signal_peptide('P00533')
+    assert sp.begin == 1, sp
+    assert sp.end == 24, sp
     # This one requires a web lookup
-    bp, ep = uniprot_client.get_signal_peptide('P00534')
-    assert bp is None, bp
-    assert ep is None, ep
+    sp = uniprot_client.get_signal_peptide('P00534')
+    assert sp is None, sp
     # This one errors when doing web lookup
-    bp, ep = uniprot_client.get_signal_peptide('Q9H7H1')
-    assert bp is None, bp
-    assert ep is None, ep
+    sp = uniprot_client.get_signal_peptide('Q9H7H1')
+    assert sp is None, sp
 
 
 def test_get_hgnc_id():
