@@ -842,8 +842,7 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed, self._uniprot_signal_peptide,
-         self._uniprot_chains, self._uniprot_propeptides) = maps
+         self._uniprot_reviewed, self.features) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -985,9 +984,7 @@ def _build_uniprot_entries():
     uniprot_mgi_reverse = {}
     uniprot_rgd_reverse = {}
     uniprot_length = {}
-    uniprot_signal_peptide = {}
-    uniprot_chains = {}
-    uniprot_propeptides = {}
+    uniprot_features = {}
     uniprot_reviewed = set()
     with open(up_entries_file, 'r') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
@@ -995,7 +992,7 @@ def _build_uniprot_entries():
         next(csv_rows)
         for row in csv_rows:
             up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                signal_peptide, chains_str, propeptides_str = row
+                signal_peptide_str, chains_str, propeptides_str = row
             # Store the entry in the reviewed set
             if reviewed == 'reviewed':
                 uniprot_reviewed.add(up_id)
@@ -1013,41 +1010,36 @@ def _build_uniprot_entries():
                 if rgd_ids:
                     uniprot_rgd[up_id] = rgd_ids[0]
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
-            uniprot_signal_peptide[up_id] = (None, None)
-            if signal_peptide:
-                match = re.match(r'SIGNAL (\d+)..(\d+);', signal_peptide)
-                if match:
-                    beg_pos, end_pos = match.groups()
-                    uniprot_signal_peptide[up_id] = \
-                        (int(beg_pos), int(end_pos))
-            if chains_str:
-                chains = _process_chains_peptide(chains_str)
-                uniprot_chains[up_id] = chains
-            uniprot_chains[up_id] = []
+            feature_structure = [
+                ('SIGNAL', signal_peptide_str),
+                ('CHAIN', chains_str),
+                ('PROPEP', propeptides_str)
+            ]
+            uniprot_features[up_id] = []
+            for feature_type, feature_str in feature_structure:
+                uniprot_features[up_id] += _process_feature(feature_str)
 
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed, uniprot_signal_peptide,
-            uniprot_chains, uniprot_propeptides)
+            uniprot_length, uniprot_reviewed, uniprot_features)
 
 
-Chain = namedtuple('Chain', ['begin', 'end', 'name', 'id'])
+Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
 
 
-def _process_chains_peptide(chains_str):
-    parts = chains_str.split(';  ')
+def _process_feature(feature_type, feature_str):
+    parts = feature_str.split(';  ')
     chunk_ids = [idx for idx, part in enumerate(parts)
-                 if part.startswith('CHAIN')] + [len(parts)]
+                 if part.startswith(feature_type)] + [len(parts)]
     chunks = []
     for idx, chunk_id in enumerate(chunk_ids[:-1]):
         chunks.append(parts[chunk_ids[idx]:chunk_ids[idx+1]])
-    chains = []
-    print(chunks)
+    feats = []
     for chunk in chunks:
         begin = end = name = pid = None
         for part in chunk:
-            if part.startswith('CHAIN'):
-                match = re.match(r'CHAIN (\d+)..(\d+)', part)
+            if part.startswith(feature_type):
+                match = re.match(r'%s (\d+)..(\d+)' % feature_type, part)
                 begin, end = int(match.groups()[0]), int(match.groups()[1])
             elif part.startswith('/note'):
                 match = re.match(r'/note="(.+)"', part)
@@ -1055,10 +1047,9 @@ def _process_chains_peptide(chains_str):
             elif part.startswith('/id'):
                 match = re.match(r'/id="(.+)"', part)
                 pid = match.groups()[0]
-        if not any(attr is None for attr in [begin, end, name, pid]):
-            chain = Chain(begin, end, name, pid)
-            chains.append(chain)
-    return chains
+        feature = Feature(feature_type, begin, end, name, pid)
+        feats.append(feature)
+    return feats
 
 
 def _build_human_mouse_rat():

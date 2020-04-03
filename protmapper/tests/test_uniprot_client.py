@@ -238,7 +238,7 @@ def test_process_chain():
     chain_str = ('CHAIN 1..7096;  /note="Replicase polyprotein 1ab";  '
                  '/id="PRO_0000449618";  CHAIN 1..180;  /note="Host '
                  'translation inhibitor nsp1";  /id="PRO_0000449619";')
-    chains = uniprot_client._process_chains_peptide(chain_str)
+    chains = uniprot_client._process_feature('CHAIN', chain_str)
     assert len(chains) == 2
     assert chains[0].id == 'PRO_0000449618'
     assert chains[0].begin == 1
@@ -248,3 +248,4 @@ def test_process_chain():
     assert chains[1].begin == 1
     assert chains[1].end == 180
     assert chains[1].name == 'Host translation inhibitor nsp1'
+
