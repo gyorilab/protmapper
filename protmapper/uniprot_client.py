@@ -1000,7 +1000,7 @@ def _build_uniprot_entries():
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
             uniprot_signal_peptide[up_id] = (None, None)
             if signal_peptide:
-                match = re.match(r'SIGNAL (\d+)..(\d+);p', signal_peptide)
+                match = re.match(r'SIGNAL (\d+)..(\d+);', signal_peptide)
                 if match:
                     beg_pos, end_pos = match.groups()
                     uniprot_signal_peptide[up_id] = \

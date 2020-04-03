@@ -193,6 +193,11 @@ def test_get_ids_from_refseq():
     assert up_ids == ['P31946-1']
 
 
+def test_process_signal_peptide():
+    sp = uniprot_client.um.signal_peptide['P04626']
+    assert sp == (1, 22), sp
+
+
 @attr('webservice')
 def test_get_signal_peptide():
     # This is a valid entry local to the resource file
