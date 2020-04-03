@@ -842,7 +842,8 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed, self._uniprot_signal_peptide) = maps
+         self._uniprot_reviewed, self._uniprot_signal_peptide,
+         self._uniprot_chains, self._uniprot_propeptides) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -958,6 +959,18 @@ class UniprotMapper(object):
             self.initialize()
         return self._uniprot_signal_peptide
 
+    @property
+    def chains(self):
+        if not self.initialized:
+            self.initialize()
+        return self._uniprot_chains
+
+    @property
+    def propeptides(self):
+        if not self.initialized:
+            self.initialize()
+        return self._uniprot_propeptides
+
 
 um = UniprotMapper()
 
@@ -1007,8 +1020,10 @@ def _build_uniprot_entries():
                     beg_pos, end_pos = match.groups()
                     uniprot_signal_peptide[up_id] = \
                         (int(beg_pos), int(end_pos))
+            if chains_str:
+                chains = _process_chains_peptide(chains_str)
+                uniprot_chains[up_id] = chains
             uniprot_chains[up_id] = []
-
 
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
