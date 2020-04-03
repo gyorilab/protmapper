@@ -757,6 +757,40 @@ def get_function(protein_id):
     return function.text
 
 
+def get_features(protein_id):
+    """Return a list of features (chains, peptides) for a given protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein whose features are to be returned.
+
+    Returns
+    -------
+    list of Feature
+        A list of Feature named tuples representing each Feature.
+    """
+    return um.features.get(protein_id, [])
+
+
+def get_chains(protein_id):
+    """Return the list of cleaved chains for the given protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein whose cleaved chains are to be returned.
+
+    Returns
+    -------
+    list of Feature
+        A list of Feature named tuples representing each chain.
+    """
+    features = get_features(protein_id)
+    chains = [f for f in features if f.type == 'CHAIN']
+    return chains
+
+
 def get_signal_peptide(protein_id, web_fallback=True):
     """Return the position of a signal peptide for the given protein.
 
@@ -779,7 +813,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
     if not web_fallback and protein_id not in um.features:
         return None
     elif protein_id in um.features:
-        sp = [f for f in um.features[protein_id] if f.type == 'SIGNAL']
+        sp = [f for f in get_features(protein_id) if f.type == 'SIGNAL']
         if sp:
             return sp[0]
         elif not web_fallback:

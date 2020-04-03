@@ -242,3 +242,18 @@ def test_process_chain():
     assert chains[1].end == 180
     assert chains[1].name == 'Host translation inhibitor nsp1'
 
+
+def test_features():
+    features = uniprot_client.get_features('P70444')
+    assert len(features) == 4, features
+    chains = uniprot_client.get_chains('P70444')
+    assert 'BH3-interacting domain death agonist p15' in \
+           {c.name for c in chains}
+    for chain in chains:
+        assert chain.type == 'CHAIN'
+        if chain.name == 'BH3-interacting domain death agonist p15':
+            assert chain.begin == 61
+            assert chain.end == 195
+            assert chain.id == 'PRO_0000223236'
+
+
