@@ -65,7 +65,8 @@ def download_uniprot_entries(out_file, cached=True):
         return
 
     columns = ['id', 'genes(PREFERRED)', 'entry%20name', 'database(RGD)',
-               'database(MGI)', 'length', 'reviewed', 'feature(SIGNAL)']
+               'database(MGI)', 'length', 'reviewed', 'feature(SIGNAL)',
+               'feature(CHAIN)', 'feature(PROPEPTIDE)']
     columns_str = ','.join(columns)
 
     logger.info('Downloading UniProt entries')
