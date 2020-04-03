@@ -980,7 +980,7 @@ def _build_uniprot_entries():
         next(csv_rows)
         for row in csv_rows:
             up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                signal_peptide = row
+                signal_peptide, chains_str, propeptides_str = row
             # Store the entry in the reviewed set
             if reviewed == 'reviewed':
                 uniprot_reviewed.add(up_id)
@@ -1000,7 +1000,7 @@ def _build_uniprot_entries():
                     uniprot_rgd_reverse[rgd_ids[0]] = up_id
             uniprot_signal_peptide[up_id] = (None, None)
             if signal_peptide:
-                match = re.match(r'SIGNAL (\d+) (\d+) ', signal_peptide)
+                match = re.match(r'SIGNAL (\d+)..(\d+);p', signal_peptide)
                 if match:
                     beg_pos, end_pos = match.groups()
                     uniprot_signal_peptide[up_id] = \
