@@ -177,7 +177,7 @@ def download_refseq_uniprot(out_file, cached=True):
         return
     logger.info('Downloading RefSeq->Uniprot mappings from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
-                 'idmapping/by_organism/HUMAN_9606_idmapping.dat.gz')
+                'idmapping/by_organism/HUMAN_9606_idmapping.dat.gz')
     mappings_bytes = _download_ftp_gz('ftp.uniprot.org', ftp_path,
                                       out_file=None)
     logger.info('Processing RefSeq->Uniprot mappings file')
@@ -238,16 +238,34 @@ def download_sars_cov2(out_file, cached=True):
         full_name_tag = entry.find('up:protein/up:recommendedName/up:fullName',
                                    namespaces=up_ns)
         full_name = full_name_tag.text if full_name_tag is not None else None
+        recommended_name_tag = \
+            entry.find('up:protein/up:recommendedName/up:fullName',
+                       namespaces=up_ns)
+        recommended_name = recommended_name_tag.text if recommended_name_tag \
+            is not None else None
         short_names = [e.text for e in
                        entry.findall('up:protein/up:recommendedName/'
                                      'up:shortName', namespaces=up_ns)]
+
+        # Choose a single canonical name
+        if recommended_name:
+            canonical_name = recommended_name
+        elif gene_name:
+            canonical_name = gene_name
+        elif full_name:
+            canonical_name = full_name
+        elif short_names:
+            canonical_name = short_names[0]
+        if not canonical_name:
+            assert False
+
         chains = _get_chains(entry)
         chain_str = make_chain_str(chains)
         seq_tag = entry.find('up:sequence', namespaces=up_ns)
         length = seq_tag.attrib['length']
 
-        row = up_id, gene_name, mnemonic, full_name, '', '', length, \
-            short_names, '', chain_str, ''
+        row = up_id, canonical_name, mnemonic, '', '', length, \
+            'reviewed', '', chain_str, ''
         rows.append(row)
     with open(out_file, 'w') as fh:
         writer = csv.writer(fh, delimiter='\t', quotechar=None)
