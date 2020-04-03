@@ -776,13 +776,14 @@ def get_signal_peptide(protein_id, web_fallback=True):
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
     # Note, we use False here to differentiate from None
-    if protein_id not in um.features:
+    if not web_fallback and protein_id not in um.features:
         return None
-    sp = [f for f in um.features[protein_id] if f.type == 'SIGNAL']
-    if sp:
-        return sp[0]
-    elif not web_fallback:
-        return False
+    elif protein_id in um.features:
+        sp = [f for f in um.features[protein_id] if f.type == 'SIGNAL']
+        if sp:
+            return sp[0]
+        elif not web_fallback:
+            return False
 
     et = query_protein_xml(protein_id)
     if et is None:
@@ -803,7 +804,9 @@ def get_signal_peptide(protein_id, web_fallback=True):
             end_pos = end.attrib.get('position')
             if end_pos is not None:
                 end_pos = int(end_pos)
-    return Feature('SIGNAL', begin_pos, end_pos, None, None)
+    if begin_pos is not None and end_pos is not None:
+        return Feature('SIGNAL', begin_pos, end_pos, None, None)
+    return None
 
 
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
