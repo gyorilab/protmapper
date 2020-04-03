@@ -192,10 +192,21 @@ def download_refseq_uniprot(out_file, cached=True):
         csvwriter.writerows(filt_rows)
 
 
+def download_sars_cov2(out_file, cached=True):
+    if cached:
+        _download_from_s3('uniprot_sars_cov2_entries.tsv', out_file)
+        return
+    logger.info('Downloading Sars-Cov-2 mappings from Uniprot')
+    url = ('ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/'
+           'covid-19.xml')
+    urlretrieve(url, out_file)
+
+
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
     'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
     'up': ('uniprot_entries.tsv', download_uniprot_entries),
+    'up_sars_cov2': ('uniprot_sars_cov2_entries.tsv', download_sars_cov2),
     'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
     'swissprot': ('uniprot_sprot.fasta', download_swissprot),
     'isoforms': ('uniprot_sprot_varsplic.fasta', download_isoforms),
