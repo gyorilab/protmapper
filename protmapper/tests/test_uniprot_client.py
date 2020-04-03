@@ -244,16 +244,14 @@ def test_process_chain():
 
 
 def test_features():
-    features = uniprot_client.get_features('P70444')
+    features = uniprot_client.get_features('P55957')
     assert len(features) == 4, features
-    chains = uniprot_client.get_chains('P70444')
+    chains = uniprot_client.get_chains('P55957')
     assert 'BH3-interacting domain death agonist p15' in \
            {c.name for c in chains}
     for chain in chains:
         assert chain.type == 'CHAIN'
         if chain.name == 'BH3-interacting domain death agonist p15':
-            assert chain.begin == 61
+            assert chain.begin == 62
             assert chain.end == 195
-            assert chain.id == 'PRO_0000223236'
-
-
+            assert chain.id == 'PRO_0000223233'

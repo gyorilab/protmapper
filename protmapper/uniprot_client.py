@@ -1063,7 +1063,15 @@ def _process_feature(feature_type, feature_str):
     """
     https://www.uniprot.org/help/sequence_annotation
     """
-    parts = feature_str.split(';  ')
+    def _fix_parts(parts):
+        for idx, part in enumerate(parts):
+            if part.startswith('/') and not part.endswith('"'):
+                parts[idx] += parts[idx+1]
+                parts = [p for idx, p in enumerate(parts) if idx != idx+1]
+        return parts
+
+    parts = [p.strip() for p in feature_str.split('; ')]
+    parts = _fix_parts(parts)
     chunk_ids = [idx for idx, part in enumerate(parts)
                  if part.startswith(feature_type)] + [len(parts)]
     chunks = []
