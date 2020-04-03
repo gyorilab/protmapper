@@ -232,3 +232,11 @@ def test_is_mouse():
 def test_is_rat():
     assert uniprot_client.is_rat('P11345-1') is True
     assert uniprot_client.is_rat('P28028') is False
+
+
+def test_process_chain():
+    chain_str = ('CHAIN 1..7096;  /note="Replicase polyprotein 1ab";  '
+                 '/id="PRO_0000449618";  CHAIN 1..180;  /note="Host '
+                 'translation inhibitor nsp1";  /id="PRO_0000449619";')
+    res = uniprot_client._process_chains_peptide(chain_str)
+    print(res)

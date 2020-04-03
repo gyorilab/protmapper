@@ -1,11 +1,11 @@
-import os
 import re
 import csv
 import rdflib
 import logging
 import requests
-from xml.etree import ElementTree
 from functools import lru_cache
+from xml.etree import ElementTree
+from collections import namedtuple
 from urllib.error import HTTPError
 from protmapper.resources import resource_manager
 
@@ -973,6 +973,8 @@ def _build_uniprot_entries():
     uniprot_rgd_reverse = {}
     uniprot_length = {}
     uniprot_signal_peptide = {}
+    uniprot_chains = {}
+    uniprot_propeptides = {}
     uniprot_reviewed = set()
     with open(up_entries_file, 'r') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
@@ -1005,10 +1007,43 @@ def _build_uniprot_entries():
                     beg_pos, end_pos = match.groups()
                     uniprot_signal_peptide[up_id] = \
                         (int(beg_pos), int(end_pos))
+            uniprot_chains[up_id] = []
+
 
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed, uniprot_signal_peptide)
+            uniprot_length, uniprot_reviewed, uniprot_signal_peptide,
+            uniprot_chains, uniprot_propeptides)
+
+
+Chain = namedtuple('Chain', ['begin', 'end', 'name', 'id'])
+
+
+def _process_chains_peptide(chains_str):
+    parts = chains_str.split(';  ')
+    chunk_ids = [idx for idx, part in enumerate(parts)
+                 if part.startswith('CHAIN')] + [len(parts)]
+    chunks = []
+    for idx, chunk_id in enumerate(chunk_ids[:-1]):
+        chunks.append(parts[chunk_ids[idx]:chunk_ids[idx+1]])
+    chains = []
+    print(chunks)
+    for chunk in chunks:
+        begin = end = name = pid = None
+        for part in chunk:
+            if part.startswith('CHAIN'):
+                match = re.match(r'CHAIN (\d+)..(\d+)', part)
+                begin, end = int(match.groups()[0]), int(match.groups()[1])
+            elif part.startswith('/note'):
+                match = re.match(r'/note="(.+)"', part)
+                name = match.groups()[0]
+            elif part.startswith('/id'):
+                match = re.match(r'/id="(.+)"', part)
+                pid = match.groups()[0]
+        if not any(attr is None for attr in [begin, end, name, pid]):
+            chain = Chain(begin, end, name, pid)
+            chains.append(chain)
+    return chains
 
 
 def _build_human_mouse_rat():
