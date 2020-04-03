@@ -9,6 +9,7 @@ import botocore
 from ftplib import FTP
 from io import BytesIO, StringIO
 from urllib.request import urlretrieve
+from xml.etree import ElementTree as ET
 from . import __version__
 
 
@@ -195,11 +196,63 @@ def download_refseq_uniprot(out_file, cached=True):
 def download_sars_cov2(out_file, cached=True):
     if cached:
         _download_from_s3('uniprot_sars_cov2_entries.tsv', out_file)
-        return
-    logger.info('Downloading Sars-Cov-2 mappings from Uniprot')
-    url = ('ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/'
-           'covid-19.xml')
-    urlretrieve(url, out_file)
+    else:
+        logger.info('Downloading Sars-Cov-2 mappings from Uniprot')
+        url = ('ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/'
+               'covid-19.xml')
+        urlretrieve(url, out_file + '.xml')
+
+    et = ET.parse(out_file + '.xml')
+    up_ns = {'up': 'http://uniprot.org/uniprot'}
+
+    def _get_chains(entry):
+        features = entry.findall('up:feature', namespaces=up_ns)
+        chains = []
+        for feature in features:
+            if feature.attrib.get('type') == 'chain':
+                pid = feature.attrib['id']
+                desc = feature.attrib['description']
+                begin = feature.find('up:location/up:begin',
+                                     namespaces=up_ns).attrib['position']
+                end = feature.find('up:location/up:end',
+                                   namespaces=up_ns).attrib['position']
+                chains.append((pid, desc, begin, end))
+        return chains
+
+    def make_chain_str(chains):
+        chain_strs = ['CHAIN %s..%s;  /note="%s";  /id="%s";' %
+                      (begin, end, desc, pid) for pid, desc, begin, end
+                      in chains]
+        chain_str = '  '.join(chain_strs)
+        return chain_str
+
+    rows = []
+    for entry in et.findall('up:entry', namespaces=up_ns):
+        up_id = entry.find('up:accession', namespaces=up_ns).text
+        mnemonic = entry.find('up:name', namespaces=up_ns).text
+        # Skip redundant human proteins here
+        if mnemonic.endswith('HUMAN'):
+            continue
+        gene_name_tag = entry.find('up:gene/up:name', namespaces=up_ns)
+        gene_name = gene_name_tag.text if gene_name_tag is not None else None
+        full_name_tag = entry.find('up:protein/up:recommendedName/up:fullName',
+                                   namespaces=up_ns)
+        full_name = full_name_tag.text if full_name_tag is not None else None
+        short_names = [e.text for e in
+                       entry.findall('up:protein/up:recommendedName/'
+                                     'up:shortName', namespaces=up_ns)]
+        chains = _get_chains(entry)
+        chain_str = make_chain_str(chains)
+        seq_tag = entry.find('up:sequence', namespaces=up_ns)
+        length = seq_tag.attrib['length']
+
+        row = up_id, gene_name, mnemonic, full_name, '', '', length, \
+            short_names, '', chain_str, ''
+        rows.append(row)
+    with open(out_file, 'w') as fh:
+        writer = csv.writer(fh, delimiter='\t', quotechar=None)
+        for row in rows:
+            writer.writerow(row)
 
 
 RESOURCE_MAP = {
