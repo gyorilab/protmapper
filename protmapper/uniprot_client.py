@@ -1027,6 +1027,7 @@ um = UniprotMapper()
 
 def _build_uniprot_entries():
     up_entries_file = resource_manager.get_create_resource_file('up')
+    sc_entries_file = resource_manager.get_create_resource_file('up_sars_cov2')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
     uniprot_mnemonic_reverse = {}
@@ -1037,41 +1038,43 @@ def _build_uniprot_entries():
     uniprot_length = {}
     uniprot_features = {}
     uniprot_reviewed = set()
-    with open(up_entries_file, 'r') as fh:
-        csv_rows = csv.reader(fh, delimiter='\t')
-        # Skip the header row
-        next(csv_rows)
-        for row in csv_rows:
-            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                signal_peptide_str, chains_str, propeptides_str = row
-            # Store the entry in the reviewed set
-            if reviewed == 'reviewed':
-                uniprot_reviewed.add(up_id)
-            uniprot_gene_name[up_id] = gene_name
-            uniprot_mnemonic[up_id] = up_mnemonic
-            uniprot_mnemonic_reverse[up_mnemonic] = up_id
-            uniprot_length[up_id] = int(length)
-            if mgi:
-                mgi_ids = mgi.split(';')
-                if mgi_ids:
-                    uniprot_mgi[up_id] = mgi_ids[0]
-                    uniprot_mgi_reverse[mgi_ids[0]] = up_id
-            if rgd:
-                rgd_ids = rgd.split(';')
-                if rgd_ids:
-                    uniprot_rgd[up_id] = rgd_ids[0]
-                    uniprot_rgd_reverse[rgd_ids[0]] = up_id
-            feature_structure = [
-                ('SIGNAL', signal_peptide_str),
-                ('CHAIN', chains_str),
-                ('PROPEP', propeptides_str)
-            ]
-            uniprot_features[up_id] = []
-            for feature_type, feature_str in feature_structure:
-                if not feature_str.strip():
-                    continue
-                uniprot_features[up_id] += \
-                    _process_feature(feature_type, feature_str)
+    files = [up_entries_file, sc_entries_file]
+    for file in files:
+        with open(file, 'r') as fh:
+            csv_rows = csv.reader(fh, delimiter='\t')
+            # Skip the header row
+            next(csv_rows)
+            for row in csv_rows:
+                up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
+                    signal_peptide_str, chains_str, propeptides_str = row
+                # Store the entry in the reviewed set
+                if reviewed == 'reviewed':
+                    uniprot_reviewed.add(up_id)
+                uniprot_gene_name[up_id] = gene_name
+                uniprot_mnemonic[up_id] = up_mnemonic
+                uniprot_mnemonic_reverse[up_mnemonic] = up_id
+                uniprot_length[up_id] = int(length)
+                if mgi:
+                    mgi_ids = mgi.split(';')
+                    if mgi_ids:
+                        uniprot_mgi[up_id] = mgi_ids[0]
+                        uniprot_mgi_reverse[mgi_ids[0]] = up_id
+                if rgd:
+                    rgd_ids = rgd.split(';')
+                    if rgd_ids:
+                        uniprot_rgd[up_id] = rgd_ids[0]
+                        uniprot_rgd_reverse[rgd_ids[0]] = up_id
+                feature_structure = [
+                    ('SIGNAL', signal_peptide_str),
+                    ('CHAIN', chains_str),
+                    ('PROPEP', propeptides_str)
+                ]
+                uniprot_features[up_id] = []
+                for feature_type, feature_str in feature_structure:
+                    if not feature_str.strip():
+                        continue
+                    uniprot_features[up_id] += \
+                        _process_feature(feature_type, feature_str)
 
     # Build a dict of features by feature ID
     features_by_id = {}
@@ -1100,7 +1103,7 @@ def _process_feature(feature_type, feature_str):
         return parts
 
     # Split parts and strip off extra spaces
-    parts = [p.strip() for p in feature_str.split('; ')]
+    parts = [p.strip(' ;') for p in feature_str.split('; ')]
     parts = _fix_parts(parts)
     # Find each starting part e.g., CHAIN
     chunk_ids = [idx for idx, part in enumerate(parts)

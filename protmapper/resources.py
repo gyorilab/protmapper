@@ -226,7 +226,9 @@ def download_sars_cov2(out_file, cached=True):
         chain_str = '  '.join(chain_strs)
         return chain_str
 
-    rows = []
+    rows = [('Entry', 'Gene names  (primary )', 'Entry name',
+             'Cross-reference (RGD)', 'Cross-reference (MGI)', 'Length',
+             'Status', 'Signal peptide', 'Chain', 'Propeptide')]
     for entry in et.findall('up:entry', namespaces=up_ns):
         up_id = entry.find('up:accession', namespaces=up_ns).text
         mnemonic = entry.find('up:name', namespaces=up_ns).text
