@@ -24,10 +24,10 @@ def test_default():
     run_main(args)
     with open(output, 'r') as fh:
         rows = [r for r in csv.reader(fh)]
-    assert rows[1][-2] == 'INFERRED_MOUSE_SITE'
-    assert rows[2][-2] == 'INFERRED_METHIONINE_CLEAVAGE'
-    assert rows[3][-2] == 'VALID'
-    assert rows[4][-2] == 'NO_MAPPING_FOUND'
+    assert rows[1][-2] == 'INFERRED_MOUSE_SITE', rows[1]
+    assert rows[2][-2] == 'INFERRED_METHIONINE_CLEAVAGE', rows[2]
+    assert rows[3][-2] == 'VALID', rows[3]
+    assert rows[4][-2] == 'NO_MAPPING_FOUND', rows[4]
 
 
 def test_options():
@@ -37,10 +37,10 @@ def test_options():
     run_main(args)
     with open(output, 'r') as fh:
         rows = [r for r in csv.reader(fh)]
-    assert rows[1][-2] == 'INFERRED_MOUSE_SITE'
-    assert rows[2][-2] == 'NO_MAPPING_FOUND'
-    assert rows[3][-2] == 'VALID'
-    assert rows[4][-2] == 'NO_MAPPING_FOUND'
+    assert rows[1][-2] == 'INFERRED_MOUSE_SITE', rows[1]
+    assert rows[2][-2] == 'NO_MAPPING_FOUND', rows[2]
+    assert rows[3][-2] == 'VALID', rows[3]
+    assert rows[4][-2] == 'NO_MAPPING_FOUND', rows[4]
 
 
 def test_peptide():
@@ -51,5 +51,5 @@ def test_peptide():
     with open(output, 'r') as fh:
         rows = [r for r in csv.reader(fh)]
     print(rows)
-    assert rows[1][2] == 'True'
+    assert rows[1][2] == 'True', rows
     assert rows[2][2] == 'False'
