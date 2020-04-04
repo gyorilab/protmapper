@@ -196,6 +196,7 @@ def download_refseq_uniprot(out_file, cached=True):
 def download_sars_cov2(out_file, cached=True):
     if cached:
         _download_from_s3('uniprot_sars_cov2_entries.tsv', out_file)
+        return
     else:
         logger.info('Downloading Sars-Cov-2 mappings from Uniprot')
         url = ('ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/'
