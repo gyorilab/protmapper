@@ -265,3 +265,11 @@ def test_feature_by_id():
     assert feature.type == 'CHAIN'
     assert feature.begin == 18
     assert feature.end == 708
+
+
+def test_sars_cov2_feature():
+    feat = uniprot_client.get_feature_by_id('PRO_0000449635')
+    assert feat.type == 'CHAIN'
+    assert feat.begin == 1
+    assert feat.end == 180
+    assert feat.name == 'Non-structural protein 1'
