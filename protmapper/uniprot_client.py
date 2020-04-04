@@ -1060,9 +1060,10 @@ Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
 
 
 def _process_feature(feature_type, feature_str):
+    """Process a feature string from the UniProt TSV.
+    Documentation at: https://www.uniprot.org/help/sequence_annotation
     """
-    https://www.uniprot.org/help/sequence_annotation
-    """
+    # This function merges parts that were split inadvertently on semicolons
     def _fix_parts(parts):
         for idx, part in enumerate(parts):
             if part.startswith('/') and not part.endswith('"'):
@@ -1070,17 +1071,28 @@ def _process_feature(feature_type, feature_str):
                 parts = [p for idx, p in enumerate(parts) if idx != idx+1]
         return parts
 
+    # Split parts and strip off extra spaces
     parts = [p.strip() for p in feature_str.split('; ')]
     parts = _fix_parts(parts)
+    # Find each starting part e.g., CHAIN
     chunk_ids = [idx for idx, part in enumerate(parts)
                  if part.startswith(feature_type)] + [len(parts)]
+    # Group parts into chunks, one for each overall entry
     chunks = []
     for idx, chunk_id in enumerate(chunk_ids[:-1]):
         chunks.append(parts[chunk_ids[idx]:chunk_ids[idx+1]])
     feats = []
+    # For each distinct entry, we collect all the relevant parts and parse
+    # out information
     for chunk in chunks:
         begin = end = name = pid = None
         for part in chunk:
+            # If this is the starting piece, we have to parse out the begin
+            # and end coordinates. Caveats include: sometimes only one
+            # number is given; sometimes a ? is there instead of a number;
+            # sometimes a question mark precedes a number; sometimes
+            # there is a < before the beginning number; sometimes there
+            # is a > before the end number.
             if part.startswith(feature_type):
                 match = re.match(r'%s (?:\?|<?)(\d+|\?)..(?:\?|>?)(\d+|\?)' %
                                  feature_type, part)

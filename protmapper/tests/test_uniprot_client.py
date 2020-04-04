@@ -247,6 +247,7 @@ def test_features():
     features = uniprot_client.get_features('P55957')
     assert len(features) == 4, features
     chains = uniprot_client.get_chains('P55957')
+    assert len(chains) == 4
     assert 'BH3-interacting domain death agonist p15' in \
            {c.name for c in chains}
     for chain in chains:
