@@ -256,3 +256,12 @@ def test_features():
             assert chain.begin == 62
             assert chain.end == 195
             assert chain.id == 'PRO_0000223233'
+
+
+def test_feature_by_id():
+    feature = uniprot_client.get_feature_by_id('PRO_0000292268')
+    assert feature is not None
+    assert feature.name == 'Processed angiotensin-converting enzyme 2'
+    assert feature.type == 'CHAIN'
+    assert feature.begin == 18
+    assert feature.end == 708

@@ -843,6 +843,22 @@ def get_signal_peptide(protein_id, web_fallback=True):
     return None
 
 
+def get_feature_by_id(feature_id):
+    """Return a Feature based on its unique feature ID.
+
+    Parameters
+    ----------
+    feature_id : str
+        A Feature ID, of the form PRO_*.
+
+    Returns
+    -------
+    Feature or None
+        A Feature with the given ID.
+    """
+    return um.features_by_id.get(feature_id)
+
+
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
     """Return UniProt IDs from a RefSeq ID".
 
@@ -883,7 +899,7 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed, self._features) = maps
+         self._uniprot_reviewed, self._features, self._features_by_id) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -999,6 +1015,12 @@ class UniprotMapper(object):
             self.initialize()
         return self._features
 
+    @property
+    def features_by_id(self):
+        if not self.initialized:
+            self.initialize()
+        return self._features_by_id
+
 
 um = UniprotMapper()
 
@@ -1051,9 +1073,15 @@ def _build_uniprot_entries():
                 uniprot_features[up_id] += \
                     _process_feature(feature_type, feature_str)
 
+    # Build a dict of features by feature ID
+    features_by_id = {}
+    for up_id, feats in uniprot_features.items():
+        for feat in feats:
+            features_by_id[feat.id] = feat
+
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed, uniprot_features)
+            uniprot_length, uniprot_reviewed, uniprot_features, features_by_id)
 
 
 Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
