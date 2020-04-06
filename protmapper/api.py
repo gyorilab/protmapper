@@ -357,9 +357,9 @@ class ProtMapper(object):
         # being shifted
         signal_peptide = uniprot_client.get_signal_peptide(up_id, False)
         # If there is valid signal peptide information from UniProt
-        if signal_peptide and signal_peptide[0] == 1 and \
-                signal_peptide[1] is not None:
-            offset_pos = str(int(position) + signal_peptide[1])
+        if signal_peptide and signal_peptide.begin == 1 and \
+                signal_peptide.end is not None:
+            offset_pos = str(int(position) + signal_peptide.end)
             # Check to see if the offset position is known to be phosphorylated
             mapped_site = self.get_psp_mapping(
                                 up_id, up_id, gene_name, residue, position,

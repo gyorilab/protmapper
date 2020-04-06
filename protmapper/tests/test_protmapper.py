@@ -200,14 +200,14 @@ def test_map_invalid_from_sitemap():
                             gene_name='RB1')
 
 
-def test_h2afx_s139():
+def test_h2ax_s139():
     pm = ProtMapper()
     ms = pm.map_to_human_ref('P16104', 'uniprot', 'S', '139')
     assert ms == MappedSite(up_id='P16104', valid=False, orig_res='S',
                             orig_pos='139', mapped_id='P16104',
                             mapped_res='S', mapped_pos='140',
                             description='REMAPPED_FROM_PSP_SEQUENCE',
-                            gene_name='H2AFX')
+                            gene_name='H2AX')
 
 
 def test_myl9_s19():

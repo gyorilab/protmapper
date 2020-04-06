@@ -1,13 +1,13 @@
-import os
 import re
 import csv
+import json
 import rdflib
 import logging
 import requests
-from xml.etree import ElementTree
 from functools import lru_cache
+from xml.etree import ElementTree
 from urllib.error import HTTPError
-from protmapper.resources import resource_manager
+from protmapper.resources import resource_manager, feature_from_json, Feature
 
 logger = logging.getLogger(__name__)
 
@@ -757,6 +757,40 @@ def get_function(protein_id):
     return function.text
 
 
+def get_features(protein_id):
+    """Return a list of features (chains, peptides) for a given protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein whose features are to be returned.
+
+    Returns
+    -------
+    list of Feature
+        A list of Feature named tuples representing each Feature.
+    """
+    return um.features.get(protein_id, [])
+
+
+def get_chains(protein_id):
+    """Return the list of cleaved chains for the given protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of the protein whose cleaved chains are to be returned.
+
+    Returns
+    -------
+    list of Feature
+        A list of Feature named tuples representing each chain.
+    """
+    features = get_features(protein_id)
+    chains = [f for f in features if f.type == 'CHAIN']
+    return chains
+
+
 def get_signal_peptide(protein_id, web_fallback=True):
     """Return the position of a signal peptide for the given protein.
 
@@ -771,18 +805,23 @@ def get_signal_peptide(protein_id, web_fallback=True):
 
     Returns
     -------
-    tuple of int
-        The beginning and end position of the signal peptide as a tuple
-        of integers.
+    Feature
+        A Feature named tuple representing the signal peptide.
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
     # Note, we use False here to differentiate from None
-    entry = um.signal_peptide.get(protein_id, False)
-    if entry is not False or not web_fallback:
-        return entry
+    if not web_fallback and protein_id not in um.features:
+        return None
+    elif protein_id in um.features:
+        sp = [f for f in get_features(protein_id) if f.type == 'SIGNAL']
+        if sp:
+            return sp[0]
+        elif not web_fallback:
+            return False
+
     et = query_protein_xml(protein_id)
     if et is None:
-        return None, None
+        return None
     location = et.find(
         'up:entry/up:feature[@type="signal peptide"]/up:location',
         namespaces=xml_ns)
@@ -799,7 +838,25 @@ def get_signal_peptide(protein_id, web_fallback=True):
             end_pos = end.attrib.get('position')
             if end_pos is not None:
                 end_pos = int(end_pos)
-    return begin_pos, end_pos
+    if begin_pos is not None and end_pos is not None:
+        return Feature('SIGNAL', begin_pos, end_pos, None, None)
+    return None
+
+
+def get_feature_by_id(feature_id):
+    """Return a Feature based on its unique feature ID.
+
+    Parameters
+    ----------
+    feature_id : str
+        A Feature ID, of the form PRO_*.
+
+    Returns
+    -------
+    Feature or None
+        A Feature with the given ID.
+    """
+    return um.features_by_id.get(feature_id)
 
 
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
@@ -842,7 +899,7 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed, self._uniprot_signal_peptide) = maps
+         self._uniprot_reviewed, self._features, self._features_by_id) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -953,10 +1010,16 @@ class UniprotMapper(object):
         return self._refseq_uniprot
 
     @property
-    def signal_peptide(self):
+    def features(self):
         if not self.initialized:
             self.initialize()
-        return self._uniprot_signal_peptide
+        return self._features
+
+    @property
+    def features_by_id(self):
+        if not self.initialized:
+            self.initialize()
+        return self._features_by_id
 
 
 um = UniprotMapper()
@@ -964,6 +1027,7 @@ um = UniprotMapper()
 
 def _build_uniprot_entries():
     up_entries_file = resource_manager.get_create_resource_file('up')
+    sc_entries_file = resource_manager.get_create_resource_file('up_sars_cov2')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
     uniprot_mnemonic_reverse = {}
@@ -972,43 +1036,46 @@ def _build_uniprot_entries():
     uniprot_mgi_reverse = {}
     uniprot_rgd_reverse = {}
     uniprot_length = {}
-    uniprot_signal_peptide = {}
+    uniprot_features = {}
     uniprot_reviewed = set()
-    with open(up_entries_file, 'r') as fh:
-        csv_rows = csv.reader(fh, delimiter='\t')
-        # Skip the header row
-        next(csv_rows)
-        for row in csv_rows:
-            up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                signal_peptide = row
-            # Store the entry in the reviewed set
-            if reviewed == 'reviewed':
-                uniprot_reviewed.add(up_id)
-            uniprot_gene_name[up_id] = gene_name
-            uniprot_mnemonic[up_id] = up_mnemonic
-            uniprot_mnemonic_reverse[up_mnemonic] = up_id
-            uniprot_length[up_id] = int(length)
-            if mgi:
-                mgi_ids = mgi.split(';')
-                if mgi_ids:
-                    uniprot_mgi[up_id] = mgi_ids[0]
-                    uniprot_mgi_reverse[mgi_ids[0]] = up_id
-            if rgd:
-                rgd_ids = rgd.split(';')
-                if rgd_ids:
-                    uniprot_rgd[up_id] = rgd_ids[0]
-                    uniprot_rgd_reverse[rgd_ids[0]] = up_id
-            uniprot_signal_peptide[up_id] = (None, None)
-            if signal_peptide:
-                match = re.match(r'SIGNAL (\d+) (\d+) ', signal_peptide)
-                if match:
-                    beg_pos, end_pos = match.groups()
-                    uniprot_signal_peptide[up_id] = \
-                        (int(beg_pos), int(end_pos))
+    files = [up_entries_file, sc_entries_file]
+    for file in files:
+        with open(file, 'r') as fh:
+            csv_rows = csv.reader(fh, delimiter='\t')
+            # Skip the header row
+            next(csv_rows)
+            for row in csv_rows:
+                up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
+                    features_json = row
+                # Store the entry in the reviewed set
+                if reviewed == 'reviewed':
+                    uniprot_reviewed.add(up_id)
+                uniprot_gene_name[up_id] = gene_name
+                uniprot_mnemonic[up_id] = up_mnemonic
+                uniprot_mnemonic_reverse[up_mnemonic] = up_id
+                uniprot_length[up_id] = int(length)
+                if mgi:
+                    mgi_ids = mgi.split(';')
+                    if mgi_ids:
+                        uniprot_mgi[up_id] = mgi_ids[0]
+                        uniprot_mgi_reverse[mgi_ids[0]] = up_id
+                if rgd:
+                    rgd_ids = rgd.split(';')
+                    if rgd_ids:
+                        uniprot_rgd[up_id] = rgd_ids[0]
+                        uniprot_rgd_reverse[rgd_ids[0]] = up_id
+                uniprot_features[up_id] = [feature_from_json(feat) for
+                                           feat in json.loads(features_json)]
+
+    # Build a dict of features by feature ID
+    features_by_id = {}
+    for up_id, feats in uniprot_features.items():
+        for feat in feats:
+            features_by_id[feat.id] = feat
 
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed, uniprot_signal_peptide)
+            uniprot_length, uniprot_reviewed, uniprot_features, features_by_id)
 
 
 def _build_human_mouse_rat():

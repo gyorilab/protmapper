@@ -1,4 +1,5 @@
 from protmapper import uniprot_client
+from protmapper.resources import _process_feature
 from nose.plugins.attrib import attr
 
 
@@ -196,17 +197,15 @@ def test_get_ids_from_refseq():
 @attr('webservice')
 def test_get_signal_peptide():
     # This is a valid entry local to the resource file
-    bp, ep = uniprot_client.get_signal_peptide('P00533')
-    assert bp == 1, bp
-    assert ep == 24, ep
+    sp = uniprot_client.get_signal_peptide('P00533')
+    assert sp.begin == 1, sp
+    assert sp.end == 24, sp
     # This one requires a web lookup
-    bp, ep = uniprot_client.get_signal_peptide('P00534')
-    assert bp is None, bp
-    assert ep is None, ep
+    sp = uniprot_client.get_signal_peptide('P00534')
+    assert sp is None, sp
     # This one errors when doing web lookup
-    bp, ep = uniprot_client.get_signal_peptide('Q9H7H1')
-    assert bp is None, bp
-    assert ep is None, ep
+    sp = uniprot_client.get_signal_peptide('Q9H7H1')
+    assert sp is None, sp
 
 
 def test_get_hgnc_id():
@@ -227,3 +226,51 @@ def test_is_mouse():
 def test_is_rat():
     assert uniprot_client.is_rat('P11345-1') is True
     assert uniprot_client.is_rat('P28028') is False
+
+
+def test_process_chain():
+    chain_str = ('CHAIN 1..7096;  /note="Replicase polyprotein 1ab";  '
+                 '/id="PRO_0000449618";  CHAIN 1..180;  /note="Host '
+                 'translation inhibitor nsp1";  /id="PRO_0000449619";')
+    chains = _process_feature('CHAIN', chain_str)
+    assert len(chains) == 2
+    assert chains[0].id == 'PRO_0000449618'
+    assert chains[0].begin == 1, chains
+    assert chains[0].end == 7096
+    assert chains[0].name == 'Replicase polyprotein 1ab'
+    assert chains[1].id == 'PRO_0000449619', chains
+    assert chains[1].begin == 1
+    assert chains[1].end == 180
+    assert chains[1].name == 'Host translation inhibitor nsp1'
+
+
+def test_features():
+    features = uniprot_client.get_features('P55957')
+    assert len(features) == 4, features
+    chains = uniprot_client.get_chains('P55957')
+    assert len(chains) == 4
+    assert 'BH3-interacting domain death agonist p15' in \
+           {c.name for c in chains}
+    for chain in chains:
+        assert chain.type == 'CHAIN'
+        if chain.name == 'BH3-interacting domain death agonist p15':
+            assert chain.begin == 62, chain
+            assert chain.end == 195
+            assert chain.id == 'PRO_0000223233'
+
+
+def test_feature_by_id():
+    feature = uniprot_client.get_feature_by_id('PRO_0000292268')
+    assert feature is not None
+    assert feature.name == 'Processed angiotensin-converting enzyme 2'
+    assert feature.type == 'CHAIN'
+    assert feature.begin == 18, feature
+    assert feature.end == 708
+
+
+def test_sars_cov2_feature():
+    feat = uniprot_client.get_feature_by_id('PRO_0000449635')
+    assert feat.type == 'CHAIN'
+    assert feat.begin == 1, feat
+    assert feat.end == 180, feat
+    assert feat.name == 'Non-structural protein 1'
