@@ -7,7 +7,7 @@ import requests
 from functools import lru_cache
 from xml.etree import ElementTree
 from urllib.error import HTTPError
-from protmapper.resources import resource_manager, feature_from_json
+from protmapper.resources import resource_manager, feature_from_json, Feature
 
 logger = logging.getLogger(__name__)
 

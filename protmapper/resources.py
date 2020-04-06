@@ -106,7 +106,7 @@ def download_uniprot_entries(out_file, cached=True):
     #    lines = pickle.load(fh)
 
     logger.info('Processing UniProt entries list.')
-    new_lines = [base_columns + ['features']]
+    new_lines = ['\t'.join(base_columns + ['features'])]
     for line_idx, line in enumerate(lines):
         if line_idx == 0:
             continue
@@ -315,7 +315,8 @@ def download_sars_cov2(out_file, cached=True):
                                      namespaces=up_ns).attrib['position']
                 end = feature.find('up:location/up:end',
                                    namespaces=up_ns).attrib['position']
-                chains.append((pid, desc, begin, end))
+                chain = Feature('CHAIN', begin, end, desc, pid)
+                chains.append(chain)
         return chains
 
     rows = [('Entry', 'Gene names  (primary )', 'Entry name',
@@ -354,7 +355,7 @@ def download_sars_cov2(out_file, cached=True):
             assert False
 
         chains = _get_chains(entry)
-        chain_str = json.dumps(chains)
+        chain_str = json.dumps([feature_to_json(ch) for ch in chains])
         seq_tag = entry.find('up:sequence', namespaces=up_ns)
         length = seq_tag.attrib['length']
 
