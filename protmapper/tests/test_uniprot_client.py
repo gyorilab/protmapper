@@ -1,4 +1,5 @@
 from protmapper import uniprot_client
+from protmapper.resources import _process_feature
 from nose.plugins.attrib import attr
 
 
@@ -231,10 +232,10 @@ def test_process_chain():
     chain_str = ('CHAIN 1..7096;  /note="Replicase polyprotein 1ab";  '
                  '/id="PRO_0000449618";  CHAIN 1..180;  /note="Host '
                  'translation inhibitor nsp1";  /id="PRO_0000449619";')
-    chains = uniprot_client._process_feature('CHAIN', chain_str)
+    chains = _process_feature('CHAIN', chain_str)
     assert len(chains) == 2
     assert chains[0].id == 'PRO_0000449618'
-    assert chains[0].begin == 1
+    assert chains[0].begin == 1, chains
     assert chains[0].end == 7096
     assert chains[0].name == 'Replicase polyprotein 1ab'
     assert chains[1].id == 'PRO_0000449619', chains
@@ -253,7 +254,7 @@ def test_features():
     for chain in chains:
         assert chain.type == 'CHAIN'
         if chain.name == 'BH3-interacting domain death agonist p15':
-            assert chain.begin == 62
+            assert chain.begin == 62, chain
             assert chain.end == 195
             assert chain.id == 'PRO_0000223233'
 
@@ -263,13 +264,13 @@ def test_feature_by_id():
     assert feature is not None
     assert feature.name == 'Processed angiotensin-converting enzyme 2'
     assert feature.type == 'CHAIN'
-    assert feature.begin == 18
+    assert feature.begin == 18, feature
     assert feature.end == 708
 
 
 def test_sars_cov2_feature():
     feat = uniprot_client.get_feature_by_id('PRO_0000449635')
     assert feat.type == 'CHAIN'
-    assert feat.begin == 1
-    assert feat.end == 180
+    assert feat.begin == 1, feat
+    assert feat.end == 180, feat
     assert feat.name == 'Non-structural protein 1'

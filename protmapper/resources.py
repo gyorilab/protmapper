@@ -188,10 +188,10 @@ def _process_feature(feature_type, feature_str):
             # is a > before the end number. Sometimes there is an isoform
             # before the beginning number.
             if part.startswith(feature_type):
-                match = re.match(r'%s'                           # type marker
-                                 r'(?:.+:?)(?:\?|<?)(\d+|\?)'    # beginning
-                                 r'..'                           # connector
-                                 r'(?:\?|>?)(\d+|\?)' %          # end
+                match = re.match(r'%s '                           # type marker
+                                 r'(?:[^:]+:)?(?:\?|<?)(\d+|\?)'  # beginning
+                                 r'..'                            # connector
+                                 r'(?:\?|>?)(\d+|\?)' %           # end
                                  feature_type, part)
                 if match:
                     beg, end = match.groups()
@@ -315,6 +315,8 @@ def download_sars_cov2(out_file, cached=True):
                                      namespaces=up_ns).attrib['position']
                 end = feature.find('up:location/up:end',
                                    namespaces=up_ns).attrib['position']
+                begin = int(begin) if begin is not None else None
+                end = int(end) if end is not None else None
                 chain = Feature('CHAIN', begin, end, desc, pid)
                 chains.append(chain)
         return chains
