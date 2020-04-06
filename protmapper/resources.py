@@ -72,7 +72,6 @@ def download_uniprot_entries(out_file, cached=True):
     feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
     columns = base_columns + ['feature(%s)' % feat for feat in feature_types]
     columns_str = ','.join(columns)
-
     logger.info('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
@@ -100,32 +99,34 @@ def download_uniprot_entries(out_file, cached=True):
     reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
+    #import pickle
+    #with open('up.pkl', 'wb') as fh:
+    #    pickle.dump(lines, fh)
+    #with open('up.pkl', 'rb') as fh:
+    #    lines = pickle.load(fh)
 
-    # At this point, we need to clean up the gene names.
     logger.info('Processing UniProt entries list.')
-    for i, line in enumerate(lines):
-        if i == 0:
+    new_lines = [base_columns + ['features']]
+    for line_idx, line in enumerate(lines):
+        if line_idx == 0:
             continue
         terms = line.split('\t')
+
+        # At this point, we need to clean up the gene names.
         # If there are multiple gene names, take the first one
         gene_names = terms[1].split(';')
         terms[1] = gene_names[0]
-        # Join the line again after the change
-        lines[i] = '\t'.join(terms)
 
-    # Next we process the various features into a form that can be
-    # loaded easily in the client
-    new_lines = base_columns + ['features']
-    for line_idx, line in enumerate(lines):
-        if line_idx == 1:
-            continue
-        features = {}
+        # Next we process the various features into a form that can be
+        # loaded easily in the client
+        features = []
         for idx, feature_type in enumerate(feature_types):
             col_idx = len(base_columns) + idx
-            features += _process_feature(feature_type, line[col_idx])
+            features += _process_feature(feature_type, terms[col_idx])
         features_json = [feature_to_json(feature) for feature in features]
         features_json_str = json.dumps(features_json)
-        new_lines.append(line[:len(base_columns)] + [features_json_str])
+        new_line = terms[:len(base_columns)] + [features_json_str]
+        new_lines.append('\t'.join(new_line))
 
     # Join all lines into a single string
     full_table = '\n'.join(new_lines)
@@ -184,13 +185,18 @@ def _process_feature(feature_type, feature_str):
             # number is given; sometimes a ? is there instead of a number;
             # sometimes a question mark precedes a number; sometimes
             # there is a < before the beginning number; sometimes there
-            # is a > before the end number.
+            # is a > before the end number. Sometimes there is an isoform
+            # before the beginning number.
             if part.startswith(feature_type):
-                match = re.match(r'%s (?:\?|<?)(\d+|\?)..(?:\?|>?)(\d+|\?)' %
+                match = re.match(r'%s'                           # type marker
+                                 r'(?:.+:?)(?:\?|<?)(\d+|\?)'    # beginning
+                                 r'..'                           # connector
+                                 r'(?:\?|>?)(\d+|\?)' %          # end
                                  feature_type, part)
                 if match:
                     beg, end = match.groups()
                 else:
+                    # This is the standard begin marker
                     match = re.match(r'%s (\d+)' % feature_type, part)
                     beg = match.groups()[0]
                     end = beg

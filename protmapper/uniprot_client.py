@@ -1,13 +1,13 @@
 import re
 import csv
+import json
 import rdflib
 import logging
 import requests
 from functools import lru_cache
 from xml.etree import ElementTree
-from collections import namedtuple
 from urllib.error import HTTPError
-from protmapper.resources import resource_manager
+from protmapper.resources import resource_manager, feature_from_json
 
 logger = logging.getLogger(__name__)
 
@@ -1046,7 +1046,7 @@ def _build_uniprot_entries():
             next(csv_rows)
             for row in csv_rows:
                 up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                    signal_peptide_str, chains_str, propeptides_str = row
+                    features_json = row
                 # Store the entry in the reviewed set
                 if reviewed == 'reviewed':
                     uniprot_reviewed.add(up_id)
@@ -1064,17 +1064,8 @@ def _build_uniprot_entries():
                     if rgd_ids:
                         uniprot_rgd[up_id] = rgd_ids[0]
                         uniprot_rgd_reverse[rgd_ids[0]] = up_id
-                feature_structure = [
-                    ('SIGNAL', signal_peptide_str),
-                    ('CHAIN', chains_str),
-                    ('PROPEP', propeptides_str)
-                ]
-                uniprot_features[up_id] = []
-                for feature_type, feature_str in feature_structure:
-                    if not feature_str.strip():
-                        continue
-                    uniprot_features[up_id] += \
-                        _process_feature(feature_type, feature_str)
+                uniprot_features[up_id] = [feature_from_json(feat) for
+                                           feat in json.loads(features_json)]
 
     # Build a dict of features by feature ID
     features_by_id = {}
@@ -1085,62 +1076,6 @@ def _build_uniprot_entries():
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
             uniprot_length, uniprot_reviewed, uniprot_features, features_by_id)
-
-
-def _process_feature(feature_type, feature_str):
-    """Process a feature string from the UniProt TSV.
-    Documentation at: https://www.uniprot.org/help/sequence_annotation
-    """
-    # This function merges parts that were split inadvertently on semicolons
-    def _fix_parts(parts):
-        for idx, part in enumerate(parts):
-            if part.startswith('/') and not part.endswith('"'):
-                parts[idx] += parts[idx+1]
-                parts = [p for idx, p in enumerate(parts) if idx != idx+1]
-        return parts
-
-    # Split parts and strip off extra spaces
-    parts = [p.strip(' ;') for p in feature_str.split('; ')]
-    parts = _fix_parts(parts)
-    # Find each starting part e.g., CHAIN
-    chunk_ids = [idx for idx, part in enumerate(parts)
-                 if part.startswith(feature_type)] + [len(parts)]
-    # Group parts into chunks, one for each overall entry
-    chunks = []
-    for idx, chunk_id in enumerate(chunk_ids[:-1]):
-        chunks.append(parts[chunk_ids[idx]:chunk_ids[idx+1]])
-    feats = []
-    # For each distinct entry, we collect all the relevant parts and parse
-    # out information
-    for chunk in chunks:
-        begin = end = name = pid = None
-        for part in chunk:
-            # If this is the starting piece, we have to parse out the begin
-            # and end coordinates. Caveats include: sometimes only one
-            # number is given; sometimes a ? is there instead of a number;
-            # sometimes a question mark precedes a number; sometimes
-            # there is a < before the beginning number; sometimes there
-            # is a > before the end number.
-            if part.startswith(feature_type):
-                match = re.match(r'%s (?:\?|<?)(\d+|\?)..(?:\?|>?)(\d+|\?)' %
-                                 feature_type, part)
-                if match:
-                    beg, end = match.groups()
-                else:
-                    match = re.match(r'%s (\d+)' % feature_type, part)
-                    beg = match.groups()[0]
-                    end = beg
-                begin = int(beg) if beg != '?' else None
-                end = int(end) if end != '?' else None
-            elif part.startswith('/note'):
-                match = re.match(r'/note="(.+)"', part)
-                name = match.groups()[0]
-            elif part.startswith('/id'):
-                match = re.match(r'/id="(.+)"', part)
-                pid = match.groups()[0]
-        feature = Feature(feature_type, begin, end, name, pid)
-        feats.append(feature)
-    return feats
 
 
 def _build_human_mouse_rat():
