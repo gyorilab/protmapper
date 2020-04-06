@@ -246,7 +246,7 @@ def download_swissprot(out_file, cached=True):
         return
     logger.info('Downloading reviewed protein sequences from SwissProt')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
-                 'complete/uniprot_sprot.fasta.gz')
+                'complete/uniprot_sprot.fasta.gz')
     _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
 
 
@@ -318,16 +318,9 @@ def download_sars_cov2(out_file, cached=True):
                 chains.append((pid, desc, begin, end))
         return chains
 
-    def make_chain_str(chains):
-        chain_strs = ['CHAIN %s..%s;  /note="%s";  /id="%s";' %
-                      (begin, end, desc, pid) for pid, desc, begin, end
-                      in chains]
-        chain_str = '  '.join(chain_strs)
-        return chain_str
-
     rows = [('Entry', 'Gene names  (primary )', 'Entry name',
              'Cross-reference (RGD)', 'Cross-reference (MGI)', 'Length',
-             'Status', 'Signal peptide', 'Chain', 'Propeptide')]
+             'Status', 'features')]
     for entry in et.findall('up:entry', namespaces=up_ns):
         up_id = entry.find('up:accession', namespaces=up_ns).text
         mnemonic = entry.find('up:name', namespaces=up_ns).text
@@ -361,12 +354,12 @@ def download_sars_cov2(out_file, cached=True):
             assert False
 
         chains = _get_chains(entry)
-        chain_str = make_chain_str(chains)
+        chain_str = json.dumps(chains)
         seq_tag = entry.find('up:sequence', namespaces=up_ns)
         length = seq_tag.attrib['length']
 
         row = up_id, canonical_name, mnemonic, '', '', length, \
-            'reviewed', '', chain_str, ''
+            'reviewed', chain_str
         rows.append(row)
     with open(out_file, 'w') as fh:
         writer = csv.writer(fh, delimiter='\t', quotechar=None)
