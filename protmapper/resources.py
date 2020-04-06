@@ -1,6 +1,8 @@
 import os
+import re
 import csv
 import zlib
+import json
 import boto3
 import logging
 import argparse
@@ -8,6 +10,7 @@ import requests
 import botocore
 from ftplib import FTP
 from io import BytesIO, StringIO
+from collections import namedtuple
 from urllib.request import urlretrieve
 from xml.etree import ElementTree as ET
 from . import __version__
@@ -64,10 +67,10 @@ def download_uniprot_entries(out_file, cached=True):
     if cached:
         _download_from_s3('uniprot_entries.tsv', out_file)
         return
-
-    columns = ['id', 'genes(PREFERRED)', 'entry%20name', 'database(RGD)',
-               'database(MGI)', 'length', 'reviewed', 'feature(SIGNAL)',
-               'feature(CHAIN)', 'feature(PROPEPTIDE)']
+    base_columns = ['id', 'genes(PREFERRED)', 'entry%20name', 'database(RGD)',
+                    'database(MGI)', 'length', 'reviewed']
+    feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
+    columns = base_columns + ['feature(%s)' % feat for feat in feature_types]
     columns_str = ','.join(columns)
 
     logger.info('Downloading UniProt entries')
@@ -97,6 +100,7 @@ def download_uniprot_entries(out_file, cached=True):
     reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
+
     # At this point, we need to clean up the gene names.
     logger.info('Processing UniProt entries list.')
     for i, line in enumerate(lines):
@@ -108,11 +112,99 @@ def download_uniprot_entries(out_file, cached=True):
         terms[1] = gene_names[0]
         # Join the line again after the change
         lines[i] = '\t'.join(terms)
+
+    # Next we process the various features into a form that can be
+    # loaded easily in the client
+    new_lines = base_columns + ['features']
+    for line_idx, line in enumerate(lines):
+        if line_idx == 1:
+            continue
+        features = {}
+        for idx, feature_type in enumerate(feature_types):
+            col_idx = len(base_columns) + idx
+            features += _process_feature(feature_type, line[col_idx])
+        features_json = [feature_to_json(feature) for feature in features]
+        features_json_str = json.dumps(features_json)
+        new_lines.append(line[:len(base_columns)] + [features_json_str])
+
     # Join all lines into a single string
-    full_table = '\n'.join(lines)
+    full_table = '\n'.join(new_lines)
     logging.info('Saving into %s.' % out_file)
     with open(out_file, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
+
+
+Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
+
+
+def feature_to_json(feature):
+    return {
+        'type': feature.type,
+        'begin': feature.begin,
+        'end': feature.end,
+        'name': feature.name,
+        'id': feature.id
+    }
+
+
+def feature_from_json(feature_json):
+    return Feature(**feature_json)
+
+
+def _process_feature(feature_type, feature_str):
+    """Process a feature string from the UniProt TSV.
+    Documentation at: https://www.uniprot.org/help/sequence_annotation
+    """
+    # This function merges parts that were split inadvertently on semicolons
+    def _fix_parts(parts):
+        for idx, part in enumerate(parts):
+            if part.startswith('/') and not part.endswith('"'):
+                parts[idx] += parts[idx+1]
+                parts = [p for idx, p in enumerate(parts) if idx != idx+1]
+        return parts
+
+    # Split parts and strip off extra spaces
+    parts = [p.strip(' ;') for p in feature_str.split('; ')]
+    parts = _fix_parts(parts)
+    # Find each starting part e.g., CHAIN
+    chunk_ids = [idx for idx, part in enumerate(parts)
+                 if part.startswith(feature_type)] + [len(parts)]
+    # Group parts into chunks, one for each overall entry
+    chunks = []
+    for idx, chunk_id in enumerate(chunk_ids[:-1]):
+        chunks.append(parts[chunk_ids[idx]:chunk_ids[idx+1]])
+    feats = []
+    # For each distinct entry, we collect all the relevant parts and parse
+    # out information
+    for chunk in chunks:
+        begin = end = name = pid = None
+        for part in chunk:
+            # If this is the starting piece, we have to parse out the begin
+            # and end coordinates. Caveats include: sometimes only one
+            # number is given; sometimes a ? is there instead of a number;
+            # sometimes a question mark precedes a number; sometimes
+            # there is a < before the beginning number; sometimes there
+            # is a > before the end number.
+            if part.startswith(feature_type):
+                match = re.match(r'%s (?:\?|<?)(\d+|\?)..(?:\?|>?)(\d+|\?)' %
+                                 feature_type, part)
+                if match:
+                    beg, end = match.groups()
+                else:
+                    match = re.match(r'%s (\d+)' % feature_type, part)
+                    beg = match.groups()[0]
+                    end = beg
+                begin = int(beg) if beg != '?' else None
+                end = int(end) if end != '?' else None
+            elif part.startswith('/note'):
+                match = re.match(r'/note="(.+)"', part)
+                name = match.groups()[0]
+            elif part.startswith('/id'):
+                match = re.match(r'/id="(.+)"', part)
+                pid = match.groups()[0]
+        feature = Feature(feature_type, begin, end, name, pid)
+        feats.append(feature)
+    return feats
 
 
 def download_uniprot_sec_ac(out_file, cached=True):

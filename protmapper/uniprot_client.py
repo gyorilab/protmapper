@@ -1087,9 +1087,6 @@ def _build_uniprot_entries():
             uniprot_length, uniprot_reviewed, uniprot_features, features_by_id)
 
 
-Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
-
-
 def _process_feature(feature_type, feature_str):
     """Process a feature string from the UniProt TSV.
     Documentation at: https://www.uniprot.org/help/sequence_annotation
