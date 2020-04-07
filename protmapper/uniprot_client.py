@@ -859,6 +859,28 @@ def get_feature_by_id(feature_id):
     return um.features_by_id.get(feature_id)
 
 
+def get_feature_of(feature_id):
+    """Return the UniProt ID of the protein to which the given feature belongs.
+
+    Parameters
+    ----------
+    feature_id : str
+        A Feature ID, of the form PRO_*.
+
+    Returns
+    -------
+    str or None
+        A UniProt ID corresponding to the given feature, or None if not
+        available (generally shouldn't happen, unless the feature ID is
+        invalid).
+    """
+    for up_id, feats in um.features.items():
+        for feat in feats:
+            if feat.id == feature_id:
+                return up_id
+    return None
+
+
 def get_ids_from_refseq(refseq_id, reviewed_only=False):
     """Return UniProt IDs from a RefSeq ID".
 

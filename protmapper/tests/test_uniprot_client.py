@@ -274,3 +274,8 @@ def test_sars_cov2_feature():
     assert feat.begin == 1, feat
     assert feat.end == 180, feat
     assert feat.name == 'Non-structural protein 1'
+
+
+def test_get_feature_of():
+    up_id = uniprot_client.get_feature_of('PRO_0000449635')
+    assert up_id == 'P0DTC1', up_id
