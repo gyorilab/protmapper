@@ -708,5 +708,5 @@ default_mapper = ProtMapper(default_site_map)
 information found in resources/curated_site_map.csv'."""
 
 
-hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id = \
+hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id, _, _ = \
      uniprot_client._build_hgnc_mappings()

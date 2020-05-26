@@ -590,11 +590,35 @@ def get_hgnc_id(protein_id):
 
 
 def get_entrez_id(protein_id):
+    """Return the Entrez ID given the protein id of a human protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        UniProt ID of the human protein
+
+    Returns
+    -------
+    str or None
+        Entrez ID of the human gene or None if not available.
+    """
     protein_id = get_primary_id(_strip_isoform(protein_id))
     return um.uniprot_entrez.get(protein_id)
 
 
 def get_id_from_entrez(entrez_id):
+    """Return the uniProt ID given the Entrez ID of a human gene.
+
+    Parameters
+    ----------
+    entrez_id : str
+        Entrez ID of the human gene
+
+    Returns
+    -------
+    str or None
+        UniProt ID of the human protein or None if not available.
+    """
     return um.entrez_uniprot.get(entrez_id)
 
 
