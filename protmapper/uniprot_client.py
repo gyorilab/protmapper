@@ -589,6 +589,39 @@ def get_hgnc_id(protein_id):
     return um.uniprot_hgnc.get(protein_id)
 
 
+def get_entrez_id(protein_id):
+    """Return the Entrez ID given the protein id of a human protein.
+
+    Parameters
+    ----------
+    protein_id : str
+        UniProt ID of the human protein
+
+    Returns
+    -------
+    str or None
+        Entrez ID of the human gene or None if not available.
+    """
+    protein_id = get_primary_id(_strip_isoform(protein_id))
+    return um.uniprot_entrez.get(protein_id)
+
+
+def get_id_from_entrez(entrez_id):
+    """Return the uniProt ID given the Entrez ID of a human gene.
+
+    Parameters
+    ----------
+    entrez_id : str
+        Entrez ID of the human gene
+
+    Returns
+    -------
+    str or None
+        UniProt ID of the human protein or None if not available.
+    """
+    return um.entrez_uniprot.get(entrez_id)
+
+
 def get_mgi_id(protein_id):
     """Return the MGI ID given the protein id of a mouse protein.
 
@@ -930,7 +963,8 @@ class UniprotMapper(object):
     def initialize_hgnc(self):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
-        _, _, self._uniprot_hgnc = _build_hgnc_mappings()
+        _, _, self._uniprot_hgnc, self._entrez_uniprot, \
+            self._uniprot_entrez = _build_hgnc_mappings()
         self.initialized_hgnc = True
 
     def initialize_seq(self):
@@ -952,6 +986,18 @@ class UniprotMapper(object):
         if not self.initialized_hgnc:
             self.initialize_hgnc()
         return self._uniprot_hgnc
+
+    @property
+    def uniprot_entrez(self):
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
+        return self._uniprot_entrez
+
+    @property
+    def entrez_uniprot(self):
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
+        return self._entrez_uniprot
 
     @property
     def uniprot_mnemonic(self):
@@ -1137,6 +1183,8 @@ def _build_hgnc_mappings():
         hgnc_name_to_id = {}
         hgnc_id_to_up = {}
         up_to_hgnc_id = {}
+        entrez_to_up = {}
+        up_to_entrez = {}
         for row in csv_rows:
             hgnc_id = row[0][5:]
             hgnc_status = row[3]
@@ -1149,7 +1197,14 @@ def _build_hgnc_mappings():
             uniprot_ids = uniprot_id.split(', ')
             for upid in uniprot_ids:
                 up_to_hgnc_id[upid] = hgnc_id
-    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id
+            # Entrez
+            entrez_id = row[5]
+            for upid in uniprot_ids:
+                up_to_entrez[upid] = entrez_id
+            entrez_to_up[entrez_id] = uniprot_id
+
+    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id, \
+        entrez_to_up, up_to_entrez
 
 
 def _build_uniprot_sec():

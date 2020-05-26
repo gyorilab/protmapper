@@ -279,3 +279,8 @@ def test_sars_cov2_feature():
 def test_get_feature_of():
     up_id = uniprot_client.get_feature_of('PRO_0000449635')
     assert up_id == 'P0DTC1', up_id
+
+
+def test_entrez_uniprot():
+    assert uniprot_client.get_entrez_id('Q66K41') == '201181'
+    assert uniprot_client.get_id_from_entrez('201181') == 'Q66K41'
