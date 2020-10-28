@@ -13,10 +13,12 @@ from io import BytesIO, StringIO
 from collections import namedtuple
 from urllib.request import urlretrieve
 from xml.etree import ElementTree as ET
-from . import __version__
+#from . import __version__
+__version__ = '0.0.18'
 
 
 logger = logging.getLogger('protmapper.resources')
+logger.setLevel(logging.INFO)
 
 
 # If the protmapper resource directory does not exist, try to create it
@@ -57,6 +59,9 @@ def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432):
 
 
 def download_phosphositeplus(out_file, cached=True):
+    if not cached:
+        logger.info('Cannot download PSP data without using the cache.')
+        return
     logger.info("Note that PhosphoSitePlus data is not available for "
                 "commercial use; please see full terms and conditions at: "
                 "https://www.psp.org/staticDownloads")
@@ -99,11 +104,6 @@ def download_uniprot_entries(out_file, cached=True):
     reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
-    #import pickle
-    #with open('up.pkl', 'wb') as fh:
-    #    pickle.dump(lines, fh)
-    #with open('up.pkl', 'rb') as fh:
-    #    lines = pickle.load(fh)
 
     logger.info('Processing UniProt entries list.')
     new_lines = ['\t'.join(base_columns + ['features'])]
@@ -291,90 +291,10 @@ def download_refseq_uniprot(out_file, cached=True):
         csvwriter.writerows(filt_rows)
 
 
-def download_sars_cov2(out_file, cached=True):
-    if cached:
-        _download_from_s3('uniprot_sars_cov2_entries.tsv', out_file)
-        return
-    else:
-        logger.info('Downloading Sars-Cov-2 mappings from Uniprot')
-        url = ('ftp://ftp.uniprot.org/pub/databases/uniprot/pre_release/'
-               'covid-19.xml')
-        urlretrieve(url, out_file + '.xml')
-
-    et = ET.parse(out_file + '.xml')
-    up_ns = {'up': 'http://uniprot.org/uniprot'}
-
-    def _get_chains(entry):
-        features = entry.findall('up:feature', namespaces=up_ns)
-        chains = []
-        for feature in features:
-            if feature.attrib.get('type') == 'chain':
-                pid = feature.attrib['id']
-                desc = feature.attrib['description']
-                begin = feature.find('up:location/up:begin',
-                                     namespaces=up_ns).attrib['position']
-                end = feature.find('up:location/up:end',
-                                   namespaces=up_ns).attrib['position']
-                begin = int(begin) if begin is not None else None
-                end = int(end) if end is not None else None
-                chain = Feature('CHAIN', begin, end, desc, pid)
-                chains.append(chain)
-        return chains
-
-    rows = [('Entry', 'Gene names  (primary )', 'Entry name',
-             'Cross-reference (RGD)', 'Cross-reference (MGI)', 'Length',
-             'Status', 'features')]
-    for entry in et.findall('up:entry', namespaces=up_ns):
-        up_id = entry.find('up:accession', namespaces=up_ns).text
-        mnemonic = entry.find('up:name', namespaces=up_ns).text
-        # Skip redundant human proteins here
-        if mnemonic.endswith('HUMAN'):
-            continue
-        gene_name_tag = entry.find('up:gene/up:name', namespaces=up_ns)
-        gene_name = gene_name_tag.text if gene_name_tag is not None else None
-        full_name_tag = entry.find('up:protein/up:recommendedName/up:fullName',
-                                   namespaces=up_ns)
-        full_name = full_name_tag.text if full_name_tag is not None else None
-        recommended_name_tag = \
-            entry.find('up:protein/up:recommendedName/up:fullName',
-                       namespaces=up_ns)
-        recommended_name = recommended_name_tag.text if recommended_name_tag \
-            is not None else None
-        short_names = [e.text for e in
-                       entry.findall('up:protein/up:recommendedName/'
-                                     'up:shortName', namespaces=up_ns)]
-
-        # Choose a single canonical name
-        if recommended_name:
-            canonical_name = recommended_name
-        elif gene_name:
-            canonical_name = gene_name
-        elif full_name:
-            canonical_name = full_name
-        elif short_names:
-            canonical_name = short_names[0]
-        if not canonical_name:
-            assert False
-
-        chains = _get_chains(entry)
-        chain_str = json.dumps([feature_to_json(ch) for ch in chains])
-        seq_tag = entry.find('up:sequence', namespaces=up_ns)
-        length = seq_tag.attrib['length']
-
-        row = up_id, canonical_name, mnemonic, '', '', length, \
-            'reviewed', chain_str
-        rows.append(row)
-    with open(out_file, 'w') as fh:
-        writer = csv.writer(fh, delimiter='\t', quotechar=None)
-        for row in rows:
-            writer.writerow(row)
-
-
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
     'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
     'up': ('uniprot_entries.tsv', download_uniprot_entries),
-    'up_sars_cov2': ('uniprot_sars_cov2_entries.tsv', download_sars_cov2),
     'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
     'swissprot': ('uniprot_sprot.fasta', download_swissprot),
     'isoforms': ('uniprot_sprot_varsplic.fasta', download_isoforms),
@@ -498,6 +418,7 @@ if __name__ == '__main__':
     # already exists. With the download flag, we force re-download.
     parser.add_argument('--download', action='store_true')
     args = parser.parse_args()
+    logger.info(args)
     resource_ids = resource_manager.get_resource_ids()
     for resource_id in resource_ids:
         if not args.download:

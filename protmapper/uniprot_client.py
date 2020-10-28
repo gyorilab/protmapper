@@ -1095,7 +1095,6 @@ um = UniprotMapper()
 
 def _build_uniprot_entries():
     up_entries_file = resource_manager.get_create_resource_file('up')
-    sc_entries_file = resource_manager.get_create_resource_file('up_sars_cov2')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
     uniprot_mnemonic_reverse = {}
@@ -1106,7 +1105,7 @@ def _build_uniprot_entries():
     uniprot_length = {}
     uniprot_features = {}
     uniprot_reviewed = set()
-    files = [up_entries_file, sc_entries_file]
+    files = [up_entries_file]
     for file in files:
         with open(file, 'r') as fh:
             csv_rows = csv.reader(fh, delimiter='\t')
