@@ -1192,15 +1192,17 @@ def _build_hgnc_mappings():
                 hgnc_name_to_id[hgnc_name] = hgnc_id
             # Uniprot
             uniprot_id = row[6]
-            hgnc_id_to_up[hgnc_id] = uniprot_id
-            uniprot_ids = uniprot_id.split(', ')
-            for upid in uniprot_ids:
-                up_to_hgnc_id[upid] = hgnc_id
-            # Entrez
-            entrez_id = row[5]
-            for upid in uniprot_ids:
-                up_to_entrez[upid] = entrez_id
-            entrez_to_up[entrez_id] = uniprot_id
+            if uniprot_id:
+                hgnc_id_to_up[hgnc_id] = uniprot_id
+                uniprot_ids = uniprot_id.split(', ')
+                for upid in uniprot_ids:
+                    up_to_hgnc_id[upid] = hgnc_id
+                # Entrez
+                entrez_id = row[5]
+                if entrez_id:
+                    for upid in uniprot_ids:
+                        up_to_entrez[upid] = entrez_id
+                        entrez_to_up[entrez_id] = uniprot_id
 
     return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id, \
         entrez_to_up, up_to_entrez
