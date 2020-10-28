@@ -1,7 +1,6 @@
 import re
 import csv
 import json
-import rdflib
 import logging
 import requests
 from functools import lru_cache
@@ -39,6 +38,7 @@ def query_protein(protein_id):
     g : rdflib.Graph
         The RDF graph corresponding to the UniProt entry.
     """
+    import rdflib
     # Try looking up a primary ID if the given one
     # is a secondary ID
     try:
