@@ -13,8 +13,7 @@ from io import BytesIO, StringIO
 from collections import namedtuple
 from urllib.request import urlretrieve
 from xml.etree import ElementTree as ET
-#from . import __version__
-__version__ = '0.0.18'
+from . import __version__
 
 
 logger = logging.getLogger('protmapper.resources')
