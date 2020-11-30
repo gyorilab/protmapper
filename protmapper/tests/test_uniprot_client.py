@@ -273,7 +273,7 @@ def test_sars_cov2_feature():
     assert feat.type == 'CHAIN'
     assert feat.begin == 1, feat
     assert feat.end == 180, feat
-    assert feat.name == 'Non-structural protein 1'
+    assert feat.name == 'Host translation inhibitor nsp1', feat.name
 
 
 def test_get_feature_of():

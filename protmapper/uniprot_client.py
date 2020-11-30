@@ -1,7 +1,6 @@
 import re
 import csv
 import json
-import rdflib
 import logging
 import requests
 from functools import lru_cache
@@ -39,6 +38,7 @@ def query_protein(protein_id):
     g : rdflib.Graph
         The RDF graph corresponding to the UniProt entry.
     """
+    import rdflib
     # Try looking up a primary ID if the given one
     # is a secondary ID
     try:
@@ -1095,7 +1095,6 @@ um = UniprotMapper()
 
 def _build_uniprot_entries():
     up_entries_file = resource_manager.get_create_resource_file('up')
-    sc_entries_file = resource_manager.get_create_resource_file('up_sars_cov2')
     uniprot_gene_name = {}
     uniprot_mnemonic = {}
     uniprot_mnemonic_reverse = {}
@@ -1106,7 +1105,7 @@ def _build_uniprot_entries():
     uniprot_length = {}
     uniprot_features = {}
     uniprot_reviewed = set()
-    files = [up_entries_file, sc_entries_file]
+    files = [up_entries_file]
     for file in files:
         with open(file, 'r') as fh:
             csv_rows = csv.reader(fh, delimiter='\t')
@@ -1193,15 +1192,17 @@ def _build_hgnc_mappings():
                 hgnc_name_to_id[hgnc_name] = hgnc_id
             # Uniprot
             uniprot_id = row[6]
-            hgnc_id_to_up[hgnc_id] = uniprot_id
-            uniprot_ids = uniprot_id.split(', ')
-            for upid in uniprot_ids:
-                up_to_hgnc_id[upid] = hgnc_id
-            # Entrez
-            entrez_id = row[5]
-            for upid in uniprot_ids:
-                up_to_entrez[upid] = entrez_id
-            entrez_to_up[entrez_id] = uniprot_id
+            if uniprot_id:
+                hgnc_id_to_up[hgnc_id] = uniprot_id
+                uniprot_ids = uniprot_id.split(', ')
+                for upid in uniprot_ids:
+                    up_to_hgnc_id[upid] = hgnc_id
+                # Entrez
+                entrez_id = row[5]
+                if entrez_id:
+                    for upid in uniprot_ids:
+                        up_to_entrez[upid] = entrez_id
+                        entrez_to_up[entrez_id] = uniprot_id
 
     return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id, \
         entrez_to_up, up_to_entrez
