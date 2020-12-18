@@ -284,3 +284,10 @@ def test_get_feature_of():
 def test_entrez_uniprot():
     assert uniprot_client.get_entrez_id('Q66K41') == '201181'
     assert uniprot_client.get_id_from_entrez('201181') == 'Q66K41'
+
+
+def test_get_organism_id():
+    tid = uniprot_client.get_organism_id('P15056')
+    assert tid == '9606', tid
+    tid = uniprot_client.get_organism_id('P0DTC1')
+    assert tid == '2697049', tid

@@ -941,6 +941,23 @@ def get_ids_from_refseq(refseq_id, reviewed_only=False):
         return primaries
 
 
+def get_organism_id(protein_id):
+    """Return the Taxonomy ID of the organism that a protein belongs to.
+
+    Parameters
+    ----------
+    protein_id : str
+        The UniProt ID of a protein.
+
+    Returns
+    -------
+    str or None
+        The Taxonomy ID of the organism the protein belongs to or None
+        if not available.
+    """
+    return um.organism_ids.get(protein_id)
+
+
 class UniprotMapper(object):
     def __init__(self):
         self.initialized = False
@@ -954,7 +971,8 @@ class UniprotMapper(object):
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
-         self._uniprot_reviewed, self._features, self._features_by_id) = maps
+         self._uniprot_reviewed, self._features, self._features_by_id,
+         self._organisms_by_id) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -1089,6 +1107,12 @@ class UniprotMapper(object):
             self.initialize()
         return self._features_by_id
 
+    @property
+    def organism_ids(self):
+        if not self.initialized:
+            self.initialize()
+        return self._organisms_by_id
+
 
 um = UniprotMapper()
 
@@ -1105,6 +1129,7 @@ def _build_uniprot_entries():
     uniprot_length = {}
     uniprot_features = {}
     uniprot_reviewed = set()
+    organisms_by_id = {}
     files = [up_entries_file]
     for file in files:
         with open(file, 'r') as fh:
@@ -1113,7 +1138,7 @@ def _build_uniprot_entries():
             next(csv_rows)
             for row in csv_rows:
                 up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                    features_json = row
+                    organism_id, features_json = row
                 # Store the entry in the reviewed set
                 if reviewed == 'reviewed':
                     uniprot_reviewed.add(up_id)
@@ -1133,6 +1158,7 @@ def _build_uniprot_entries():
                         uniprot_rgd_reverse[rgd_ids[0]] = up_id
                 uniprot_features[up_id] = [feature_from_json(feat) for
                                            feat in json.loads(features_json)]
+                organisms_by_id[up_id] = organism_id
 
     # Build a dict of features by feature ID
     features_by_id = {}
@@ -1142,7 +1168,8 @@ def _build_uniprot_entries():
 
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
-            uniprot_length, uniprot_reviewed, uniprot_features, features_by_id)
+            uniprot_length, uniprot_reviewed, uniprot_features, features_by_id,
+            organisms_by_id)
 
 
 def _build_human_mouse_rat():
