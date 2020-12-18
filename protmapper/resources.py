@@ -72,7 +72,7 @@ def download_uniprot_entries(out_file, cached=True):
         _download_from_s3('uniprot_entries.tsv', out_file)
         return
     base_columns = ['id', 'genes(PREFERRED)', 'entry%20name', 'database(RGD)',
-                    'database(MGI)', 'length', 'reviewed']
+                    'database(MGI)', 'length', 'reviewed', 'organism-id']
     feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
     columns = base_columns + ['feature(%s)' % feat for feat in feature_types]
     columns_str = ','.join(columns)
