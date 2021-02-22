@@ -1138,7 +1138,11 @@ def _build_uniprot_entries():
             next(csv_rows)
             for row in csv_rows:
                 up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                    organism_id, features_json = row
+                    organism_id, all_gene_names, features_json = row
+                if all_gene_names:
+                    all_gene_names_list = all_gene_names.split(' ')
+                    if not gene_name:
+                        gene_name = all_gene_names_list[0]
                 # Store the entry in the reviewed set
                 if reviewed == 'reviewed':
                     uniprot_reviewed.add(up_id)

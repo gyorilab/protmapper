@@ -291,3 +291,10 @@ def test_get_organism_id():
     assert tid == '9606', tid
     tid = uniprot_client.get_organism_id('P0DTC1')
     assert tid == '2697049', tid
+
+
+def test_more_gene_names_for_nonhuman():
+    gene_name = uniprot_client.get_gene_name('P59632', web_fallback=False)
+    assert gene_name == '3a'
+    gene_name = uniprot_client.get_gene_name('P0DTD2', web_fallback=False)
+    assert gene_name == '9b'

@@ -71,8 +71,9 @@ def download_uniprot_entries(out_file, cached=True):
     if cached:
         _download_from_s3('uniprot_entries.tsv', out_file)
         return
-    base_columns = ['id', 'genes(PREFERRED)', 'entry%20name', 'database(RGD)',
-                    'database(MGI)', 'length', 'reviewed', 'organism-id']
+    base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
+                    'database(RGD)', 'database(MGI)', 'length', 'reviewed',
+                    'organism-id', 'genes']
     feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
     columns = base_columns + ['feature(%s)' % feat for feat in feature_types]
     columns_str = ','.join(columns)
@@ -98,7 +99,7 @@ def download_uniprot_entries(out_file, cached=True):
 
     if not((reviewed_entries is not None) and
             (unreviewed_human_entries is not None)):
-            return
+        return
     unreviewed_human_entries = unreviewed_human_entries.decode('utf-8')
     reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
