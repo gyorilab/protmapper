@@ -1,18 +1,28 @@
-import os
-from setuptools import setup
+import re
+from os import path
+from setuptools import setup, find_packages
 
 
-readme_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                           'README.md')
-with open(readme_path, 'r', encoding='utf-8') as fh:
+here = path.abspath(path.dirname(__file__))
+with open(path.join(here, 'README.md'), 'r', encoding='utf-8') as fh:
     long_description = fh.read()
+
+
+with open(path.join(here, 'protmapper', '__init__.py'), 'r') as fh:
+    for line in fh.readlines():
+        match = re.match(r'__version__ = \'(.+)\'', line)
+        if match:
+            version = match.groups()[0]
+            break
+    else:
+        raise ValueError('Could not get version from protmapper/__init__.py')
 
 
 def main():
     install_list = ['requests', 'rdflib', 'boto3']
 
     setup(name='protmapper',
-          version='0.0.19',
+          version=version,
           description='Map protein sites to human reference sequence.',
           long_description=long_description,
           long_description_content_type='text/markdown',
@@ -30,7 +40,7 @@ def main():
             ],
           keywords=['protein', 'proteomics', 'sequence', 'alignment',
                     'assembly', 'post-translational', 'modification'],
-          packages=['protmapper', 'protmapper.rest_api'],
+          packages=find_packages(),
           install_requires=install_list,
           tests_require=['nose'],
           extras_require={'rest_api': ['flask', 'flask_cors']},
