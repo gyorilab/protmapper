@@ -73,9 +73,11 @@ def download_uniprot_entries(out_file, cached=True):
         return
     base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
                     'database(RGD)', 'database(MGI)', 'length', 'reviewed',
-                    'organism-id', 'genes']
+                    'organism-id']
+    processed_columns = ['genes', 'protein%20names']
     feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
-    columns = base_columns + ['feature(%s)' % feat for feat in feature_types]
+    columns = base_columns + processed_columns + \
+        ['feature(%s)' % feat for feat in feature_types]
     columns_str = ','.join(columns)
     logger.info('Downloading UniProt entries')
     url = 'http://www.uniprot.org/uniprot/?' + \
@@ -106,53 +108,107 @@ def download_uniprot_entries(out_file, cached=True):
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
 
     logger.info('Processing UniProt entries list.')
-    new_lines = ['\t'.join(base_columns + ['features'])]
+    new_lines = ['\t'.join(base_columns + processed_columns + ['features'])]
     for line_idx, line in enumerate(lines):
         if line_idx == 0:
             continue
-        terms = line.split('\t')
-
-        # At this point, we need to clean up the gene names.
-        # If there are multiple gene names, take the first one
-        gene_names = terms[1].split(';')
-        terms[1] = gene_names[0]
-
-        # Next we process the various features into a form that can be
-        # loaded easily in the client
-        features = []
-        for idx, feature_type in enumerate(feature_types):
-            col_idx = len(base_columns) + idx
-            features += _process_feature(feature_type, terms[col_idx])
-        features_json = [feature_to_json(feature) for feature in features]
-        features_json_str = json.dumps(features_json)
-        new_line = terms[:len(base_columns)] + [features_json_str]
-        new_lines.append('\t'.join(new_line))
+        new_line = process_uniprot_line(line, base_columns, processed_columns,
+                                        feature_types)
+        new_lines.append(new_line)
 
     # Join all lines into a single string
     full_table = '\n'.join(new_lines)
-    logging.info('Saving into %s.' % out_file)
+    logger.info('Saving into %s.' % out_file)
     with open(out_file, 'wb') as fh:
         fh.write(full_table.encode('utf-8'))
 
 
-Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id'])
+def process_uniprot_line(line, base_columns, processed_columns,
+                         feature_types):
+    terms = line.split('\t')
+
+    # At this point, we need to clean up the gene names.
+    # If there are multiple gene names, take the first one
+    gene_names_preferred = terms[1].split(';')
+    gene_name = gene_names_preferred[0]
+    if not gene_name:
+        gene_name = terms[8].split(' ')[0]
+    terms[1] = gene_name
+
+    protein_names = parse_uniprot_synonyms(terms[9])
+    protein_name = protein_names[0] if protein_names else None
+
+    # Next we process the various features into a form that can be
+    # loaded easily in the client
+    features = []
+    for idx, feature_type in enumerate(feature_types):
+        col_idx = len(base_columns) + len(processed_columns) + idx
+        features += _process_feature(feature_type, terms[col_idx],
+                                     protein_name)
+    features_json = [feature_to_json(feature) for feature in features]
+    features_json_str = json.dumps(features_json)
+    new_line = terms[:len(base_columns)] + [features_json_str]
+    return '\t'.join(new_line)
+
+
+def parse_uniprot_synonyms(synonyms_str):
+    synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
+                          '', synonyms_str).strip()
+    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]',
+                          '', synonyms_str).strip()
+
+    def find_block_from_right(s):
+        parentheses_depth = 0
+        assert s.endswith(')')
+        s = s[:-1]
+        block = ''
+        for c in s[::-1]:
+            if c == ')':
+                parentheses_depth += 1
+            elif c == '(':
+                if parentheses_depth > 0:
+                    parentheses_depth -= 1
+                else:
+                    return block
+            block = c + block
+        return block
+
+    syns = []
+    while True:
+        if not synonyms_str:
+            return syns
+        if not synonyms_str.endswith(')'):
+            return [synonyms_str] + syns
+
+        syn = find_block_from_right(synonyms_str)
+        syns = [syn] + syns
+        synonyms_str = synonyms_str[:-len(syn)-3]
+
+
+Feature = namedtuple('Feature', ['type', 'begin', 'end', 'name', 'id',
+                                 'is_main'])
 
 
 def feature_to_json(feature):
-    return {
+    jj = {
         'type': feature.type,
         'begin': feature.begin,
         'end': feature.end,
         'name': feature.name,
         'id': feature.id
     }
+    if feature.is_main:
+        jj['is_main'] = True
+    return jj
 
 
 def feature_from_json(feature_json):
+    if 'is_main' not in feature_json:
+        feature_json['is_main'] = False
     return Feature(**feature_json)
 
 
-def _process_feature(feature_type, feature_str):
+def _process_feature(feature_type, feature_str, protein_name):
     """Process a feature string from the UniProt TSV.
     Documentation at: https://www.uniprot.org/help/sequence_annotation
     """
@@ -208,7 +264,8 @@ def _process_feature(feature_type, feature_str):
             elif part.startswith('/id'):
                 match = re.match(r'/id="(.+)"', part)
                 pid = match.groups()[0]
-        feature = Feature(feature_type, begin, end, name, pid)
+        is_main = name == protein_name
+        feature = Feature(feature_type, begin, end, name, pid, is_main)
         feats.append(feature)
     return feats
 
