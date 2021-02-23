@@ -264,7 +264,7 @@ def _process_feature(feature_type, feature_str, protein_name):
             elif part.startswith('/id'):
                 match = re.match(r'/id="(.+)"', part)
                 pid = match.groups()[0]
-        is_main = name == protein_name
+        is_main = (name == protein_name)
         feature = Feature(feature_type, begin, end, name, pid, is_main)
         feats.append(feature)
     return feats

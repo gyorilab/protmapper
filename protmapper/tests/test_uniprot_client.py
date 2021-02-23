@@ -298,3 +298,12 @@ def test_more_gene_names_for_nonhuman():
     assert gene_name == '3a'
     gene_name = uniprot_client.get_gene_name('P0DTD2', web_fallback=False)
     assert gene_name == '9b'
+
+
+def test_chain_is_main_protein():
+    feature = uniprot_client.get_feature_by_id('PRO_0000016665')
+    assert feature.is_main, feature
+    feature = uniprot_client.get_feature_by_id('PRO_0000030310')
+    assert feature.is_main, feature
+    feature = uniprot_client.get_feature_by_id('PRO_0000030311')
+    assert not feature.is_main, feature
