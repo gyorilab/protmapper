@@ -15,7 +15,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-
+from protmapper import __version__ as protmapper_version
 
 # -- Project information -----------------------------------------------------
 
@@ -24,9 +24,9 @@ copyright = '2019, John A. Bachman, Benjamin M. Gyori'
 author = 'John A. Bachman, Benjamin M. Gyori'
 
 # The short X.Y version
-version = '0.0'
+version = '.'.join(protmapper_version.split('.')[:1])
 # The full version, including alpha/beta/rc tags
-release = '0.0.19'
+release = protmapper_version
 
 
 # -- General configuration ---------------------------------------------------

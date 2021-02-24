@@ -1,0 +1,31 @@
+name: Run unit tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[rest_api]
+        pip install nose coverage python-coveralls
+    - name: Run regular unit tests
+      run: |
+        nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
+    - name: Run CLI smoketests
+      run: |
+        protmapper protmapper/tests/cli_input.csv output.csv --no_methionine_offset --no_orthology_mapping --no_isoform_mapping
+        protmapper protmapper/tests/cli_input_peptide.csv output.csv --peptide

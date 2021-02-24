@@ -1142,7 +1142,8 @@ def _build_uniprot_entries():
                 # Store the entry in the reviewed set
                 if reviewed == 'reviewed':
                     uniprot_reviewed.add(up_id)
-                uniprot_gene_name[up_id] = gene_name
+                # This is to turn empty strings into explicit Nones
+                uniprot_gene_name[up_id] = gene_name if gene_name else None
                 uniprot_mnemonic[up_id] = up_mnemonic
                 uniprot_mnemonic_reverse[up_mnemonic] = up_id
                 uniprot_length[up_id] = int(length)

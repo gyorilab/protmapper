@@ -232,7 +232,7 @@ def test_process_chain():
     chain_str = ('CHAIN 1..7096;  /note="Replicase polyprotein 1ab";  '
                  '/id="PRO_0000449618";  CHAIN 1..180;  /note="Host '
                  'translation inhibitor nsp1";  /id="PRO_0000449619";')
-    chains = _process_feature('CHAIN', chain_str)
+    chains = _process_feature('CHAIN', chain_str, None)
     assert len(chains) == 2
     assert chains[0].id == 'PRO_0000449618'
     assert chains[0].begin == 1, chains
@@ -291,3 +291,19 @@ def test_get_organism_id():
     assert tid == '9606', tid
     tid = uniprot_client.get_organism_id('P0DTC1')
     assert tid == '2697049', tid
+
+
+def test_more_gene_names_for_nonhuman():
+    gene_name = uniprot_client.get_gene_name('P59632', web_fallback=False)
+    assert gene_name == '3a'
+    gene_name = uniprot_client.get_gene_name('P0DTD2', web_fallback=False)
+    assert gene_name == '9b'
+
+
+def test_chain_is_main_protein():
+    feature = uniprot_client.get_feature_by_id('PRO_0000016665')
+    assert feature.is_main, feature
+    feature = uniprot_client.get_feature_by_id('PRO_0000030310')
+    assert feature.is_main, feature
+    feature = uniprot_client.get_feature_by_id('PRO_0000030311')
+    assert not feature.is_main, feature
