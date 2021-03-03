@@ -256,7 +256,10 @@ def get_id_from_mnemonic(uniprot_mnemonic):
 
 
 def get_gene_name(protein_id, web_fallback=True):
-    """Return the gene name for the given UniProt ID.
+    """Return the gene name or canonical protein name for the given UniProt ID.
+
+    If available, this function returns the primary gene name provided by
+    UniProt. If not available, the primary protein name is returned.
 
     Parameters
     ----------
