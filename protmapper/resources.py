@@ -133,10 +133,16 @@ def process_uniprot_line(line, base_columns, processed_columns,
     gene_name = gene_names_preferred[0]
     if not gene_name:
         gene_name = terms[8].split(' ')[0]
-    terms[1] = gene_name
 
     protein_names = parse_uniprot_synonyms(terms[9])
     protein_name = protein_names[0] if protein_names else None
+
+    if gene_name:
+        terms[1] = gene_name
+    elif protein_name:
+        terms[1] = protein_name
+    else:
+        terms[1] = None
 
     # Next we process the various features into a form that can be
     # loaded easily in the client

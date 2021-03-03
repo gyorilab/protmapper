@@ -307,3 +307,7 @@ def test_chain_is_main_protein():
     assert feature.is_main, feature
     feature = uniprot_client.get_feature_by_id('PRO_0000030311')
     assert not feature.is_main, feature
+
+
+def test_get_gene_name_only_protein_name():
+    assert uniprot_client.get_gene_name('P04377') == 'Pseudoazurin'
