@@ -4,6 +4,7 @@ import csv
 import zlib
 import json
 import boto3
+import pystow
 import logging
 import argparse
 import requests
@@ -22,14 +23,7 @@ logger.setLevel(logging.INFO)
 
 # If the protmapper resource directory does not exist, try to create it
 home_dir = os.path.expanduser('~')
-resource_dir = os.path.join(home_dir, '.protmapper', __version__)
-
-
-if not os.path.isdir(resource_dir):
-    try:
-        os.makedirs(resource_dir)
-    except Exception:
-        logger.warning(resource_dir + ' already exists')
+resource_dir = pystow.get('protmapper', __version__).as_posix()
 
 
 def _download_from_s3(key, out_file):
