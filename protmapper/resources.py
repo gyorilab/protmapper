@@ -21,8 +21,10 @@ logger = logging.getLogger('protmapper.resources')
 logger.setLevel(logging.INFO)
 
 
-# If the protmapper resource directory does not exist, try to create it
-home_dir = os.path.expanduser('~')
+# If the protmapper resource directory does not exist, try to create it using PyStow
+# Can be specified with PROTMAPPER_HOME environment variable, otherwise defaults
+# to $HOME/.data/protmapper/<__version__>. The location of $HOME can be overridden with
+# the PYSTOW_HOME environment variable
 resource_dir = pystow.get('protmapper', __version__).as_posix()
 
 
