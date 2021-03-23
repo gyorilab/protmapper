@@ -19,7 +19,7 @@ with open(path.join(here, 'protmapper', '__init__.py'), 'r') as fh:
 
 
 def main():
-    install_list = ['requests', 'rdflib', 'boto3']
+    install_list = ['requests', 'rdflib', 'boto3', 'pystow']
 
     setup(name='protmapper',
           version=version,
