@@ -25,7 +25,7 @@ logger.setLevel(logging.INFO)
 # Can be specified with PROTMAPPER_HOME environment variable, otherwise defaults
 # to $HOME/.data/protmapper/<__version__>. The location of $HOME can be overridden with
 # the PYSTOW_HOME environment variable
-resource_dir = pystow.get('protmapper', __version__).as_posix()
+resource_dir = pystow.join('protmapper', __version__).as_posix()
 
 
 def _download_from_s3(key, out_file):
