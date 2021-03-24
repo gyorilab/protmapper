@@ -3,7 +3,7 @@ import csv
 import pickle
 import logging
 from requests.exceptions import HTTPError
-from protmapper.resources import resource_dir
+from protmapper.resources import resource_dir_path
 from protmapper import phosphosite_client, uniprot_client
 
 
@@ -185,7 +185,7 @@ class ProtMapper(object):
         self.site_map = site_map
         # Set default cache path
         if cache_path is None:
-            cache_path = os.path.join(resource_dir, 'sm_cache.pkl')
+            cache_path = os.path.join(resource_dir_path, 'sm_cache.pkl')
         self._cache_path = cache_path
         self.use_cache = use_cache
         self._cache = {}

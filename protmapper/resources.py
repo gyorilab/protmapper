@@ -4,6 +4,7 @@ import csv
 import zlib
 import json
 import boto3
+import pystow
 import logging
 import argparse
 import requests
@@ -20,16 +21,12 @@ logger = logging.getLogger('protmapper.resources')
 logger.setLevel(logging.INFO)
 
 
-# If the protmapper resource directory does not exist, try to create it
-home_dir = os.path.expanduser('~')
-resource_dir = os.path.join(home_dir, '.protmapper', __version__)
-
-
-if not os.path.isdir(resource_dir):
-    try:
-        os.makedirs(resource_dir)
-    except Exception:
-        logger.warning(resource_dir + ' already exists')
+# If the protmapper resource directory does not exist, try to create it using PyStow
+# Can be specified with PROTMAPPER_HOME environment variable, otherwise defaults
+# to $HOME/.data/protmapper/<__version__>. The location of $HOME can be overridden with
+# the PYSTOW_HOME environment variable
+resource_dir_path = pystow.join('protmapper', __version__)
+resource_dir = resource_dir_path.as_posix()
 
 
 def _download_from_s3(key, out_file):
@@ -391,7 +388,7 @@ class ResourceManager(object):
         str
             The path to the resource file.
         """
-        return os.path.join(resource_dir, self.resource_map[resource_id][0])
+        return os.path.join(resource_dir_path, self.resource_map[resource_id][0])
 
     def get_download_fun(self, resource_id):
         """Return the download function for the given resource.
