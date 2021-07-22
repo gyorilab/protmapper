@@ -129,9 +129,9 @@ def process_uniprot_line(line, base_columns, processed_columns,
     gene_names_preferred = terms[1].split(';')
     gene_name = gene_names_preferred[0]
     if not gene_name:
-        gene_name = terms[8].split(' ')[0]
+        gene_name = terms[len(base_columns)].split(' ')[0]
 
-    protein_names = parse_uniprot_synonyms(terms[9])
+    protein_names = parse_uniprot_synonyms(terms[len(base_columns)+1])
     protein_name = protein_names[0] if protein_names else None
 
     if gene_name:
