@@ -593,34 +593,34 @@ def get_hgnc_id(protein_id):
 
 
 def get_entrez_id(protein_id):
-    """Return the Entrez ID given the protein id of a human protein.
+    """Return the Entrez ID given a protein ID.
 
     Parameters
     ----------
     protein_id : str
-        UniProt ID of the human protein
+        UniProt ID of the protein
 
     Returns
     -------
     str or None
-        Entrez ID of the human gene or None if not available.
+        Entrez ID of the corresponding gene or None if not available.
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
     return um.uniprot_entrez.get(protein_id)
 
 
 def get_id_from_entrez(entrez_id):
-    """Return the uniProt ID given the Entrez ID of a human gene.
+    """Return the UniProt ID given the Entrez ID of a gene.
 
     Parameters
     ----------
     entrez_id : str
-        Entrez ID of the human gene
+        Entrez ID of the gene
 
     Returns
     -------
     str or None
-        UniProt ID of the human protein or None if not available.
+        UniProt ID of the corresponding protein or None if not available.
     """
     return um.entrez_uniprot.get(entrez_id)
 
@@ -975,7 +975,8 @@ class UniprotMapper(object):
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
          self._uniprot_reviewed, self._features, self._features_by_id,
-         self._organisms_by_id) = maps
+         self._organisms_by_id, self._uniprot_entrez,
+         self._entrez_uniprot) = maps
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -984,8 +985,7 @@ class UniprotMapper(object):
     def initialize_hgnc(self):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
-        _, _, self._uniprot_hgnc, self._entrez_uniprot, \
-            self._uniprot_entrez = _build_hgnc_mappings()
+        _, _, self._uniprot_hgnc = _build_hgnc_mappings()
         self.initialized_hgnc = True
 
     def initialize_seq(self):
@@ -1010,14 +1010,14 @@ class UniprotMapper(object):
 
     @property
     def uniprot_entrez(self):
-        if not self.initialized_hgnc:
-            self.initialize_hgnc()
+        if not self.initialized:
+            self.initialize()
         return self._uniprot_entrez
 
     @property
     def entrez_uniprot(self):
-        if not self.initialized_hgnc:
-            self.initialize_hgnc()
+        if not self.initialized:
+            self.initialize()
         return self._entrez_uniprot
 
     @property
@@ -1117,6 +1117,7 @@ class UniprotMapper(object):
         return self._organisms_by_id
 
 
+
 um = UniprotMapper()
 
 
@@ -1133,6 +1134,8 @@ def _build_uniprot_entries():
     uniprot_features = {}
     uniprot_reviewed = set()
     organisms_by_id = {}
+    uniprot_entrez = {}
+    uniprot_entrez_reverse = {}
     files = [up_entries_file]
     for file in files:
         with open(file, 'r') as fh:
@@ -1141,7 +1144,7 @@ def _build_uniprot_entries():
             next(csv_rows)
             for row in csv_rows:
                 up_id, gene_name, up_mnemonic, rgd, mgi, length, reviewed, \
-                    organism_id, features_json = row
+                    organism_id, entrez_id, features_json = row
                 # Store the entry in the reviewed set
                 if reviewed == 'reviewed':
                     uniprot_reviewed.add(up_id)
@@ -1164,6 +1167,13 @@ def _build_uniprot_entries():
                                            feat in json.loads(features_json)]
                 organisms_by_id[up_id] = organism_id
 
+                # Entrez mappings
+                entrez_ids = [ei for ei in
+                              [e.strip() for e in entrez_id.split(';')] if ei]
+                for eid in entrez_ids:
+                    uniprot_entrez[up_id] = eid
+                    uniprot_entrez_reverse[eid] = up_id
+
     # Build a dict of features by feature ID
     features_by_id = {}
     for up_id, feats in uniprot_features.items():
@@ -1173,7 +1183,7 @@ def _build_uniprot_entries():
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
             uniprot_length, uniprot_reviewed, uniprot_features, features_by_id,
-            organisms_by_id)
+            organisms_by_id, uniprot_entrez, uniprot_entrez_reverse)
 
 
 def _build_human_mouse_rat():
@@ -1213,8 +1223,6 @@ def _build_hgnc_mappings():
         hgnc_name_to_id = {}
         hgnc_id_to_up = {}
         up_to_hgnc_id = {}
-        entrez_to_up = {}
-        up_to_entrez = {}
         for row in csv_rows:
             hgnc_id = row[0][5:]
             hgnc_status = row[3]
@@ -1228,15 +1236,8 @@ def _build_hgnc_mappings():
                 uniprot_ids = uniprot_id.split(', ')
                 for upid in uniprot_ids:
                     up_to_hgnc_id[upid] = hgnc_id
-                # Entrez
-                entrez_id = row[5]
-                if entrez_id:
-                    for upid in uniprot_ids:
-                        up_to_entrez[upid] = entrez_id
-                        entrez_to_up[entrez_id] = uniprot_id
 
-    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id, \
-        entrez_to_up, up_to_entrez
+    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id
 
 
 def _build_uniprot_sec():
