@@ -70,7 +70,7 @@ def download_uniprot_entries(out_file, cached=True):
         return
     base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
                     'database(RGD)', 'database(MGI)', 'length', 'reviewed',
-                    'organism-id']
+                    'organism-id', 'database(GeneID)']
     processed_columns = ['genes', 'protein%20names']
     feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
     columns = base_columns + processed_columns + \
@@ -280,7 +280,7 @@ def download_uniprot_sec_ac(out_file, cached=True):
 
     logger.info('Downloading UniProt secondary accession mappings')
     url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
-        'docs/sec_ac.txt'
+        'complete/docs/sec_ac.txt'
     urlretrieve(url, out_file)
 
 
