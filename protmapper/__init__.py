@@ -1,4 +1,5 @@
-__version__ = '0.0.21'
+__version__ = '0.0.22'
+import os
 import logging
 
 logging.basicConfig(format=('%(levelname)s: [%(asctime)s] %(name)s'
@@ -13,5 +14,6 @@ logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
 logger = logging.getLogger('protmapper')
 
-from protmapper.api import ProtMapper, MappedSite
-from protmapper.resources import resource_dir
+if not os.environ.get('INITIAL_RESOURCE_DOWNLOAD'):
+    from protmapper.api import ProtMapper, MappedSite
+    from protmapper.resources import resource_dir

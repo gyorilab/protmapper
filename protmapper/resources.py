@@ -70,7 +70,7 @@ def download_uniprot_entries(out_file, cached=True):
         return
     base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
                     'database(RGD)', 'database(MGI)', 'length', 'reviewed',
-                    'organism-id']
+                    'organism-id', 'database(GeneID)']
     processed_columns = ['genes', 'protein%20names']
     feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
     columns = base_columns + processed_columns + \
@@ -129,9 +129,9 @@ def process_uniprot_line(line, base_columns, processed_columns,
     gene_names_preferred = terms[1].split(';')
     gene_name = gene_names_preferred[0]
     if not gene_name:
-        gene_name = terms[8].split(' ')[0]
+        gene_name = terms[len(base_columns)].split(' ')[0]
 
-    protein_names = parse_uniprot_synonyms(terms[9])
+    protein_names = parse_uniprot_synonyms(terms[len(base_columns)+1])
     protein_name = protein_names[0] if protein_names else None
 
     if gene_name:
@@ -140,6 +140,10 @@ def process_uniprot_line(line, base_columns, processed_columns,
         terms[1] = protein_name
     else:
         terms[1] = None
+
+    # We only add Entrez IDs for reviewed entries to avoid the problem
+    # caused by one-to-many mappings with lots of unreviewed proteins
+    terms[8] = '' if terms[6] != 'reviewed' else terms[8]
 
     # Next we process the various features into a form that can be
     # loaded easily in the client
@@ -280,7 +284,7 @@ def download_uniprot_sec_ac(out_file, cached=True):
 
     logger.info('Downloading UniProt secondary accession mappings')
     url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
-        'docs/sec_ac.txt'
+        'complete/docs/sec_ac.txt'
     urlretrieve(url, out_file)
 
 

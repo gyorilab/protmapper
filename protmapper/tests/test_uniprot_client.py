@@ -282,8 +282,14 @@ def test_get_feature_of():
 
 
 def test_entrez_uniprot():
+    # This oen comes only from HGNC
     assert uniprot_client.get_entrez_id('Q66K41') == '201181'
     assert uniprot_client.get_id_from_entrez('201181') == 'Q66K41'
+    # This is unreviewed so we don't add it
+    assert uniprot_client.get_entrez_id('Q5VZ30') is None
+    # This comes only from UniProt
+    assert uniprot_client.get_entrez_id('Q05329') == '2572'
+    assert uniprot_client.get_id_from_entrez('2572') == 'Q05329'
 
 
 def test_get_organism_id():
