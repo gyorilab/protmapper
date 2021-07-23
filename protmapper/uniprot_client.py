@@ -999,10 +999,12 @@ class UniprotMapper(object):
             _uniprot_entrez = _build_hgnc_mappings()
 
         # Here we always overwrite the value to prioritize
-        for k, v in _uniprot_entrez.items():
-            self._uniprot_entrez[k] = v
-        for k, v in _entrez_uniprot.items():
-            self._entrez_uniprot[k] = v
+        for upid, egid in _uniprot_entrez.items():
+            for uid in upid.split(', '):
+                self._uniprot_entrez[uid] = egid
+        for egid, upid in _entrez_uniprot.items():
+            if ',' not in upid:
+                self._entrez_uniprot[egid] = upid
 
         self.initialized_hgnc = True
 
