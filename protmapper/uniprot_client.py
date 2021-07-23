@@ -967,6 +967,8 @@ class UniprotMapper(object):
         self.initialized_seq = False
         self.initialized_hgnc = False
         self.initialized_refseq = False
+        self._entrez_uniprot = {}
+        self._uniprot_entrez = {}
 
     def initialize(self):
         maps = _build_uniprot_entries()
@@ -975,8 +977,14 @@ class UniprotMapper(object):
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
          self._uniprot_reviewed, self._features, self._features_by_id,
-         self._organisms_by_id, self._uniprot_entrez,
-         self._entrez_uniprot) = maps
+         self._organisms_by_id, _uniprot_entrez,
+         _entrez_uniprot) = maps
+
+        # Here we always overwrite the value to prioritize
+        for k, v in _uniprot_entrez.items():
+            self._uniprot_entrez[k] = v
+        for k, v in _entrez_uniprot.items():
+            self._entrez_uniprot[k] = v
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -985,7 +993,17 @@ class UniprotMapper(object):
     def initialize_hgnc(self):
         self._uniprot_human_mouse, self._uniprot_human_rat = \
             _build_human_mouse_rat()
-        _, _, self._uniprot_hgnc = _build_hgnc_mappings()
+        _, _, self._uniprot_hgnc, _entrez_uniprot, \
+            _uniprot_entrez = _build_hgnc_mappings()
+
+        # Here we don't overwrite the value to de-prioritize
+        for k, v in _uniprot_entrez.items():
+            if k not in self._uniprot_entrez:
+                self._uniprot_entrez[k] = v
+        for k, v in _entrez_uniprot.items():
+            if k not in self._entrez_uniprot:
+                self._entrez_uniprot[k] = v
+
         self.initialized_hgnc = True
 
     def initialize_seq(self):
@@ -1012,12 +1030,16 @@ class UniprotMapper(object):
     def uniprot_entrez(self):
         if not self.initialized:
             self.initialize()
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
         return self._uniprot_entrez
 
     @property
     def entrez_uniprot(self):
         if not self.initialized:
             self.initialize()
+        if not self.initialized_hgnc:
+            self.initialize_hgnc()
         return self._entrez_uniprot
 
     @property
@@ -1223,6 +1245,8 @@ def _build_hgnc_mappings():
         hgnc_name_to_id = {}
         hgnc_id_to_up = {}
         up_to_hgnc_id = {}
+        entrez_to_up = {}
+        up_to_entrez = {}
         for row in csv_rows:
             hgnc_id = row[0][5:]
             hgnc_status = row[3]
@@ -1236,8 +1260,15 @@ def _build_hgnc_mappings():
                 uniprot_ids = uniprot_id.split(', ')
                 for upid in uniprot_ids:
                     up_to_hgnc_id[upid] = hgnc_id
+                # Entrez
+                entrez_id = row[5]
+                if entrez_id:
+                    for upid in uniprot_ids:
+                        up_to_entrez[upid] = entrez_id
+                        entrez_to_up[entrez_id] = uniprot_id
 
-    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id
+    return hgnc_name_to_id, hgnc_id_to_up, up_to_hgnc_id, \
+        entrez_to_up, up_to_entrez
 
 
 def _build_uniprot_sec():
