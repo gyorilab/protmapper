@@ -141,6 +141,10 @@ def process_uniprot_line(line, base_columns, processed_columns,
     else:
         terms[1] = None
 
+    # We only add Entrez IDs for reviewed entries to avoid the problem
+    # caused by one-to-many mappings with lots of unreviewed proteins
+    terms[8] = '' if terms[6] != 'reviewed' else terms[8]
+
     # Next we process the various features into a form that can be
     # loaded easily in the client
     features = []

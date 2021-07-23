@@ -980,11 +980,13 @@ class UniprotMapper(object):
          self._organisms_by_id, _uniprot_entrez,
          _entrez_uniprot) = maps
 
-        # Here we always overwrite the value to prioritize
+        # Here we don't overwrite the value to de-prioritize
         for k, v in _uniprot_entrez.items():
-            self._uniprot_entrez[k] = v
+            if k not in self._uniprot_entrez:
+                self._uniprot_entrez[k] = v
         for k, v in _entrez_uniprot.items():
-            self._entrez_uniprot[k] = v
+            if k not in self._entrez_uniprot:
+                self._entrez_uniprot[k] = v
 
         self._uniprot_sec = _build_uniprot_sec()
 
@@ -996,13 +998,11 @@ class UniprotMapper(object):
         _, _, self._uniprot_hgnc, _entrez_uniprot, \
             _uniprot_entrez = _build_hgnc_mappings()
 
-        # Here we don't overwrite the value to de-prioritize
+        # Here we always overwrite the value to prioritize
         for k, v in _uniprot_entrez.items():
-            if k not in self._uniprot_entrez:
-                self._uniprot_entrez[k] = v
+            self._uniprot_entrez[k] = v
         for k, v in _entrez_uniprot.items():
-            if k not in self._entrez_uniprot:
-                self._entrez_uniprot[k] = v
+            self._entrez_uniprot[k] = v
 
         self.initialized_hgnc = True
 
