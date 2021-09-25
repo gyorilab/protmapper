@@ -69,3 +69,17 @@ For a detailed documentation of the Protmapper, visit http://protmapper.readthed
 
 ## Funding
 The development of protmapper is funded under the DARPA Automated Scientific Discovery Framework project (ARO grant W911NF018-1-0124).
+
+## Citation
+
+```bibtex
+@article{bachman2019protmapper,
+  author = {Bachman, John A and Gyori, Benjamin M and Sorger, Peter K},
+  doi = {10.1101/822668},
+  journal = {bioRxiv},
+  publisher = {Cold Spring Harbor Laboratory},
+  title = {{Assembling a phosphoproteomic knowledge base using ProtMapper to normalize phosphosite information from databases and text mining}},
+  url = {https://www.biorxiv.org/content/early/2019/11/06/822668.1},
+  year = {2019}
+}
+```
