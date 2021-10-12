@@ -1,3 +1,5 @@
+import gzip
+
 import os
 import re
 import csv
@@ -39,7 +41,8 @@ def _download_from_s3(key, out_file):
     s3.download_file('bigmech', full_key, out_file, Config=tc)
 
 
-def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432):
+def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432,
+                     decompress=True):
     ftp = FTP(ftp_host)
     ftp.login()
     gzf_bytes = BytesIO()
@@ -47,7 +50,8 @@ def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432):
                    callback=lambda s: gzf_bytes.write(s),
                    blocksize=ftp_blocksize)
     ret = gzf_bytes.getvalue()
-    ret = zlib.decompress(ret, 16+zlib.MAX_WBITS)
+    if decompress:
+        ret = zlib.decompress(ret, 16+zlib.MAX_WBITS)
     if out_file is not None:
         with open(out_file, 'wb') as f:
             f.write(ret)
@@ -61,12 +65,12 @@ def download_phosphositeplus(out_file, cached=True):
     logger.info("Note that PhosphoSitePlus data is not available for "
                 "commercial use; please see full terms and conditions at: "
                 "https://www.psp.org/staticDownloads")
-    _download_from_s3('Phosphorylation_site_dataset.tsv', out_file)
+    _download_from_s3('Phosphorylation_site_dataset.tsv.gz', out_file)
 
 
 def download_uniprot_entries(out_file, cached=True):
     if cached:
-        _download_from_s3('uniprot_entries.tsv', out_file)
+        _download_from_s3('uniprot_entries.tsv.gz', out_file)
         return
     base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
                     'database(RGD)', 'database(MGI)', 'length', 'reviewed',
@@ -116,8 +120,8 @@ def download_uniprot_entries(out_file, cached=True):
     # Join all lines into a single string
     full_table = '\n'.join(new_lines)
     logger.info('Saving into %s.' % out_file)
-    with open(out_file, 'wb') as fh:
-        fh.write(full_table.encode('utf-8'))
+    with gzip.open(out_file, 'wt', encoding='utf-8') as fh:
+        fh.write(full_table)
 
 
 def process_uniprot_line(line, base_columns, processed_columns,
@@ -281,18 +285,20 @@ def _process_feature(feature_type, feature_str, protein_name):
 
 def download_uniprot_sec_ac(out_file, cached=True):
     if cached:
-        _download_from_s3('uniprot_sec_ac.txt', out_file)
+        _download_from_s3('uniprot_sec_ac.txt.gz', out_file)
         return
 
     logger.info('Downloading UniProt secondary accession mappings')
     url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
         'complete/docs/sec_ac.txt'
-    urlretrieve(url, out_file)
+    res = requests.get(url)
+    with gzip.open(out_file, 'wt', encoding='utf=8') as fh:
+        fh.write(res.text)
 
 
 def download_hgnc_entries(out_file, cached=True):
     if cached:
-        _download_from_s3('hgnc_entries.tsv', out_file)
+        _download_from_s3('hgnc_entries.tsv.gz', out_file)
         return
 
     logger.info('Downloading HGNC entries')
@@ -302,42 +308,43 @@ def download_hgnc_entries(out_file, cached=True):
         logger.error('Failed to download "%s"' % url)
         return
     logger.info('Saving into %s' % out_file)
-    with open(out_file, 'wb') as fh:
-        fh.write(res.content)
+    with gzip.open(out_file, 'wt', encoding='utf-8') as fh:
+        fh.write(res.text)
 
 
 def download_swissprot(out_file, cached=True):
     if cached:
-        _download_from_s3('uniprot_sprot.fasta', out_file)
+        _download_from_s3('uniprot_sprot.fasta.gz', out_file)
         return
     logger.info('Downloading reviewed protein sequences from SwissProt')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                 'complete/uniprot_sprot.fasta.gz')
-    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
+    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file, decompress=False)
 
 
 def download_isoforms(out_file, cached=True):
     if cached:
-        _download_from_s3('uniprot_sprot_varsplic.fasta', out_file)
+        _download_from_s3('uniprot_sprot_varsplic.fasta.gz', out_file)
         return
     logger.info('Downloading isoform sequences from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                 'complete/uniprot_sprot_varsplic.fasta.gz')
-    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file)
+    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file, decompress=False)
 
 
 def download_refseq_seq(out_file, cached=True):
     if cached:
-        _download_from_s3('refseq_sequence.fasta', out_file)
+        _download_from_s3('refseq_sequence.fasta.gz', out_file)
         return
     ftp_path = ('/refseq/H_sapiens/annotation/GRCh38_latest/'
                 'refseq_identifiers/GRCh38_latest_protein.faa.gz')
-    _download_ftp_gz('ftp.ncbi.nlm.nih.gov', ftp_path, out_file)
+    _download_ftp_gz('ftp.ncbi.nlm.nih.gov', ftp_path, out_file,
+                     decompress=False)
 
 
 def download_refseq_uniprot(out_file, cached=True):
     if cached:
-        _download_from_s3('refseq_uniprot.csv', out_file)
+        _download_from_s3('refseq_uniprot.csv.gz', out_file)
         return
     logger.info('Downloading RefSeq->Uniprot mappings from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
@@ -352,20 +359,20 @@ def download_refseq_uniprot(out_file, cached=True):
         if other_type == 'RefSeq':
             filt_rows.append([other_id, up_id])
     # Write the file with just the RefSeq->UP mappings
-    with open(out_file, 'wt') as f:
-        csvwriter = csv.writer(f)
-        csvwriter.writerows(filt_rows)
+    with gzip.open(out_file, 'wt', encoding='utf-8') as fh:
+        writer = csv.writer(fh)
+        writer.writerows(filt_rows)
 
 
 RESOURCE_MAP = {
-    'hgnc': ('hgnc_entries.tsv', download_hgnc_entries),
-    'upsec': ('uniprot_sec_ac.txt', download_uniprot_sec_ac),
-    'up': ('uniprot_entries.tsv', download_uniprot_entries),
-    'psp': ('Phosphorylation_site_dataset.tsv', download_phosphositeplus),
-    'swissprot': ('uniprot_sprot.fasta', download_swissprot),
-    'isoforms': ('uniprot_sprot_varsplic.fasta', download_isoforms),
-    'refseq_uniprot': ('refseq_uniprot.csv', download_refseq_uniprot),
-    'refseq_seq': ('refseq_sequence.fasta', download_refseq_seq),
+    'hgnc': ('hgnc_entries.tsv.gz', download_hgnc_entries),
+    'upsec': ('uniprot_sec_ac.txt.gz', download_uniprot_sec_ac),
+    'up': ('uniprot_entries.tsv.gz', download_uniprot_entries),
+    'psp': ('Phosphorylation_site_dataset.tsv.gz', download_phosphositeplus),
+    'swissprot': ('uniprot_sprot.fasta.gz', download_swissprot),
+    'isoforms': ('uniprot_sprot_varsplic.fasta.gz', download_isoforms),
+    'refseq_uniprot': ('refseq_uniprot.csv.gz', download_refseq_uniprot),
+    'refseq_seq': ('refseq_sequence.fasta.gz', download_refseq_seq),
     }
 
 
