@@ -122,6 +122,8 @@ def download_uniprot_entries(out_file, cached=True):
 
 def process_uniprot_line(line, base_columns, processed_columns,
                          feature_types):
+    if 'P84122' in line:
+        breakpoint()
     terms = line.split('\t')
 
     # At this point, we need to clean up the gene names.
@@ -161,7 +163,7 @@ def process_uniprot_line(line, base_columns, processed_columns,
 def parse_uniprot_synonyms(synonyms_str):
     synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
                           '', synonyms_str).strip()
-    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]',
+    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]( \(Fragments\))?',
                           '', synonyms_str).strip()
 
     def find_block_from_right(s):
