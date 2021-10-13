@@ -41,15 +41,15 @@ def _download_from_s3(key, out_file):
     s3.download_file('bigmech', full_key, out_file, Config=tc)
 
 
-def _download_ftp_gz(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432,
-                     decompress=True):
+def _download_ftp(ftp_host, ftp_path, out_file=None, ftp_blocksize=33554432,
+                  decompress=True):
     ftp = FTP(ftp_host)
     ftp.login()
-    gzf_bytes = BytesIO()
+    fbytes = BytesIO()
     ftp.retrbinary('RETR %s' % ftp_path,
-                   callback=lambda s: gzf_bytes.write(s),
+                   callback=lambda s: fbytes.write(s),
                    blocksize=ftp_blocksize)
-    ret = gzf_bytes.getvalue()
+    ret = fbytes.getvalue()
     if decompress:
         ret = zlib.decompress(ret, 16+zlib.MAX_WBITS)
     if out_file is not None:
@@ -291,9 +291,12 @@ def download_uniprot_sec_ac(out_file, cached=True):
     logger.info('Downloading UniProt secondary accession mappings')
     url = 'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/' + \
         'complete/docs/sec_ac.txt'
-    res = requests.get(url)
-    with gzip.open(out_file, 'wt', encoding='utf=8') as fh:
-        fh.write(res.text)
+    content = _download_ftp('ftp.uniprot.org',
+                            'pub/databases/uniprot/knowledgebase/complete/'
+                            'docs/sec_ac.txt',
+                            decompress=False, out_file=None)
+    with gzip.open(out_file, 'wb') as fh:
+        fh.write(content)
 
 
 def download_hgnc_entries(out_file, cached=True):
@@ -319,7 +322,7 @@ def download_swissprot(out_file, cached=True):
     logger.info('Downloading reviewed protein sequences from SwissProt')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                 'complete/uniprot_sprot.fasta.gz')
-    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file, decompress=False)
+    _download_ftp('ftp.uniprot.org', ftp_path, out_file, decompress=False)
 
 
 def download_isoforms(out_file, cached=True):
@@ -329,7 +332,7 @@ def download_isoforms(out_file, cached=True):
     logger.info('Downloading isoform sequences from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                 'complete/uniprot_sprot_varsplic.fasta.gz')
-    _download_ftp_gz('ftp.uniprot.org', ftp_path, out_file, decompress=False)
+    _download_ftp('ftp.uniprot.org', ftp_path, out_file, decompress=False)
 
 
 def download_refseq_seq(out_file, cached=True):
@@ -338,8 +341,8 @@ def download_refseq_seq(out_file, cached=True):
         return
     ftp_path = ('/refseq/H_sapiens/annotation/GRCh38_latest/'
                 'refseq_identifiers/GRCh38_latest_protein.faa.gz')
-    _download_ftp_gz('ftp.ncbi.nlm.nih.gov', ftp_path, out_file,
-                     decompress=False)
+    _download_ftp('ftp.ncbi.nlm.nih.gov', ftp_path, out_file,
+                  decompress=False)
 
 
 def download_refseq_uniprot(out_file, cached=True):
@@ -349,8 +352,8 @@ def download_refseq_uniprot(out_file, cached=True):
     logger.info('Downloading RefSeq->Uniprot mappings from Uniprot')
     ftp_path = ('/pub/databases/uniprot/current_release/knowledgebase/'
                 'idmapping/by_organism/HUMAN_9606_idmapping.dat.gz')
-    mappings_bytes = _download_ftp_gz('ftp.uniprot.org', ftp_path,
-                                      out_file=None)
+    mappings_bytes = _download_ftp('ftp.uniprot.org', ftp_path,
+                                   out_file=None, decompress=True)
     logger.info('Processing RefSeq->Uniprot mappings file')
     mappings_io = StringIO(mappings_bytes.decode('utf8'))
     csvreader = csv.reader(mappings_io, delimiter='\t')
