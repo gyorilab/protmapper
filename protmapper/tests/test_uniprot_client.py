@@ -1,5 +1,5 @@
 from protmapper import uniprot_client
-from protmapper.resources import _process_feature
+from protmapper.resources import _process_feature, parse_uniprot_synonyms
 from nose.plugins.attrib import attr
 
 
@@ -317,3 +317,14 @@ def test_chain_is_main_protein():
 
 def test_get_gene_name_only_protein_name():
     assert uniprot_client.get_gene_name('P04377') == 'Pseudoazurin'
+
+
+def test_protein_name_no_ec_code():
+    assert uniprot_client.get_gene_name('P84122') == 'Thrombin'
+
+
+def test_parse_synonym():
+    syn_str = ('Thrombin (EC 3.4.21.5) [Cleaved into: Thrombin light chain; '
+               'Thrombin heavy chain] (Fragments)')
+    syns = parse_uniprot_synonyms(syn_str)
+    assert syns == ['Thrombin'], syns
