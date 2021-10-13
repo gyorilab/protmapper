@@ -1279,10 +1279,11 @@ def _build_uniprot_sec():
     # to primary accession numbers
     sec_file = resource_manager.get_create_resource_file('upsec')
     uniprot_sec = {}
-    lines = open(sec_file, 'rt').readlines()
-    for i, l in enumerate(lines):
-        if l.startswith('Secondary AC'):
-            entry_lines = lines[i+2:]
+    with gzip.open(sec_file, 'rt', encoding='utf-8') as fh:
+        lines = fh.readlines()
+        for i, l in enumerate(lines):
+            if l.startswith('Secondary AC'):
+                entry_lines = lines[i+2:]
 
     for l in entry_lines:
         sec_id, prim_id = l.split()
