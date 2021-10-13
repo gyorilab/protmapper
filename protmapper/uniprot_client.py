@@ -1322,21 +1322,26 @@ def _build_refseq_uniprot():
 
 def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
     sequences = {}
-    with gzip.open(seq_file, 'rt', encoding='utf-8') as f:
-        lines = f.readlines()
-        cur_id = None
-        seq_lines = []
-        for line in lines:
-            if line.startswith('>'):
-                line_id = line[1:].split(id_delimiter)[id_index]
-                if cur_id is not None:
-                    seq = ''.join(seq_lines)
-                    sequences[cur_id] = seq
-                    seq_lines = []
-                cur_id = line_id
-            else:
-                seq_lines.append(line.strip())
-        # Add the last sequence
-        seq = ''.join(seq_lines)
-        sequences[cur_id] = seq
+    if seq_file.endswith('gz'):
+        with gzip.open(seq_file, 'rt', encoding='utf-8') as f:
+            lines = f.readlines()
+    # This is necessary for downstream usage of this function
+    else:
+        with open(seq_file, 'rt', encoding='utf-8') as f:
+            lines = f.readlines()
+    cur_id = None
+    seq_lines = []
+    for line in lines:
+        if line.startswith('>'):
+            line_id = line[1:].split(id_delimiter)[id_index]
+            if cur_id is not None:
+                seq = ''.join(seq_lines)
+                sequences[cur_id] = seq
+                seq_lines = []
+            cur_id = line_id
+        else:
+            seq_lines.append(line.strip())
+    # Add the last sequence
+    seq = ''.join(seq_lines)
+    sequences[cur_id] = seq
     return sequences
