@@ -1,5 +1,6 @@
 import re
 import csv
+import gzip
 import json
 import logging
 import requests
@@ -1162,7 +1163,7 @@ def _build_uniprot_entries():
     uniprot_entrez_reverse = {}
     files = [up_entries_file]
     for file in files:
-        with open(file, 'r') as fh:
+        with gzip.open(file, 'rt', encoding='utf-8') as fh:
             csv_rows = csv.reader(fh, delimiter='\t')
             # Skip the header row
             next(csv_rows)
@@ -1212,7 +1213,7 @@ def _build_uniprot_entries():
 
 def _build_human_mouse_rat():
     hgnc_file = resource_manager.get_create_resource_file('hgnc')
-    with open(hgnc_file, 'r') as fh:
+    with gzip.open(hgnc_file, 'rt', encoding='utf-8') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
@@ -1240,7 +1241,7 @@ def _build_human_mouse_rat():
 
 def _build_hgnc_mappings():
     hgnc_file = resource_manager.get_create_resource_file('hgnc')
-    with open(hgnc_file, 'r') as fh:
+    with gzip.open(hgnc_file, 'rt', encoding='utf-8') as fh:
         csv_rows = csv.reader(fh, delimiter='\t')
         # Skip the header row
         next(csv_rows)
@@ -1309,7 +1310,7 @@ def _build_refseq_uniprot():
     refseq_uniprot_file = resource_manager.get_create_resource_file(
                                                 'refseq_uniprot')
     refseq_up = {}
-    with open(refseq_uniprot_file, 'rt') as f:
+    with gzip.open(refseq_uniprot_file, 'rt', encoding='utf-8') as f:
         csvreader = csv.reader(f)
         for refseq_id, up_id in csvreader:
             if refseq_id not in refseq_up:
@@ -1320,7 +1321,7 @@ def _build_refseq_uniprot():
 
 def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
     sequences = {}
-    with open(seq_file, 'rt') as f:
+    with gzip.open(seq_file, 'rt', encoding='utf-8') as f:
         lines = f.readlines()
         cur_id = None
         seq_lines = []

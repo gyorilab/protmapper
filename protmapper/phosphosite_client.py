@@ -1,4 +1,5 @@
 import csv
+import gzip
 import logging
 from os.path import dirname, abspath, join
 from collections import namedtuple, defaultdict
@@ -77,7 +78,7 @@ def _get_phospho_site_dataset():
     global _data_by_site_grp
     phosphosite_data_file = resource_manager.get_create_resource_file('psp')
     if _data_by_up is None or _data_by_site_grp is None:
-        with open(phosphosite_data_file, 'r') as fh:
+        with gzip.open(phosphosite_data_file, 'rt', encoding='utf-8') as fh:
             # Get the csv reader generator
             reader = csv.reader(fh, delimiter='\t')
             # Skip 4 rows
