@@ -155,12 +155,20 @@ def test_up_from_mouse():
     assert uniprot_client.get_id_from_mgi('88190') == 'P28028'
 
 
+def test_up_from_mouse_name():
+    assert uniprot_client.get_id_from_mgi_name('Braf') == 'P28028'
+
+
 def test_rat_from_up():
     assert uniprot_client.get_rgd_id('O08773') == '620003'
 
 
 def test_up_from_rat():
     assert uniprot_client.get_id_from_rgd('620003') == 'O08773'
+
+
+def test_up_from_rat_name():
+    assert uniprot_client.get_id_from_rgd_name('Rgs14') == 'O08773'
 
 
 def test_mouse_from_human():

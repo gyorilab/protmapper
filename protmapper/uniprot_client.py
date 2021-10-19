@@ -5,7 +5,7 @@ import json
 import logging
 import itertools
 import requests
-from typing import List, Tuple, Union
+from typing import List, Tuple, Optional, Union
 from functools import lru_cache
 import xml
 from xml.etree import ElementTree
@@ -640,6 +640,22 @@ def get_id_from_mgi(mgi_id):
     return um.uniprot_mgi_reverse.get(mgi_id)
 
 
+def get_id_from_mgi_name(mgi_name: str) -> Optional[str]:
+    """Return the UniProt ID given the MGI name of a mouse protein.
+
+    Parameters
+    ----------
+    mgi_name : str
+        The MGI name of the mouse protein.
+
+    Returns
+    -------
+    up_id : str
+        The UniProt ID of the mouse protein.
+    """
+    raise NotImplementedError
+
+
 def get_id_from_rgd(rgd_id):
     """Return the UniProt ID given the RGD ID of a rat protein.
 
@@ -654,6 +670,22 @@ def get_id_from_rgd(rgd_id):
         The UniProt ID of the rat protein.
     """
     return um.uniprot_rgd_reverse.get(rgd_id)
+
+
+def get_id_from_rgd_name(rgd_name: str) -> Optional[str]:
+    """Return the UniProt ID given the RGD name of a rat protein.
+
+    Parameters
+    ----------
+    rgd_name : str
+        The RGD name of the rat protein.
+
+    Returns
+    -------
+    up_id : str
+        The UniProt ID of the rat protein.
+    """
+    raise NotImplementedError
 
 
 def get_mouse_id(human_protein_id):
