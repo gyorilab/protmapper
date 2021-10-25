@@ -2,6 +2,5 @@ sphinx
 sphinx_rtd_theme
 mock
 boto3
-rdflib
 requests
 pystow
