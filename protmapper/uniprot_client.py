@@ -21,7 +21,7 @@ xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
 
 @lru_cache(maxsize=10000)
-def query_protein(protein_id: str) -> Union[xml.etree.ElementTree, None]:
+def query_protein(protein_id: str) -> Union[ElementTree.ElementTree, None]:
     """Retrieve the XML entry for a given protein.
 
     Parameters
@@ -268,7 +268,7 @@ def get_gene_name(protein_id, web_fallback=True):
     return name
 
 
-def get_gene_synonyms(protein_id):
+def get_gene_synonyms(protein_id: str) -> List[str]:
     """Return a list of synonyms for the gene corresponding to a protein.
 
     Note that synonyms here also include the official gene name as
@@ -276,20 +276,20 @@ def get_gene_synonyms(protein_id):
 
     Parameters
     ----------
-    protein_id : str
+    protein_id :
         The UniProt ID of the protein to query
 
     Returns
     -------
-    synonyms : list[str]
+    :
         The list of synonyms of the gene corresponding to the protein
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
     protein = query_protein(protein_id)
     if protein is None:
-        return None
+        return []
     synonyms = []
-    gene_synoyms = protein.findall('up:entry/up:gene/up:synonym',
+    gene_synoyms = protein.findall('up:entry/up:gene/up:name',
                                    namespaces=xml_ns)
     for gene_syn in gene_synoyms:
         synonyms.append(gene_syn.text)
@@ -320,7 +320,8 @@ def get_protein_synonyms(protein_id):
     synonyms = []
     for syn_type, syn_len in itertools.product(['recommended', 'alternative'],
                                                ['full', 'short']):
-        synonym_type = 'up:%sName/up:%sName' % (syn_type, syn_len)
+        synonym_type = 'up:entry/up:protein/up:%sName/up:%sName' % \
+            (syn_type, syn_len)
         synonyms_xml = tree.findall(synonym_type, namespaces=xml_ns)
         for synonym_xml in synonyms_xml:
             synonyms.append(synonym_xml.text)
@@ -370,7 +371,7 @@ def get_sequence(protein_id):
     return seq
 
 
-def get_modifications(protein_id: str) -> List[Tuple[str, str]]:
+def get_modifications(protein_id: str) -> List[Tuple[str, int]]:
     """Return a list of modifications for a protein.
 
     Parameters
@@ -399,7 +400,7 @@ def get_modifications(protein_id: str) -> List[Tuple[str, str]]:
         pos_tag = feature.find('up:location/up:position', namespaces=xml_ns)
         if pos_tag is None:
             continue
-        pos = pos_tag.attrib['position']
+        pos = int(pos_tag.attrib['position'])
         # We find the residue
         res = feature.attrib['description'].split(';')[0]
         mods.append((res, pos))
