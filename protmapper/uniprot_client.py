@@ -5,8 +5,9 @@ import json
 import logging
 import itertools
 import requests
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from functools import lru_cache
+import xml
 from xml.etree import ElementTree
 from urllib.error import HTTPError
 from protmapper.resources import resource_manager, feature_from_json, Feature
@@ -16,32 +17,21 @@ logger = logging.getLogger(__name__)
 
 uniprot_url = 'http://www.uniprot.org/uniprot/'
 
-
-rdf_prefixes = """
-    PREFIX up: <http://purl.uniprot.org/core/>
-    PREFIX db: <http://purl.uniprot.org/database/>
-    PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> """
-
 xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
 
 @lru_cache(maxsize=10000)
-def query_protein(protein_id):
+def query_protein(protein_id: str) -> Union[xml.etree.ElementTree, None]:
     """Retrieve the XML entry for a given protein.
-
-    Some information is only available in the XML entry for UniProt
-    proteins (not RDF), therefore this endpoint is necessary.
 
     Parameters
     ----------
-    protein_id : str
+    protein_id :
         The UniProt ID of the protein to look up.
 
     Returns
     -------
-    xml.etree.ElementTree
+    :
         An ElementTree representation of the XML entry for the
         protein.
     """
@@ -50,19 +40,16 @@ def query_protein(protein_id):
     protein_id = get_primary_id(_strip_isoform(protein_id))
     url = uniprot_url + protein_id + '.xml'
     try:
+        # As opposed to the RDF endpoint, the XML endpoint returns
+        # an identical entry for secondary accessions, for instance,
+        # the response for the secondary ID A0A021WW06 is identical to
+        # the response for the primary ID P40417.
         ret = requests.get(url)
         et = ElementTree.fromstring(ret.content)
+        return et
     except Exception as e:
         return None
     
-    # Check if the entry has been replaced by a new entry
-    rep = et.findall('.//{http://uniprot.org/uniprot}replacedBy')
-    if rep is not None:
-        term = rep[0].find('{http://uniprot.org/uniprot}dbReference')
-        if term is not None:
-            replaced_by_id = term.attrib['id']
-            return query_protein(replaced_by_id)
-
 
 def _strip_isoform(protein_id):
     return protein_id.split('-')[0]
