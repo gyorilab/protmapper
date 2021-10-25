@@ -61,7 +61,7 @@ def query_protein(protein_id):
         term = rep[0].find('{http://uniprot.org/uniprot}dbReference')
         if term is not None:
             replaced_by_id = term.attrib['id']
-            return query_protein_xml(replaced_by_id)
+            return query_protein(replaced_by_id)
 
 
 def _strip_isoform(protein_id):
@@ -210,7 +210,7 @@ def get_mnemonic(protein_id, web_fallback=False):
     if not web_fallback:
         return None
 
-    tree = query_protein_xml(protein_id)
+    tree = query_protein(protein_id)
     if tree is None:
         return None
 
@@ -732,11 +732,11 @@ def get_function(protein_id):
     str
         The function description of the protein.
     """
-    et = query_protein_xml(protein_id)
+    et = query_protein(protein_id)
     if et is None:
         return None
     function = et.find('up:entry/up:comment[@type="function"]/up:text',
-                       namespaces={'up': 'http://uniprot.org/uniprot'})
+                       namespaces=xml_ns)
     if function is None:
         return None
     return function.text
@@ -804,7 +804,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
         elif not web_fallback:
             return False
 
-    et = query_protein_xml(protein_id)
+    et = query_protein(protein_id)
     if et is None:
         return None
     location = et.find(
