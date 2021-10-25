@@ -22,6 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install .[rest_api]
         pip install nose coverage python-coveralls
+        pip install "pyparsing<3"
     - name: Run regular unit tests
       run: |
         nosetests protmapper -v --with-coverage --cover-inclusive --cover-package=protmapper
