@@ -5,20 +5,20 @@ from nose.plugins.attrib import attr
 
 @attr('webservice')
 def test_query_protein_exists():
-    g = uniprot_client.query_protein('P00533')
-    assert g is not None
+    tree = uniprot_client.query_protein('P00533')
+    assert tree is not None
 
 
 @attr('webservice')
 def test_query_protein_nonexist():
-    g = uniprot_client.query_protein('XXXX')
-    assert g is None
+    tree = uniprot_client.query_protein('XXXX')
+    assert tree is None
 
 
 @attr('webservice')
 def test_query_protein_deprecated():
-    g = uniprot_client.query_protein('Q8NHX1')
-    assert g is not None
+    tree = uniprot_client.query_protein('Q8NHX1')
+    assert tree is not None
     gene_name = uniprot_client.get_gene_name('Q8NHX1')
     assert gene_name == 'MAPK3'
     gene_name = uniprot_client.get_gene_name('Q8NHX1', web_fallback=False)
@@ -109,8 +109,8 @@ def test_get_sequence():
 @attr('webservice')
 def test_get_modifications():
     mods = uniprot_client.get_modifications('P27361')
-    assert ('Phosphothreonine', 202) in mods
-    assert ('Phosphotyrosine', 204) in mods
+    assert ('Phosphothreonine', 202) in mods, mods
+    assert ('Phosphotyrosine', 204) in mods, mods
 
 
 @attr('webservice')

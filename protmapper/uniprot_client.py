@@ -3,8 +3,11 @@ import csv
 import gzip
 import json
 import logging
+import itertools
 import requests
+from typing import List, Tuple, Union
 from functools import lru_cache
+import xml
 from xml.etree import ElementTree
 from urllib.error import HTTPError
 from protmapper.resources import resource_manager, feature_from_json, Feature
@@ -14,64 +17,38 @@ logger = logging.getLogger(__name__)
 
 uniprot_url = 'http://www.uniprot.org/uniprot/'
 
-
-rdf_prefixes = """
-    PREFIX up: <http://purl.uniprot.org/core/>
-    PREFIX db: <http://purl.uniprot.org/database/>
-    PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> """
-
 xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
 
 @lru_cache(maxsize=10000)
-def query_protein(protein_id):
-    """Return the UniProt entry as an RDF graph for the given UniProt ID.
+def query_protein(protein_id: str) -> Union[ElementTree.ElementTree, None]:
+    """Retrieve the XML entry for a given protein.
 
     Parameters
     ----------
-    protein_id : str
-        UniProt ID to be queried.
+    protein_id :
+        The UniProt ID of the protein to look up.
 
     Returns
     -------
-    g : rdflib.Graph
-        The RDF graph corresponding to the UniProt entry.
+    :
+        An ElementTree representation of the XML entry for the
+        protein.
     """
-    import rdflib
     # Try looking up a primary ID if the given one
-    # is a secondary ID
+    # is a secondary ID and strip off isoforms
+    protein_id = get_primary_id(_strip_isoform(protein_id))
+    url = uniprot_url + protein_id + '.xml'
     try:
-        prim_ids = um.uniprot_sec[protein_id]
-        protein_id = prim_ids[0]
-    except KeyError:
-        pass
-    url = uniprot_url + protein_id + '.rdf'
-    g = rdflib.Graph()
-    try:
-        g.parse(url)
-    except HTTPError:
-        logger.warning('Could not find protein with id %s' % protein_id)
+        # As opposed to the RDF endpoint, the XML endpoint returns
+        # an identical entry for secondary accessions, for instance,
+        # the response for the secondary ID A0A021WW06 is identical to
+        # the response for the primary ID P40417.
+        ret = requests.get(url)
+        et = ElementTree.fromstring(ret.content)
+        return et
+    except Exception as e:
         return None
-    except rdflib.exceptions.ParserError as e:
-        logger.error('Could not parse RDF at %s' % url)
-        logger.error(e)
-        return None
-
-    # Check if the entry has been replaced by a new entry
-    query = rdf_prefixes + """
-        SELECT ?res2
-        WHERE {
-            ?res1 up:replacedBy ?res2 .
-            }
-        """
-    res = g.query(query)
-    if res:
-        term = [r for r in res][0][0]
-        replaced_by_id = term.split('/')[-1]
-        return query_protein(replaced_by_id)
-    return g
 
 
 def _strip_isoform(protein_id):
@@ -178,7 +155,7 @@ def get_family_members(family_name, human_only=True):
     gene_names : list
         The HGNC gene symbols corresponding to the given family.
     """
-    data = {'query': 'family:%s' % family_name, 
+    data = {'query': 'family:%s' % family_name,
             'format': 'list'}
     if human_only:
         data['fil'] = 'organism:human'
@@ -219,21 +196,15 @@ def get_mnemonic(protein_id, web_fallback=False):
         pass
     if not web_fallback:
         return None
-    g = query_protein(protein_id)
-    if g is None:
+
+    tree = query_protein(protein_id)
+    if tree is None:
         return None
-    query = rdf_prefixes + """
-        SELECT ?mnemonic
-        WHERE {
-            ?r up:mnemonic ?mnemonic .
-        }
-        """
-    res = g.query(query)
-    if res:
-        mnemonic = [r for r in res][0][0].toPython()
-        return mnemonic
-    else:
+
+    mnemonic = tree.find('up:entry/up:name', namespaces=xml_ns)
+    if mnemonic is None:
         return None
+    return mnemonic.text
 
 
 def get_id_from_mnemonic(uniprot_mnemonic):
@@ -288,25 +259,16 @@ def get_gene_name(protein_id, web_fallback=True):
         if not web_fallback:
             return None
 
-    g = query_protein(protein_id)
-    if g is None:
+    tree = query_protein(protein_id)
+    if tree is None:
         return None
-    query = rdf_prefixes + """
-        SELECT ?name
-        WHERE {
-            ?gene a up:Gene .
-            ?gene skos:prefLabel ?name .
-            }
-        """
-    res = g.query(query)
-    if res:
-        gene_name = [r for r in res][0][0].toPython()
-        if gene_name:
-            return gene_name
+    name = tree.find('up:entry/up:gene/up:name', namespaces=xml_ns)
+    if name is not None:
+        return name.text
     return None
 
 
-def get_gene_synonyms(protein_id):
+def get_gene_synonyms(protein_id: str) -> List[str]:
     """Return a list of synonyms for the gene corresponding to a protein.
 
     Note that synonyms here also include the official gene name as
@@ -314,28 +276,24 @@ def get_gene_synonyms(protein_id):
 
     Parameters
     ----------
-    protein_id : str
+    protein_id :
         The UniProt ID of the protein to query
 
     Returns
     -------
-    synonyms : list[str]
+    :
         The list of synonyms of the gene corresponding to the protein
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
-    g = query_protein(protein_id)
-    if g is None:
-        return None
-    query = rdf_prefixes + """
-        SELECT ?name
-        WHERE {
-            ?gene skos:altLabel | skos:prefLabel ?name .
-            }
-        """
-    res = g.query(query)
-    if res:
-        return [r[0].toPython() for r in res]
-    return None
+    protein = query_protein(protein_id)
+    if protein is None:
+        return []
+    synonyms = []
+    gene_synoyms = protein.findall('up:entry/up:gene/up:name',
+                                   namespaces=xml_ns)
+    for gene_syn in gene_synoyms:
+        synonyms.append(gene_syn.text)
+    return synonyms
 
 
 def get_protein_synonyms(protein_id):
@@ -356,19 +314,18 @@ def get_protein_synonyms(protein_id):
         The list of synonyms of the protein
     """
     protein_id = get_primary_id(_strip_isoform(protein_id))
-    g = query_protein(protein_id)
-    if g is None:
+    tree = query_protein(protein_id)
+    if tree is None:
         return None
-    query = rdf_prefixes + """
-        SELECT ?name
-        WHERE {
-            ?gene :fullName | :shortName ?name .
-            }
-        """
-    res = g.query(query)
-    if res:
-        return [r[0].toPython() for r in res]
-    return None
+    synonyms = []
+    for syn_type, syn_len in itertools.product(['recommended', 'alternative'],
+                                               ['full', 'short']):
+        synonym_type = 'up:entry/up:protein/up:%sName/up:%sName' % \
+            (syn_type, syn_len)
+        synonyms_xml = tree.findall(synonym_type, namespaces=xml_ns)
+        for synonym_xml in synonyms_xml:
+            synonyms.append(synonym_xml.text)
+    return synonyms
 
 
 def get_synonyms(protein_id):
@@ -410,37 +367,44 @@ def get_sequence(protein_id):
         res.raise_for_status()
         # res.text is Unicode
         lines = res.text.splitlines()
-        seq = (''.join(lines[1:])).replace('\n','')
+        seq = (''.join(lines[1:])).replace('\n', '')
     return seq
 
 
-def get_modifications(protein_id):
+def get_modifications(protein_id: str) -> List[Tuple[str, int]]:
+    """Return a list of modifications for a protein.
+
+    Parameters
+    ----------
+    protein_id :
+        The UniProt ID of the protein to query
+
+    Returns
+    -------
+    :
+        The list of modifications of the protein, each represented
+        as a tuple of residue description string and position
+        string.
+    """
     protein_id = get_primary_id(_strip_isoform(protein_id))
-    g = query_protein(protein_id)
-    if g is None:
+    tree = query_protein(protein_id)
+    if tree is None:
         return None
-    query = rdf_prefixes + """
-        SELECT ?beg_pos ?comment
-        WHERE {
-            ?mod_res a up:Modified_Residue_Annotation .
-            ?mod_res rdfs:comment ?comment .
-            ?mod_res up:range ?range .
-            ?range faldo:begin ?beg .
-            ?range faldo:end ?end .
-            ?beg a faldo:ExactPosition .
-            ?beg faldo:position ?beg_pos .
-            FILTER (?beg = ?end)
-            }
-        """
-    res = g.query(query)
+
+    # We find all features of type 'modified residue'
+    features = tree.findall("up:entry/up:feature[@type='modified residue']",
+                            namespaces=xml_ns)
     mods = []
-    for r in res:
-        mod_pos = r[0].value
-        # "Phosphothreonine; by autocatalysis"
-        # "Phosphothreonine; by MAP2K1 and MAP2K2"
-        # TODO: take into account the comment after the ;?
-        mod_res = r[1].value.split(';')[0]
-        mods.append((mod_res, mod_pos))
+    for feature in features:
+        # We find the position of the modified residue
+        pos_tag = feature.find('up:location/up:position', namespaces=xml_ns)
+        if pos_tag is None:
+            continue
+        pos = int(pos_tag.attrib['position'])
+        # We find the residue
+        res = feature.attrib['description'].split(';')[0]
+        mods.append((res, pos))
+
     return mods
 
 
@@ -481,7 +445,7 @@ def verify_location(protein_id, residue, location):
 
 
 def verify_modification(protein_id, residue, location=None):
-    """Return True if the residue at the given location has a known modifiation. 
+    """Return True if the residue at the given location has a known modifiation.
 
     Parameters
     ----------
@@ -495,7 +459,7 @@ def verify_modification(protein_id, residue, location=None):
 
     Returns
     -------
-    True if the given residue is reported to be modified at the given position 
+    True if the given residue is reported to be modified at the given position
     in the sequence corresponding to the given UniProt ID, otherwise False.
     If location is not given, we only check if there is any residue of the
     given type that is modified.
@@ -703,7 +667,8 @@ def get_mouse_id(human_protein_id):
     Returns
     -------
     mouse_protein_id : str
-        The UniProt ID of a mouse protein orthologous to the given human protein
+        The UniProt ID of a mouse protein orthologous to the given human
+        protein.
     """
     human_protein_id = get_primary_id(_strip_isoform(human_protein_id))
     return um.uniprot_human_mouse.get(human_protein_id)
@@ -743,34 +708,6 @@ def get_length(protein_id):
     return um.uniprot_length.get(protein_id)
 
 
-@lru_cache(maxsize=10000)
-def query_protein_xml(protein_id):
-    """Retrieve the XML entry for a given protein.
-
-    Some information is only available in the XML entry for UniProt
-    proteins (not RDF), therefore this endpoint is necessary.
-
-    Parameters
-    ----------
-    protein_id : str
-        The UniProt ID of the protein to look up.
-
-    Returns
-    -------
-    xml.etree.ElementTree
-        An ElementTree representation of the XML entry for the
-        protein.
-    """
-    protein_id = get_primary_id(_strip_isoform(protein_id))
-    url = uniprot_url + protein_id + '.xml'
-    try:
-        ret = requests.get(url)
-        et = ElementTree.fromstring(ret.content)
-    except Exception as e:
-        return None
-    return et
-
-
 def get_function(protein_id):
     """Return the function description of a given protein.
 
@@ -784,11 +721,11 @@ def get_function(protein_id):
     str
         The function description of the protein.
     """
-    et = query_protein_xml(protein_id)
+    et = query_protein(protein_id)
     if et is None:
         return None
     function = et.find('up:entry/up:comment[@type="function"]/up:text',
-                       namespaces={'up': 'http://uniprot.org/uniprot'})
+                       namespaces=xml_ns)
     if function is None:
         return None
     return function.text
@@ -856,7 +793,7 @@ def get_signal_peptide(protein_id, web_fallback=True):
         elif not web_fallback:
             return False
 
-    et = query_protein_xml(protein_id)
+    et = query_protein(protein_id)
     if et is None:
         return None
     location = et.find(
@@ -973,7 +910,7 @@ class UniprotMapper(object):
 
     def initialize(self):
         maps = _build_uniprot_entries()
-        (self._uniprot_gene_name, self._uniprot_mnemonic, \
+        (self._uniprot_gene_name, self._uniprot_mnemonic,
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
@@ -1140,7 +1077,6 @@ class UniprotMapper(object):
         if not self.initialized:
             self.initialize()
         return self._organisms_by_id
-
 
 
 um = UniprotMapper()
