@@ -653,7 +653,7 @@ def get_id_from_mgi_name(mgi_name: str) -> Optional[str]:
     up_id : str
         The UniProt ID of the mouse protein.
     """
-    return um.mgi_name_to_id.get(mgi_name)
+    return um.mgi_name_to_up.get(mgi_name)
 
 
 def get_id_from_rgd(rgd_id):
@@ -685,7 +685,7 @@ def get_id_from_rgd_name(rgd_name: str) -> Optional[str]:
     up_id : str
         The UniProt ID of the rat protein.
     """
-    return um.rgd_name_to_id.get(rgd_name)
+    return um.rgd_name_to_up.get(rgd_name)
 
 
 def get_mouse_id(human_protein_id):
