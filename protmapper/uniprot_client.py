@@ -49,7 +49,7 @@ def query_protein(protein_id: str) -> Union[ElementTree.ElementTree, None]:
         return et
     except Exception as e:
         return None
-    
+
 
 def _strip_isoform(protein_id):
     return protein_id.split('-')[0]
@@ -155,7 +155,7 @@ def get_family_members(family_name, human_only=True):
     gene_names : list
         The HGNC gene symbols corresponding to the given family.
     """
-    data = {'query': 'family:%s' % family_name, 
+    data = {'query': 'family:%s' % family_name,
             'format': 'list'}
     if human_only:
         data['fil'] = 'organism:human'
@@ -202,7 +202,7 @@ def get_mnemonic(protein_id, web_fallback=False):
         return None
 
     mnemonic = tree.find('up:entry/up:name', namespaces=xml_ns)
-    if mnemonic is  None:
+    if mnemonic is None:
         return None
     return mnemonic.text
 
@@ -265,7 +265,7 @@ def get_gene_name(protein_id, web_fallback=True):
     name = tree.find('up:entry/up:gene/up:name', namespaces=xml_ns)
     if name is not None:
         return name.text
-    return name
+    return None
 
 
 def get_gene_synonyms(protein_id: str) -> List[str]:
@@ -367,7 +367,7 @@ def get_sequence(protein_id):
         res.raise_for_status()
         # res.text is Unicode
         lines = res.text.splitlines()
-        seq = (''.join(lines[1:])).replace('\n','')
+        seq = (''.join(lines[1:])).replace('\n', '')
     return seq
 
 
@@ -390,10 +390,10 @@ def get_modifications(protein_id: str) -> List[Tuple[str, int]]:
     tree = query_protein(protein_id)
     if tree is None:
         return None
-    
+
     # We find all features of type 'modified residue'
     features = tree.findall("up:entry/up:feature[@type='modified residue']",
-                             namespaces=xml_ns)
+                            namespaces=xml_ns)
     mods = []
     for feature in features:
         # We find the position of the modified residue
@@ -445,7 +445,7 @@ def verify_location(protein_id, residue, location):
 
 
 def verify_modification(protein_id, residue, location=None):
-    """Return True if the residue at the given location has a known modifiation. 
+    """Return True if the residue at the given location has a known modifiation.
 
     Parameters
     ----------
@@ -459,7 +459,7 @@ def verify_modification(protein_id, residue, location=None):
 
     Returns
     -------
-    True if the given residue is reported to be modified at the given position 
+    True if the given residue is reported to be modified at the given position
     in the sequence corresponding to the given UniProt ID, otherwise False.
     If location is not given, we only check if there is any residue of the
     given type that is modified.
@@ -667,7 +667,8 @@ def get_mouse_id(human_protein_id):
     Returns
     -------
     mouse_protein_id : str
-        The UniProt ID of a mouse protein orthologous to the given human protein
+        The UniProt ID of a mouse protein orthologous to the given human
+        protein.
     """
     human_protein_id = get_primary_id(_strip_isoform(human_protein_id))
     return um.uniprot_human_mouse.get(human_protein_id)
@@ -909,7 +910,7 @@ class UniprotMapper(object):
 
     def initialize(self):
         maps = _build_uniprot_entries()
-        (self._uniprot_gene_name, self._uniprot_mnemonic, \
+        (self._uniprot_gene_name, self._uniprot_mnemonic,
          self._uniprot_mnemonic_reverse, self._uniprot_mgi,
          self._uniprot_rgd, self._uniprot_mgi_reverse,
          self._uniprot_rgd_reverse, self._uniprot_length,
@@ -1076,7 +1077,6 @@ class UniprotMapper(object):
         if not self.initialized:
             self.initialize()
         return self._organisms_by_id
-
 
 
 um = UniprotMapper()
