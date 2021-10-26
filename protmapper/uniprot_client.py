@@ -5,7 +5,7 @@ import json
 import logging
 import itertools
 import requests
-from typing import List, Tuple, Union
+from typing import List, Tuple, Optional, Union
 from functools import lru_cache
 import xml
 from xml.etree import ElementTree
@@ -640,6 +640,22 @@ def get_id_from_mgi(mgi_id):
     return um.uniprot_mgi_reverse.get(mgi_id)
 
 
+def get_id_from_mgi_name(mgi_name: str) -> Optional[str]:
+    """Return the UniProt ID given the MGI name of a mouse protein.
+
+    Parameters
+    ----------
+    mgi_name : str
+        The MGI name of the mouse protein.
+
+    Returns
+    -------
+    up_id : str
+        The UniProt ID of the mouse protein.
+    """
+    return um.mgi_name_to_up.get(mgi_name)
+
+
 def get_id_from_rgd(rgd_id):
     """Return the UniProt ID given the RGD ID of a rat protein.
 
@@ -654,6 +670,22 @@ def get_id_from_rgd(rgd_id):
         The UniProt ID of the rat protein.
     """
     return um.uniprot_rgd_reverse.get(rgd_id)
+
+
+def get_id_from_rgd_name(rgd_name: str) -> Optional[str]:
+    """Return the UniProt ID given the RGD name of a rat protein.
+
+    Parameters
+    ----------
+    rgd_name : str
+        The RGD name of the rat protein.
+
+    Returns
+    -------
+    up_id : str
+        The UniProt ID of the rat protein.
+    """
+    return um.rgd_name_to_up.get(rgd_name)
 
 
 def get_mouse_id(human_protein_id):
@@ -916,7 +948,7 @@ class UniprotMapper(object):
          self._uniprot_rgd_reverse, self._uniprot_length,
          self._uniprot_reviewed, self._features, self._features_by_id,
          self._organisms_by_id, _uniprot_entrez,
-         _entrez_uniprot) = maps
+         _entrez_uniprot, self._mgi_name_to_up, self._rgd_name_to_up) = maps
 
         # Here we don't overwrite the value to de-prioritize
         for k, v in _uniprot_entrez.items():
@@ -1078,6 +1110,18 @@ class UniprotMapper(object):
             self.initialize()
         return self._organisms_by_id
 
+    @property
+    def mgi_name_to_up(self):
+        if not self.initialized:
+            self.initialize()
+        return self._mgi_name_to_up
+
+    @property
+    def rgd_name_to_up(self):
+        if not self.initialized:
+            self.initialize()
+        return self._rgd_name_to_up
+
 
 um = UniprotMapper()
 
@@ -1098,6 +1142,8 @@ def _build_uniprot_entries():
     uniprot_entrez = {}
     uniprot_entrez_reverse = {}
     files = [up_entries_file]
+    mgi_name_to_up = {}
+    rgd_name_to_up = {}
     for file in files:
         with gzip.open(file, 'rt', encoding='utf-8') as fh:
             csv_rows = csv.reader(fh, delimiter='\t')
@@ -1119,11 +1165,13 @@ def _build_uniprot_entries():
                     if mgi_ids:
                         uniprot_mgi[up_id] = mgi_ids[0]
                         uniprot_mgi_reverse[mgi_ids[0]] = up_id
+                        mgi_name_to_up[gene_name] = up_id
                 if rgd:
                     rgd_ids = rgd.split(';')
                     if rgd_ids:
                         uniprot_rgd[up_id] = rgd_ids[0]
                         uniprot_rgd_reverse[rgd_ids[0]] = up_id
+                        rgd_name_to_up[gene_name] = up_id
                 uniprot_features[up_id] = [feature_from_json(feat) for
                                            feat in json.loads(features_json)]
                 organisms_by_id[up_id] = organism_id
@@ -1144,7 +1192,8 @@ def _build_uniprot_entries():
     return (uniprot_gene_name, uniprot_mnemonic, uniprot_mnemonic_reverse,
             uniprot_mgi, uniprot_rgd, uniprot_mgi_reverse, uniprot_rgd_reverse,
             uniprot_length, uniprot_reviewed, uniprot_features, features_by_id,
-            organisms_by_id, uniprot_entrez, uniprot_entrez_reverse)
+            organisms_by_id, uniprot_entrez, uniprot_entrez_reverse,
+            mgi_name_to_up, rgd_name_to_up)
 
 
 def _build_human_mouse_rat():
