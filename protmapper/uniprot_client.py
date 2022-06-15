@@ -1306,7 +1306,6 @@ def _build_refseq_uniprot():
 
 
 def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
-    sequences = {}
     if seq_file.endswith('gz'):
         with gzip.open(seq_file, 'rt', encoding='utf-8') as f:
             lines = f.readlines()
@@ -1314,6 +1313,11 @@ def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
     else:
         with open(seq_file, 'rt', encoding='utf-8') as f:
             lines = f.readlines()
+    return load_fasta_sequence_lines(lines)
+
+
+def load_fasta_sequence_lines(lines, id_delimiter='|', id_index=1):
+    sequences = {}
     cur_id = None
     seq_lines = []
     for line in lines:
