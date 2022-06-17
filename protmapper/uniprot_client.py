@@ -1313,7 +1313,8 @@ def load_fasta_sequences(seq_file, id_delimiter='|', id_index=1):
     else:
         with open(seq_file, 'rt', encoding='utf-8') as f:
             lines = f.readlines()
-    return load_fasta_sequence_lines(lines)
+    return load_fasta_sequence_lines(lines, id_delimiter=id_delimiter,
+                                     id_index=id_index)
 
 
 def load_fasta_sequence_lines(lines, id_delimiter='|', id_index=1):
