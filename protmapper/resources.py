@@ -72,28 +72,56 @@ def download_uniprot_entries(out_file, cached=True):
     if cached:
         _download_from_s3('uniprot_entries.tsv.gz', out_file)
         return
-    base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
-                    'database(RGD)', 'database(MGI)', 'length', 'reviewed',
-                    'organism-id', 'database(GeneID)']
-    processed_columns = ['genes', 'protein%20names']
-    feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
-    columns = base_columns + processed_columns + \
-        ['feature(%s)' % feat for feat in feature_types]
+    base_columns = [
+        'accession',            # 'id',
+        'gene_primary',         # 'genes(PREFERRED)',
+        'id',                   # 'entry%20name',
+        'xref_rgd',             # 'database(RGD)',
+        'xref_mgi',             # 'database(MGI)',
+        'length',               # 'length',
+        'reviewed',             # 'reviewed',
+        'organism_id',          # 'organism-id',
+        'xref_geneid',          # 'database(GeneID)'
+    ]
+    processed_columns = [
+        'gene_names',           # 'genes',
+        'protein_name',         # 'protein%20names'
+    ]
+
+    feature_types = [
+        'ft_signal',            # 'SIGNAL',
+        'ft_chain',             # 'CHAIN',
+        'ft_propep',            # 'PROPEPTIDE',
+        'ft_peptide',           # 'PEPTIDE',
+        'ft_transit',           # 'TRANSIT',
+    ]
+    columns = base_columns + processed_columns + feature_types
     columns_str = ','.join(columns)
     logger.info('Downloading UniProt entries')
-    url = 'https://legacy.uniprot.org/uniprot/?' + \
-        'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
-        'format=tab&columns=' + columns_str
+    url = 'https://rest.uniprot.org/uniprotkb/stream?' \
+          'format=tsv&' \
+          'query=reviewed:true&' \
+          'compress=no&' \
+          'fields=' + columns_str
+    #url = 'http://www.uniprot.org/uniprot/?' + \
+    #    'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
+    #    'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
         logger.info('Failed to download "%s"' % url)
     reviewed_entries = res.content
 
-    url = 'https://legacy.uniprot.org/uniprot/?' + \
-        'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
-        '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
-        'format=tab&columns=' + columns_str
+    url = 'https://rest.uniprot.org/uniprotkb/stream?' \
+          'format=tsv&' \
+          'query=reviewed:false,model_organism:9606&' \
+          'compress=no&' \
+          'fields=' + columns_str
+
+    #url = 'http://www.uniprot.org/uniprot/?' + \
+    #    'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
+    #    '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
+    #    'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
