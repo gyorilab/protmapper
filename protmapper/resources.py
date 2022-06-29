@@ -81,7 +81,7 @@ def download_uniprot_entries(out_file, cached=True):
         ['feature(%s)' % feat for feat in feature_types]
     columns_str = ','.join(columns)
     logger.info('Downloading UniProt entries')
-    url = 'http://www.uniprot.org/uniprot/?' + \
+    url = 'https://legacy.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
         'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
@@ -90,7 +90,7 @@ def download_uniprot_entries(out_file, cached=True):
         logger.info('Failed to download "%s"' % url)
     reviewed_entries = res.content
 
-    url = 'http://www.uniprot.org/uniprot/?' + \
+    url = 'https://legacy.uniprot.org/uniprot/?' + \
         'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
         '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
         'format=tab&columns=' + columns_str
