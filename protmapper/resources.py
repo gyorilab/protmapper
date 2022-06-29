@@ -88,20 +88,22 @@ def download_uniprot_entries(out_file, cached=True):
         'protein_name',         # 'protein%20names'
     ]
 
-    feature_types = [
-        'ft_signal',            # 'SIGNAL',
-        'ft_chain',             # 'CHAIN',
-        'ft_propep',            # 'PROPEPTIDE',
-        'ft_peptide',           # 'PEPTIDE',
-        'ft_transit',           # 'TRANSIT',
-    ]
-    columns = base_columns + processed_columns + feature_types
+    feature_types = {
+        'ft_signal': 'SIGNAL',           # 'SIGNAL',
+        'ft_chain': 'CHAIN',             # 'CHAIN',
+        'ft_propep': 'PROPEPTIDE',       # 'PROPEPTIDE',
+        'ft_peptide': 'PEPTIDE',         # 'PEPTIDE',
+        'ft_transit': 'TRANSIT',         # 'TRANSIT',
+    }
+    feature_columns = list(feature_types)
+    columns = base_columns + processed_columns + feature_columns
     columns_str = ','.join(columns)
     logger.info('Downloading UniProt entries')
     url = 'https://rest.uniprot.org/uniprotkb/stream?' \
           'format=tsv&' \
           'query=reviewed:true&' \
-          'compress=no&' \
+          'compressed=true&' \
+          'sort=accession asc&' \
           'fields=' + columns_str
     #url = 'http://www.uniprot.org/uniprot/?' + \
     #    'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
@@ -110,12 +112,13 @@ def download_uniprot_entries(out_file, cached=True):
     res = requests.get(url)
     if res.status_code != 200:
         logger.info('Failed to download "%s"' % url)
-    reviewed_entries = res.content
+    reviewed_entries = gzip.decompress(res.content).decode('utf-8')
 
     url = 'https://rest.uniprot.org/uniprotkb/stream?' \
           'format=tsv&' \
           'query=reviewed:false,model_organism:9606&' \
-          'compress=no&' \
+          'compressed=true&' \
+          'sort=accession asc&' \
           'fields=' + columns_str
 
     #url = 'http://www.uniprot.org/uniprot/?' + \
@@ -126,13 +129,11 @@ def download_uniprot_entries(out_file, cached=True):
     res = requests.get(url)
     if res.status_code != 200:
         logger.info('Failed to download "%s"' % url)
-    unreviewed_human_entries = res.content
+    unreviewed_human_entries = gzip.decompress(res.content).decode('utf-8')
 
     if not((reviewed_entries is not None) and
             (unreviewed_human_entries is not None)):
         return
-    unreviewed_human_entries = unreviewed_human_entries.decode('utf-8')
-    reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
 
@@ -142,7 +143,7 @@ def download_uniprot_entries(out_file, cached=True):
         if line_idx == 0:
             continue
         new_line = process_uniprot_line(line, base_columns, processed_columns,
-                                        feature_types)
+                                        list(feature_types.values()))
         new_lines.append(new_line)
 
     # Join all lines into a single string
@@ -154,6 +155,7 @@ def download_uniprot_entries(out_file, cached=True):
 
 def process_uniprot_line(line, base_columns, processed_columns,
                          feature_types):
+    breakpoint()
     terms = line.split('\t')
 
     # At this point, we need to clean up the gene names.
