@@ -116,7 +116,7 @@ def download_uniprot_entries(out_file, cached=True):
 
     url = 'https://rest.uniprot.org/uniprotkb/stream?' \
           'format=tsv&' \
-          'query=reviewed:false,model_organism:9606&' \
+          'query=organism_id:9606 AND (reviewed:false)&' \
           'compressed=true&' \
           'sort=accession asc&' \
           'fields=' + columns_str
@@ -155,7 +155,6 @@ def download_uniprot_entries(out_file, cached=True):
 
 def process_uniprot_line(line, base_columns, processed_columns,
                          feature_types):
-    breakpoint()
     terms = line.split('\t')
 
     # At this point, we need to clean up the gene names.
