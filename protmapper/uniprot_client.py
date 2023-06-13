@@ -15,7 +15,7 @@ from protmapper.resources import resource_manager, feature_from_json, Feature
 logger = logging.getLogger(__name__)
 
 
-uniprot_url = 'https://legacy.uniprot.org/uniprot/'
+uniprot_url = 'https://uniprot.org/uniprot/'
 
 xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
