@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 uniprot_url = 'https://uniprot.org/uniprot/'
+stream_api_url = 'https://rest.uniprot.org/uniprotkb/stream'
 
 xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
@@ -155,11 +156,18 @@ def get_family_members(family_name, human_only=True):
     gene_names : list
         The HGNC gene symbols corresponding to the given family.
     """
-    data = {'query': 'family:%s' % family_name,
-            'format': 'list'}
+    query_parts = [
+        'family:"%s"' % family_name,
+        'reviewed:true'
+    ]
     if human_only:
-        data['fil'] = 'organism:human'
-    res = requests.get(uniprot_url, params=data)
+        query_parts.append('model_organism:9606')
+
+    query_str = ' AND '.join([f'({q})' for q in query_parts])
+
+    data = {'query': query_str,
+            'format': 'list'}
+    res = requests.get(stream_api_url, params=data)
     if not res.status_code == 200 or not res.text:
         return None
     # res.text gets us the Unicode

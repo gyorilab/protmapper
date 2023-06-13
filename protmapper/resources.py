@@ -156,6 +156,7 @@ def download_uniprot_entries(out_file, cached=True):
 def process_uniprot_line(line, base_columns, processed_columns,
                          feature_types):
     terms = line.split('\t')
+    terms[4] = terms[4].replace('MGI:', '')
 
     # At this point, we need to clean up the gene names.
     # If there are multiple gene names, take the first one
