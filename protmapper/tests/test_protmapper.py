@@ -164,11 +164,11 @@ def test_map_mouse_site():
 
 def test_map_rat_site():
     sm = ProtMapper()
-    ms = sm.map_to_human_ref('NPHS1', 'hgnc', 'Y', '1204')
-    assert ms == MappedSite(up_id='O60500', error_code=None, valid=False,
-                            orig_res='Y', orig_pos='1204', mapped_id='O60500',
-                            mapped_res='Y', mapped_pos='1193',
-                            description='INFERRED_RAT_SITE', gene_name='NPHS1')
+    ms = sm.map_to_human_ref('ELK1', 'hgnc', 'S', '159')
+    assert ms == MappedSite(up_id='P19419', error_code=None, valid=False,
+                            orig_res='S', orig_pos='159', mapped_id='P19419',
+                            mapped_res='S', mapped_pos='160',
+                            description='INFERRED_RAT_SITE', gene_name='ELK1')
 
 
 def test_map_methionine_cleavage():
