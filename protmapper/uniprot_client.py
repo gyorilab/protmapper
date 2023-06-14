@@ -48,6 +48,8 @@ def query_protein(protein_id: str) -> Union[ElementTree.ElementTree, None]:
         # the response for the primary ID P40417.
         ret = requests.get(url)
         et = ElementTree.fromstring(ret.content)
+        if et.tag == 'errorInfo':
+            return None
         return et
     except Exception as e:
         return None
