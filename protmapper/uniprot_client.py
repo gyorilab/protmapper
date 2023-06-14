@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 uniprot_url = 'https://uniprot.org/uniprot/'
-stream_api_url = 'https://rest.uniprot.org/uniprotkb/stream'
+rest_api_url = 'https://rest.uniprot.org/uniprotkb/'
+stream_api_url = rest_api_url + 'stream'
 
 xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
@@ -370,7 +371,7 @@ def get_sequence(protein_id):
         protein_id = _reattach_isoform(base, iso)
     seq = um.uniprot_sequences.get(protein_id)
     if seq is None:
-        url = uniprot_url + '%s.fasta' % protein_id
+        url = rest_api_url + '%s.fasta' % protein_id
         res = requests.get(url)
         res.raise_for_status()
         # res.text is Unicode
