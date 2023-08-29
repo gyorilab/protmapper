@@ -72,39 +72,68 @@ def download_uniprot_entries(out_file, cached=True):
     if cached:
         _download_from_s3('uniprot_entries.tsv.gz', out_file)
         return
-    base_columns = ['id', 'genes(PREFERRED)', 'entry%20name',
-                    'database(RGD)', 'database(MGI)', 'length', 'reviewed',
-                    'organism-id', 'database(GeneID)']
-    processed_columns = ['genes', 'protein%20names']
-    feature_types = ['SIGNAL', 'CHAIN', 'PROPEPTIDE', 'PEPTIDE', 'TRANSIT']
-    columns = base_columns + processed_columns + \
-        ['feature(%s)' % feat for feat in feature_types]
+    base_columns = [
+        'accession',            # 'id',
+        'gene_primary',         # 'genes(PREFERRED)',
+        'id',                   # 'entry%20name',
+        'xref_rgd',             # 'database(RGD)',
+        'xref_mgi',             # 'database(MGI)',
+        'length',               # 'length',
+        'reviewed',             # 'reviewed',
+        'organism_id',          # 'organism-id',
+        'xref_geneid',          # 'database(GeneID)'
+    ]
+    processed_columns = [
+        'gene_names',           # 'genes',
+        'protein_name',         # 'protein%20names'
+    ]
+
+    feature_types = {
+        'ft_signal': 'SIGNAL',           # 'SIGNAL',
+        'ft_chain': 'CHAIN',             # 'CHAIN',
+        'ft_propep': 'PROPEPTIDE',       # 'PROPEPTIDE',
+        'ft_peptide': 'PEPTIDE',         # 'PEPTIDE',
+        'ft_transit': 'TRANSIT',         # 'TRANSIT',
+    }
+    feature_columns = list(feature_types)
+    columns = base_columns + processed_columns + feature_columns
     columns_str = ','.join(columns)
     logger.info('Downloading UniProt entries')
-    url = 'https://legacy.uniprot.org/uniprot/?' + \
-        'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
-        'format=tab&columns=' + columns_str
+    url = 'https://rest.uniprot.org/uniprotkb/stream?' \
+          'format=tsv&' \
+          'query=reviewed:true&' \
+          'compressed=true&' \
+          'sort=accession asc&' \
+          'fields=' + columns_str
+    #url = 'http://www.uniprot.org/uniprot/?' + \
+    #    'sort=id&desc=no&compress=no&query=reviewed:yes&' + \
+    #    'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
         logger.info('Failed to download "%s"' % url)
-    reviewed_entries = res.content
+    reviewed_entries = gzip.decompress(res.content).decode('utf-8')
 
-    url = 'https://legacy.uniprot.org/uniprot/?' + \
-        'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
-        '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
-        'format=tab&columns=' + columns_str
+    url = 'https://rest.uniprot.org/uniprotkb/stream?' \
+          'format=tsv&' \
+          'query=organism_id:9606 AND (reviewed:false)&' \
+          'compressed=true&' \
+          'sort=accession asc&' \
+          'fields=' + columns_str
+
+    #url = 'http://www.uniprot.org/uniprot/?' + \
+    #    'sort=id&desc=no&compress=no&query=reviewed:no&fil=organism:' + \
+    #    '%22Homo%20sapiens%20(Human)%20[9606]%22&' + \
+    #    'format=tab&columns=' + columns_str
     logger.info('Downloading %s' % url)
     res = requests.get(url)
     if res.status_code != 200:
         logger.info('Failed to download "%s"' % url)
-    unreviewed_human_entries = res.content
+    unreviewed_human_entries = gzip.decompress(res.content).decode('utf-8')
 
     if not((reviewed_entries is not None) and
             (unreviewed_human_entries is not None)):
         return
-    unreviewed_human_entries = unreviewed_human_entries.decode('utf-8')
-    reviewed_entries = reviewed_entries.decode('utf-8')
     lines = reviewed_entries.strip('\n').split('\n')
     lines += unreviewed_human_entries.strip('\n').split('\n')[1:]
 
@@ -114,7 +143,7 @@ def download_uniprot_entries(out_file, cached=True):
         if line_idx == 0:
             continue
         new_line = process_uniprot_line(line, base_columns, processed_columns,
-                                        feature_types)
+                                        list(feature_types.values()))
         new_lines.append(new_line)
 
     # Join all lines into a single string
@@ -127,6 +156,7 @@ def download_uniprot_entries(out_file, cached=True):
 def process_uniprot_line(line, base_columns, processed_columns,
                          feature_types):
     terms = line.split('\t')
+    terms[4] = terms[4].replace('MGI:', '')
 
     # At this point, we need to clean up the gene names.
     # If there are multiple gene names, take the first one

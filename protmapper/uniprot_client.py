@@ -15,7 +15,9 @@ from protmapper.resources import resource_manager, feature_from_json, Feature
 logger = logging.getLogger(__name__)
 
 
-uniprot_url = 'https://legacy.uniprot.org/uniprot/'
+uniprot_url = 'https://uniprot.org/uniprot/'
+rest_api_url = 'https://rest.uniprot.org/uniprotkb/'
+stream_api_url = rest_api_url + 'stream'
 
 xml_ns = {'up': 'http://uniprot.org/uniprot'}
 
@@ -46,6 +48,8 @@ def query_protein(protein_id: str) -> Union[ElementTree.ElementTree, None]:
         # the response for the primary ID P40417.
         ret = requests.get(url)
         et = ElementTree.fromstring(ret.content)
+        if et.tag == 'errorInfo':
+            return None
         return et
     except Exception as e:
         return None
@@ -155,11 +159,18 @@ def get_family_members(family_name, human_only=True):
     gene_names : list
         The HGNC gene symbols corresponding to the given family.
     """
-    data = {'query': 'family:%s' % family_name,
-            'format': 'list'}
+    query_parts = [
+        'family:"%s"' % family_name,
+        'reviewed:true'
+    ]
     if human_only:
-        data['fil'] = 'organism:human'
-    res = requests.get(uniprot_url, params=data)
+        query_parts.append('model_organism:9606')
+
+    query_str = ' AND '.join([f'({q})' for q in query_parts])
+
+    data = {'query': query_str,
+            'format': 'list'}
+    res = requests.get(stream_api_url, params=data)
     if not res.status_code == 200 or not res.text:
         return None
     # res.text gets us the Unicode
@@ -362,7 +373,7 @@ def get_sequence(protein_id):
         protein_id = _reattach_isoform(base, iso)
     seq = um.uniprot_sequences.get(protein_id)
     if seq is None:
-        url = uniprot_url + '%s.fasta' % protein_id
+        url = rest_api_url + '%s.fasta' % protein_id
         res = requests.get(url)
         res.raise_for_status()
         # res.text is Unicode

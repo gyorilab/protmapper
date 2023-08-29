@@ -319,7 +319,7 @@ class ProtMapper(object):
                                                         position)
             error_code = None
         except HTTPError as ex:
-            if ex.response.status_code == 404:
+            if ex.response.status_code in {400, 404}:
                 error_code = 'UNIPROT_HTTP_NOT_FOUND'
             else:
                 error_code = 'UNIPROT_HTTP_OTHER'

@@ -27,7 +27,8 @@ def test_query_protein_deprecated():
 
 @attr('webservice')
 def test_get_family_members():
-    members = uniprot_client.get_family_members('RAF')
+    members = uniprot_client.get_family_members(
+        'protein kinase superfamily TKL Ser/Thr protein kinase family RAF subfamily')
     assert 'ARAF' in members
     assert 'BRAF' in members
     assert 'RAF1' in members
@@ -84,8 +85,8 @@ def test_get_gene_name_no_gene_name():
 
 
 def test_get_gene_name_multiple_gene_names():
-    gene_name = uniprot_client.get_gene_name('Q5VWM5')
-    assert gene_name == 'PRAMEF9'
+    gene_name = uniprot_client.get_gene_name('P69905')
+    assert gene_name == 'HBA1'
 
 
 def test_is_human():
@@ -262,7 +263,7 @@ def test_features():
     for chain in chains:
         assert chain.type == 'CHAIN'
         if chain.name == 'BH3-interacting domain death agonist p15':
-            assert chain.begin == 62, chain
+            assert chain.begin == 61, chain
             assert chain.end == 195
             assert chain.id == 'PRO_0000223233'
 
