@@ -1,4 +1,9 @@
+__all__ = ['map_sitelist_to_human_ref', 'MappedSite', 'InvalidSiteException',
+           'ProtMapper', 'default_mapper', 'resource_dir']
+
+
 __version__ = '0.0.29'
+
 import os
 import logging
 

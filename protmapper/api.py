@@ -5,6 +5,7 @@ import os
 import csv
 import pickle
 import logging
+import tqdm
 from requests.exceptions import HTTPError
 from protmapper.resources import resource_dir_path
 from protmapper import phosphosite_client, uniprot_client
@@ -288,9 +289,9 @@ class ProtMapper(object):
             the input list.
         """
         mapped_sites = []
-        for ix, (prot_id, prot_ns, residue, position) in enumerate(site_list):
-            logger.info("Mapping site %d of %d, cache size %d" %
-                        (ix + 1, len(site_list), len(self._cache)))
+        for ix, (prot_id, prot_ns, residue, position) in \
+                tqdm.tqdm(enumerate(site_list), desc='Mapping sites',
+                          total=len(site_list)):
             try:
                 ms = self.map_to_human_ref(
                     prot_id, prot_ns, residue, position,

@@ -19,7 +19,7 @@ with open(path.join(here, 'protmapper', '__init__.py'), 'r') as fh:
 
 
 def main():
-    install_list = ['requests', 'boto3', 'pystow>=0.1.0']
+    install_list = ['requests', 'boto3', 'pystow>=0.1.0', 'tqdm']
 
     setup(name='protmapper',
           version=version,
