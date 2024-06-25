@@ -24,10 +24,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install .[rest_api]
-        pip install pytest coverage python-coveralls
+        pip install pytest pytest-cov
     - name: Run regular unit tests
       run: |
-        pytest protmapper --cov=protmapper
+        pytest protmapper/tests --cov=protmapper
     - name: Run CLI smoketests
       run: |
         protmapper protmapper/tests/cli_input.csv output.csv --no_methionine_offset --no_orthology_mapping --no_isoform_mapping
