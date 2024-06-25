@@ -1,3 +1,6 @@
+__all__ = ['map_sitelist_to_human_ref', 'MappedSite', 'InvalidSiteException',
+           'ProtMapper', 'default_mapper']
+
 import os
 import csv
 import pickle
@@ -12,6 +15,46 @@ logger = logging.getLogger(__name__)
 
 valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
              'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
+
+
+def map_sitelist_to_human_ref(site_list, do_methionine_offset=True,
+                              do_orthology_mapping=True,
+                              do_isoform_mapping=True):
+    """Return a list of mapped sites for a list of input sites.
+
+    Parameters
+    ----------
+    site_list : list of tuple
+        Each tuple in the list consists of the following entries:
+        (prot_id, prot_ns, residue, position).
+    do_methionine_offset : boolean
+        Whether to check for off-by-one errors in site position (possibly)
+        attributable to site numbering from mature proteins after
+        cleavage of the initial methionine. If True, checks the reference
+        sequence for a known modification at 1 site position greater
+        than the given one; if there exists such a site, creates the
+        mapping. Default is True.
+    do_orthology_mapping : boolean
+        Whether to check sequence positions for known modification sites
+        in mouse or rat sequences (based on PhosphoSitePlus data). If a
+        mouse/rat site is found that is linked to a site in the human
+        reference sequence, a mapping is created. Default is True.
+    do_isoform_mapping : boolean
+        Whether to check sequence positions for known modifications
+        in other human isoforms of the protein (based on PhosphoSitePlus
+        data). If a site is found that is linked to a site in the human
+        reference sequence, a mapping is created. Default is True.
+
+    Returns
+    -------
+    list of :py:class:`protmapper.api.MappedSite`
+        A list of MappedSite objects, one corresponding to each site in
+        the input list.
+    """
+    return default_mapper.map_sitelist_to_human_ref(
+        site_list, do_methionine_offset=do_methionine_offset,
+        do_orthology_mapping=do_orthology_mapping,
+        do_isoform_mapping=do_isoform_mapping)
 
 
 class InvalidSiteException(Exception):
@@ -210,7 +253,9 @@ class ProtMapper(object):
         except:
             pass
 
-    def map_sitelist_to_human_ref(self, site_list, **kwargs):
+    def map_sitelist_to_human_ref(self, site_list, do_methionine_offset=True,
+                                  do_orthology_mapping=True,
+                                  do_isoform_mapping=True):
         """Return a list of mapped sites for a list of input sites.
 
         Parameters
@@ -218,6 +263,23 @@ class ProtMapper(object):
         site_list : list of tuple
             Each tuple in the list consists of the following entries:
             (prot_id, prot_ns, residue, position).
+        do_methionine_offset : boolean
+            Whether to check for off-by-one errors in site position (possibly)
+            attributable to site numbering from mature proteins after
+            cleavage of the initial methionine. If True, checks the reference
+            sequence for a known modification at 1 site position greater
+            than the given one; if there exists such a site, creates the
+            mapping. Default is True.
+        do_orthology_mapping : boolean
+            Whether to check sequence positions for known modification sites
+            in mouse or rat sequences (based on PhosphoSitePlus data). If a
+            mouse/rat site is found that is linked to a site in the human
+            reference sequence, a mapping is created. Default is True.
+        do_isoform_mapping : boolean
+            Whether to check sequence positions for known modifications
+            in other human isoforms of the protein (based on PhosphoSitePlus
+            data). If a site is found that is linked to a site in the human
+            reference sequence, a mapping is created. Default is True.
 
         Returns
         -------
@@ -230,8 +292,11 @@ class ProtMapper(object):
             logger.info("Mapping site %d of %d, cache size %d" %
                         (ix + 1, len(site_list), len(self._cache)))
             try:
-                ms = self.map_to_human_ref(prot_id, prot_ns, residue, position,
-                                           **kwargs)
+                ms = self.map_to_human_ref(
+                    prot_id, prot_ns, residue, position,
+                    do_methionine_offset=do_methionine_offset,
+                    do_orthology_mapping=do_orthology_mapping,
+                    do_isoform_mapping=do_isoform_mapping)
                 mapped_sites.append(ms)
             except Exception as e:
                 logger.error("Error occurred mapping site "

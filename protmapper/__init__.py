@@ -15,5 +15,5 @@ logging.getLogger('botocore').setLevel(logging.CRITICAL)
 logger = logging.getLogger('protmapper')
 
 if not os.environ.get('INITIAL_RESOURCE_DOWNLOAD'):
-    from protmapper.api import ProtMapper, MappedSite
+    from protmapper.api import *
     from protmapper.resources import resource_dir
