@@ -42,7 +42,7 @@ def main():
                     'assembly', 'post-translational', 'modification'],
           packages=find_packages(),
           install_requires=install_list,
-          tests_require=['pytest'],
+          tests_require=['pytest', 'pytest-cov'],
           extras_require={'rest_api': ['flask', 'flask_cors']},
           include_package_data=True,
           entry_points={'console_scripts':
