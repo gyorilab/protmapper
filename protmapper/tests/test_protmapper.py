@@ -2,24 +2,24 @@ import os
 from collections import Counter
 from os.path import join, abspath, dirname, isfile
 import pickle
-from nose.tools import raises
+import pytest
 from protmapper.api import ProtMapper, _validate_site, MappedSite, \
                            InvalidSiteException, _get_uniprot_id
 
 
-@raises(InvalidSiteException)
 def test_validate_invalid_residue1():
-    _validate_site('B', '185')
+    with pytest.raises(InvalidSiteException):
+        _validate_site('B', '185')
 
 
-@raises(InvalidSiteException)
 def test_validate_invalid_residue2():
-    _validate_site('T', 'foo')
+    with pytest.raises(InvalidSiteException):
+        _validate_site('T', 'foo')
 
 
-@raises(InvalidSiteException)
 def test_validate_invalid_residue3():
-    _validate_site('T', '12.5')
+    with pytest.raises(InvalidSiteException):
+        _validate_site('T', '12.5')
 
 
 def test_validate_site():
@@ -110,10 +110,10 @@ def test_map_invalid_position2():
             description='Position 12.5 not a valid sequence position.')
 
 
-@raises(ValueError)
 def test_invalid_prot_ns():
     sm = ProtMapper()
-    sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
+    with pytest.raises(ValueError):
+        sm.map_to_human_ref('MAPK1', 'hgncsymb', 'T', '185')
 
 
 def test_check_agent_mod_up_id():
