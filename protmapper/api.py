@@ -1,4 +1,4 @@
-__all__ = ['map_sitelist_to_human_ref', 'MappedSite', 'InvalidSiteException',
+__all__ = ['map_sites', 'MappedSite', 'InvalidSiteException',
            'ProtMapper', 'default_mapper']
 
 import os
@@ -18,9 +18,8 @@ valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
              'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
 
 
-def map_sitelist_to_human_ref(site_list, do_methionine_offset=True,
-                              do_orthology_mapping=True,
-                              do_isoform_mapping=True):
+def map_sites(site_list, do_methionine_offset=True, do_orthology_mapping=True,
+              do_isoform_mapping=True):
     """Return a list of mapped sites for a list of input sites.
 
     Parameters

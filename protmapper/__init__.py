@@ -1,4 +1,4 @@
-__all__ = ['map_sitelist_to_human_ref', 'MappedSite', 'InvalidSiteException',
+__all__ = ['map_sites', 'MappedSite', 'InvalidSiteException',
            'ProtMapper', 'default_mapper', 'resource_dir']
 
 

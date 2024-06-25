@@ -1,5 +1,5 @@
 # Protmapper
-The Protmapper maps references to protein sites to the human reference
+The Protmapper maps protein sites to the human reference
 sequence based on UniProt, PhosphoSitePlus, and manual curation.
 
 
@@ -14,11 +14,11 @@ pip install protmapper
 ```
 
 ### Docker container
-Alternatively, the Protmapper Docker container can be run to expose it as
-a REST API as:
+Protmapper can be run as a local service via a Docker container exposing a
+REST API as:
 
 ```
-docker run -d -p 8008:8008 labsyspharm/protmapper:latest
+docker run -d -p 8008:8008 gyorilab/protmapper:latest
 ```
 
 ## Command line interface
@@ -39,7 +39,7 @@ positional arguments:
                         on the protein.
   output                Path to the output file to be generated. Each line of
                         the output file corresponds to a line in the input
-                        file. Each linerepresents a mapped site produced by
+                        file. Each line represents a mapped site produced by
                         Protmapper.
 
 optional arguments:
@@ -68,7 +68,8 @@ optional arguments:
 For a detailed documentation of the Protmapper, visit http://protmapper.readthedocs.io
 
 ## Funding
-The development of protmapper is funded under the DARPA Automated Scientific Discovery Framework project (ARO grant W911NF018-1-0124).
+The development of Protmapper is funded under the DARPA grants W911NF018-1-0124
+and HR00112220036.
 
 ## Citation
 
