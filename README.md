@@ -3,13 +3,13 @@ The Protmapper maps protein sites to the human reference
 sequence based on UniProt, PhosphoSitePlus, and manual curation.
 
 
-## Installation
+## Installation and usage
 
 ### Python package
 The Protmapper is a Python package that is available on PyPI and can be
 installed as:
 
-```
+```bash
 pip install protmapper
 ```
 
@@ -17,11 +17,27 @@ pip install protmapper
 Protmapper can be run as a local service via a Docker container exposing a
 REST API as:
 
-```
+```bash
 docker run -d -p 8008:8008 gyorilab/protmapper:latest
 ```
 
-## Command line interface
+Example: once the container is running, you can send requests to the REST API
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"site_list": [["P28482", "uniprot", "T", "184"]]}' http://localhost:8008/map_sitelist_to_human_ref
+```
+
+which is equivalent to the following Python code using the `requests` package
+
+```python
+import requests
+url = 'http://localhost:8008/map_sitelist_to_human_ref'
+data = {'site_list': [['P28482', 'uniprot', 'T', '184']]}
+response = requests.post(url, json=data)
+print(response.json())
+```
+
+### Command line interface
 In addition to supporting usage via a Python API and a REST service,
 Protmapper also provides a command line interface that can be used as follows.
 
@@ -61,8 +77,35 @@ optional arguments:
   --no_isoform_mapping  If given, will not check sequence positions for known
                         modifications in other human isoforms of the protein
                         (based on PhosphoSitePlus data).
-
 ```
+
+Example: the sample file [cli_input.csv](https://raw.githubusercontent.com/gyorilab/protmapper/master/protmapper/tests/cli_input.csv)
+has the following content
+
+```csv
+MAPK1,hgnc,T,183
+MAPK1,hgnc,T,184
+MAPK1,hgnc,T,185
+MAPK1,hgnc,T,186
+```
+
+By running the following command
+
+```bash
+protmapper cli_input.csv output.csv
+```
+
+we get `output.csv` which has the following content
+
+```csv
+up_id,error_code,valid,orig_res,orig_pos,mapped_id,mapped_res,mapped_pos,description,gene_name
+P28482,,False,T,183,P28482,T,185,INFERRED_MOUSE_SITE,MAPK1
+P28482,,False,T,184,P28482,T,185,INFERRED_METHIONINE_CLEAVAGE,MAPK1
+P28482,,True,T,185,,,,VALID,MAPK1
+P28482,,False,T,186,,,,NO_MAPPING_FOUND,MAPK1
+```
+
+
 
 ## Documentation
 For a detailed documentation of the Protmapper, visit http://protmapper.readthedocs.io
@@ -74,13 +117,13 @@ and HR00112220036.
 ## Citation
 
 ```bibtex
-@article{bachman2019protmapper,
-  author = {Bachman, John A and Gyori, Benjamin M and Sorger, Peter K},
+@article{bachman2022protmapper,
+  author = {Bachman, John A and Sorger, Peter K and Gyori, Benjamin M},
   doi = {10.1101/822668},
   journal = {bioRxiv},
   publisher = {Cold Spring Harbor Laboratory},
-  title = {{Assembling a phosphoproteomic knowledge base using ProtMapper to normalize phosphosite information from databases and text mining}},
-  url = {https://www.biorxiv.org/content/early/2019/11/06/822668.1},
-  year = {2019}
+  title = {{Assembling a corpus of phosphoproteomic annotations using ProtMapper to normalize site information from databases and text mining}},
+  url = {https://www.biorxiv.org/content/10.1101/822668v4},
+  year = {2022}
 }
 ```
