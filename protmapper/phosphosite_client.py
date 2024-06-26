@@ -1,7 +1,6 @@
 import csv
 import gzip
 import logging
-from os.path import dirname, abspath, join
 from collections import namedtuple, defaultdict
 from protmapper.resources import resource_manager
 

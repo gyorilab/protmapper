@@ -1,5 +1,5 @@
-__all__ = ['map_sites', 'MappedSite', 'InvalidSiteException',
-           'ProtMapper', 'default_mapper']
+__all__ = ['map_sites', 'get_site_annotations', 'MappedSite',
+           'InvalidSiteException', 'ProtMapper', 'default_mapper']
 
 import os
 import csv
@@ -170,6 +170,88 @@ class MappedSite(object):
         """
         return (not self.not_invalid()) and \
             (self.mapped_pos is not None and self.mapped_res is not None)
+
+    def get_site(self):
+        """Return the site information as a tuple.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the following entries:
+            (prot_id, prot_ns, residue, position).
+        """
+        if self.not_invalid() or not self.has_mapping():
+            return self.up_id, 'uniprot', self.orig_res, self.orig_pos
+        else:
+            return self.mapped_id, 'uniprot', self.mapped_res, self.mapped_pos
+
+
+def mapped_sites_to_sites(mapped_sites, include_invalid=False):
+    """Return a list of sites from a list of MappedSite objects.
+
+    Parameters
+    ----------
+    mapped_sites : list of :py:class:`protmapper.api.MappedSite`
+        A list of MappedSite objects.
+    include_invalid : Optional[bool]
+        If True, include sites that are known to be invalid in the output.
+        Default is False.
+
+    Returns
+    -------
+    list of tuple
+        A list of tuples, each containing the following entries:
+        (prot_id, prot_ns, residue, position).
+    """
+    return [ms.get_site() for ms in mapped_sites
+            if ms.not_invalid() or include_invalid]
+
+
+def get_site_annotations(sites):
+    """Return annotations for a list of sites.
+
+    Parameters
+    ----------
+    sites : list of tuple
+        Each tuple in the list consists of the following entries:
+        (prot_id, residue, position). where prot_id has to be a
+        UniProt ID.
+
+    Returns
+    -------
+    dict
+        A dictionary mapping each site to a list of annotations.
+    """
+    annotations = _load_annotations()
+    site_annotations = {}
+    for site in sites:
+        site_annotations[site] = annotations.get(site, [])
+    return site_annotations
+
+
+def _load_annotations():
+    import csv
+    from .resources import resource_manager
+    from collections import defaultdict
+    annotations_fname = resource_manager.get_create_resource_file('annotations')
+    evidence_fname = resource_manager.get_create_resource_file('annotations_evidence')
+    annotations_by_site = defaultdict(list)
+    # Read evidence into a dict keyed by annotation ID
+    evidences = defaultdict(list)
+    with open(evidence_fname, 'r') as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            evidences[row['ID']].append(row)
+    evidences = dict(evidences)
+    # Read annotations into a dict keyed by the site and add evidence
+    with open(annotations_fname, 'r') as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            site = (row['TARGET_UP_ID'], row['TARGET_RES'], row['TARGET_POS'])
+            row['evidence'] = evidences.get(row['ID'])
+            annotations_by_site[site].append(row)
+    annotations_by_site = dict(annotations_by_site)
+    return annotations_by_site
 
 
 class ProtMapper(object):
