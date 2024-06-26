@@ -1,0 +1,51 @@
+[project]
+name = "protmapper"
+version = "0.0.29"
+description = "Map protein sites to human reference sequence."
+keywords = ["protein", "proteomics", "sequence", "alignment", "assembly", "post-translational", "modification"]
+readme = "README.md"
+authors = [
+    {name = "John A. Bachman", email = "bachmanjohn@gmail.com"},
+    {name = "Benjamin M. Gyori", email = "b.gyori@northeastern.edu"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "boto3",
+    "pystow>=0.1.0",
+    "requests",
+    "tqdm",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/gyorilab/protmapper"
+
+[project.optional-dependencies]
+rest_api = [
+    "flask",
+    "flask_cors",
+]
+tests = [
+    "pytest",
+    "pytest-cov"
+]
+
+[project.scripts]
+protmapper = "protmapper.cli:main"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+    "webservice: marks tests that rely on third-party webservices",
+]

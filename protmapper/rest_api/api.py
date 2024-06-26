@@ -1,7 +1,7 @@
 import json
 from flask import Flask, request, abort, Response, jsonify
 from flask_cors import CORS
-from protmapper import ProtMapper
+from protmapper import ProtMapper, get_site_annotations
 
 
 app = Flask(__name__)
@@ -53,3 +53,17 @@ def map_sitelist_to_human_ref():
 
     ms_list = pm.map_sitelist_to_human_ref(**arg_values)
     return jsonify([ms.to_json() for ms in ms_list])
+
+
+@app.route('/site_annotations', methods=['GET', 'POST'])
+def site_annotations():
+    site_list = request.json.get('site_list')
+    if site_list is None:
+        abort(Response('The required site_list argument is missing.', 400))
+
+    for site in site_list:
+        if len(site) != 3:
+            abort(Response('Site list entries need to have exactly 3 elements.',
+                           400))
+    site_annotations = get_site_annotations(site_list)
+    return jsonify(site_annotations)

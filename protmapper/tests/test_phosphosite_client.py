@@ -1,4 +1,3 @@
-from nose.plugins.attrib import attr
 from protmapper.phosphosite_client import map_to_human_site, sites_only, \
                                           PspMapping
 

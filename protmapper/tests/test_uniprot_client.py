@@ -1,21 +1,21 @@
+import pytest
 from protmapper import uniprot_client
 from protmapper.resources import _process_feature, parse_uniprot_synonyms
-from nose.plugins.attrib import attr
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_query_protein_exists():
     tree = uniprot_client.query_protein('P00533')
     assert tree is not None
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_query_protein_nonexist():
     tree = uniprot_client.query_protein('XXXX')
     assert tree is None
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_query_protein_deprecated():
     tree = uniprot_client.query_protein('Q8NHX1')
     assert tree is not None
@@ -25,7 +25,7 @@ def test_query_protein_deprecated():
     assert gene_name == 'MAPK3'
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_get_family_members():
     members = uniprot_client.get_family_members(
         'protein kinase superfamily TKL Ser/Thr protein kinase family RAF subfamily')
@@ -76,7 +76,7 @@ def test_get_gene_name_unreviewed():
     assert gene_name == 'EXO5'
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_get_gene_name_no_gene_name():
     gene_name = uniprot_client.get_gene_name('P04434', web_fallback=False)
     assert gene_name is None
@@ -101,20 +101,20 @@ def test_noentry_is_human():
     assert not uniprot_client.is_human('XXXX')
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_get_sequence():
     seq = uniprot_client.get_sequence('P00533')
     assert len(seq) > 1000
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_get_modifications():
     mods = uniprot_client.get_modifications('P27361')
     assert ('Phosphothreonine', 202) in mods, mods
     assert ('Phosphotyrosine', 204) in mods, mods
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_verify_location():
     assert uniprot_client.verify_location('P27361', 'T', 202)
     assert not uniprot_client.verify_location('P27361', 'S', 202)
@@ -184,7 +184,7 @@ def test_length():
     assert uniprot_client.get_length('P15056') == 766
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_get_function():
     fun = uniprot_client.get_function('P15056')
     assert fun.startswith('Protein kinase involved in the transduction')
@@ -203,7 +203,7 @@ def test_get_ids_from_refseq():
     assert up_ids == ['P31946-1']
 
 
-@attr('webservice')
+@pytest.mark.webservice
 def test_get_signal_peptide():
     # This is a valid entry local to the resource file
     sp = uniprot_client.get_signal_peptide('P00533')

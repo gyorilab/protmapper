@@ -1,4 +1,10 @@
+__all__ = ['map_sites', 'get_site_annotations', 'MappedSite',
+           'InvalidSiteException', 'ProtMapper', 'default_mapper',
+           'resource_dir']
+
+
 __version__ = '0.0.29'
+
 import os
 import logging
 
@@ -15,5 +21,5 @@ logging.getLogger('botocore').setLevel(logging.CRITICAL)
 logger = logging.getLogger('protmapper')
 
 if not os.environ.get('INITIAL_RESOURCE_DOWNLOAD'):
-    from protmapper.api import ProtMapper, MappedSite
+    from protmapper.api import *
     from protmapper.resources import resource_dir

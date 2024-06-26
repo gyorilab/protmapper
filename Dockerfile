@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.11
 
 RUN pip install protmapper[rest_api] && \
     python -m protmapper.resources

@@ -1,7 +1,11 @@
+__all__ = ['map_sites', 'get_site_annotations', 'MappedSite',
+           'InvalidSiteException', 'ProtMapper', 'default_mapper']
+
 import os
 import csv
 import pickle
 import logging
+import tqdm
 from requests.exceptions import HTTPError
 from protmapper.resources import resource_dir_path
 from protmapper import phosphosite_client, uniprot_client
@@ -12,6 +16,45 @@ logger = logging.getLogger(__name__)
 
 valid_aas = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
              'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
+
+
+def map_sites(site_list, do_methionine_offset=True, do_orthology_mapping=True,
+              do_isoform_mapping=True):
+    """Return a list of mapped sites for a list of input sites.
+
+    Parameters
+    ----------
+    site_list : list of tuple
+        Each tuple in the list consists of the following entries:
+        (prot_id, prot_ns, residue, position).
+    do_methionine_offset : boolean
+        Whether to check for off-by-one errors in site position (possibly)
+        attributable to site numbering from mature proteins after
+        cleavage of the initial methionine. If True, checks the reference
+        sequence for a known modification at 1 site position greater
+        than the given one; if there exists such a site, creates the
+        mapping. Default is True.
+    do_orthology_mapping : boolean
+        Whether to check sequence positions for known modification sites
+        in mouse or rat sequences (based on PhosphoSitePlus data). If a
+        mouse/rat site is found that is linked to a site in the human
+        reference sequence, a mapping is created. Default is True.
+    do_isoform_mapping : boolean
+        Whether to check sequence positions for known modifications
+        in other human isoforms of the protein (based on PhosphoSitePlus
+        data). If a site is found that is linked to a site in the human
+        reference sequence, a mapping is created. Default is True.
+
+    Returns
+    -------
+    list of :py:class:`protmapper.api.MappedSite`
+        A list of MappedSite objects, one corresponding to each site in
+        the input list.
+    """
+    return default_mapper.map_sitelist_to_human_ref(
+        site_list, do_methionine_offset=do_methionine_offset,
+        do_orthology_mapping=do_orthology_mapping,
+        do_isoform_mapping=do_isoform_mapping)
 
 
 class InvalidSiteException(Exception):
@@ -128,6 +171,88 @@ class MappedSite(object):
         return (not self.not_invalid()) and \
             (self.mapped_pos is not None and self.mapped_res is not None)
 
+    def get_site(self):
+        """Return the site information as a tuple.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the following entries:
+            (prot_id, prot_ns, residue, position).
+        """
+        if self.not_invalid() or not self.has_mapping():
+            return self.up_id, 'uniprot', self.orig_res, self.orig_pos
+        else:
+            return self.mapped_id, 'uniprot', self.mapped_res, self.mapped_pos
+
+
+def mapped_sites_to_sites(mapped_sites, include_invalid=False):
+    """Return a list of sites from a list of MappedSite objects.
+
+    Parameters
+    ----------
+    mapped_sites : list of :py:class:`protmapper.api.MappedSite`
+        A list of MappedSite objects.
+    include_invalid : Optional[bool]
+        If True, include sites that are known to be invalid in the output.
+        Default is False.
+
+    Returns
+    -------
+    list of tuple
+        A list of tuples, each containing the following entries:
+        (prot_id, prot_ns, residue, position).
+    """
+    return [ms.get_site() for ms in mapped_sites
+            if ms.not_invalid() or include_invalid]
+
+
+def get_site_annotations(sites):
+    """Return annotations for a list of sites.
+
+    Parameters
+    ----------
+    sites : list of tuple
+        Each tuple in the list consists of the following entries:
+        (prot_id, residue, position). where prot_id has to be a
+        UniProt ID.
+
+    Returns
+    -------
+    dict
+        A dictionary mapping each site to a list of annotations.
+    """
+    annotations = _load_annotations()
+    site_annotations = {}
+    for site in sites:
+        site_annotations[site] = annotations.get(site, [])
+    return site_annotations
+
+
+def _load_annotations():
+    import csv
+    from .resources import resource_manager
+    from collections import defaultdict
+    annotations_fname = resource_manager.get_create_resource_file('annotations')
+    evidence_fname = resource_manager.get_create_resource_file('annotations_evidence')
+    annotations_by_site = defaultdict(list)
+    # Read evidence into a dict keyed by annotation ID
+    evidences = defaultdict(list)
+    with open(evidence_fname, 'r') as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            evidences[row['ID']].append(row)
+    evidences = dict(evidences)
+    # Read annotations into a dict keyed by the site and add evidence
+    with open(annotations_fname, 'r') as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            site = (row['TARGET_UP_ID'], row['TARGET_RES'], row['TARGET_POS'])
+            row['evidence'] = evidences.get(row['ID'])
+            annotations_by_site[site].append(row)
+    annotations_by_site = dict(annotations_by_site)
+    return annotations_by_site
+
 
 class ProtMapper(object):
     """
@@ -210,7 +335,9 @@ class ProtMapper(object):
         except:
             pass
 
-    def map_sitelist_to_human_ref(self, site_list, **kwargs):
+    def map_sitelist_to_human_ref(self, site_list, do_methionine_offset=True,
+                                  do_orthology_mapping=True,
+                                  do_isoform_mapping=True):
         """Return a list of mapped sites for a list of input sites.
 
         Parameters
@@ -218,6 +345,23 @@ class ProtMapper(object):
         site_list : list of tuple
             Each tuple in the list consists of the following entries:
             (prot_id, prot_ns, residue, position).
+        do_methionine_offset : boolean
+            Whether to check for off-by-one errors in site position (possibly)
+            attributable to site numbering from mature proteins after
+            cleavage of the initial methionine. If True, checks the reference
+            sequence for a known modification at 1 site position greater
+            than the given one; if there exists such a site, creates the
+            mapping. Default is True.
+        do_orthology_mapping : boolean
+            Whether to check sequence positions for known modification sites
+            in mouse or rat sequences (based on PhosphoSitePlus data). If a
+            mouse/rat site is found that is linked to a site in the human
+            reference sequence, a mapping is created. Default is True.
+        do_isoform_mapping : boolean
+            Whether to check sequence positions for known modifications
+            in other human isoforms of the protein (based on PhosphoSitePlus
+            data). If a site is found that is linked to a site in the human
+            reference sequence, a mapping is created. Default is True.
 
         Returns
         -------
@@ -226,12 +370,15 @@ class ProtMapper(object):
             the input list.
         """
         mapped_sites = []
-        for ix, (prot_id, prot_ns, residue, position) in enumerate(site_list):
-            logger.info("Mapping site %d of %d, cache size %d" %
-                        (ix + 1, len(site_list), len(self._cache)))
+        for ix, (prot_id, prot_ns, residue, position) in \
+                tqdm.tqdm(enumerate(site_list), desc='Mapping sites',
+                          total=len(site_list)):
             try:
-                ms = self.map_to_human_ref(prot_id, prot_ns, residue, position,
-                                           **kwargs)
+                ms = self.map_to_human_ref(
+                    prot_id, prot_ns, residue, position,
+                    do_methionine_offset=do_methionine_offset,
+                    do_orthology_mapping=do_orthology_mapping,
+                    do_isoform_mapping=do_isoform_mapping)
                 mapped_sites.append(ms)
             except Exception as e:
                 logger.error("Error occurred mapping site "

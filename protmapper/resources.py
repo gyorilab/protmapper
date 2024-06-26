@@ -397,6 +397,32 @@ def download_refseq_uniprot(out_file, cached=True):
         writer.writerows(filt_rows)
 
 
+def download_annotations(out_file, cached=True):
+    url = ('https://raw.githubusercontent.com/gyorilab/protmapper_paper/master/'
+           'output/export.csv')
+    logger.info('Downloading annotations from %s' % url)
+    res = requests.get(url)
+    if res.status_code != 200:
+        logger.error('Failed to download "%s"' % url)
+        return
+    logger.info('Saving into %s' % out_file)
+    with open(out_file, 'wb') as fh:
+        fh.write(res.content)
+
+
+def download_annotations_evidence(out_file, cached=True):
+    url = ('https://raw.githubusercontent.com/gyorilab/protmapper_paper/master/'
+           'output/evidences.csv')
+    logger.info('Downloading annotation evidence from %s' % url)
+    res = requests.get(url)
+    if res.status_code != 200:
+        logger.error('Failed to download "%s"' % url)
+        return
+    logger.info('Saving into %s' % out_file)
+    with open(out_file, 'wb') as fh:
+        fh.write(res.content)
+
+
 RESOURCE_MAP = {
     'hgnc': ('hgnc_entries.tsv.gz', download_hgnc_entries),
     'upsec': ('uniprot_sec_ac.txt.gz', download_uniprot_sec_ac),
@@ -406,6 +432,8 @@ RESOURCE_MAP = {
     'isoforms': ('uniprot_sprot_varsplic.fasta.gz', download_isoforms),
     'refseq_uniprot': ('refseq_uniprot.csv.gz', download_refseq_uniprot),
     'refseq_seq': ('refseq_sequence.fasta.gz', download_refseq_seq),
+    'annotations': ('annotations.csv', download_annotations),
+    'annotations_evidence': ('annotations_evidence.csv', download_annotations_evidence),
     }
 
 
