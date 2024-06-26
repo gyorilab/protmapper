@@ -23,8 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install .[rest_api]
-        pip install pytest pytest-cov
+        pip install .[rest_api,tests]
     - name: Run regular unit tests
       run: |
         pytest protmapper/tests --cov=protmapper

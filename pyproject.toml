@@ -33,10 +33,14 @@ rest_api = [
     "flask",
     "flask_cors",
 ]
+tests = [
+    "pytest",
+    "pytest-cov"
+]
 
 [project.scripts]
 protmapper = "protmapper.cli:main"
 
 [build-system]
-requires  ["setuptools", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
