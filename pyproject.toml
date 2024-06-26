@@ -44,3 +44,8 @@ protmapper = "protmapper.cli:main"
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+    "webservice: marks tests that rely on third-party webservices",
+]
