@@ -286,9 +286,11 @@ def _iter_uniprot_search_lines(query, columns, page_size=500):
                 yield line
         url = res.links.get('next', {}).get('url')
     if not num_rows:
-        # A query can come back empty if a taxon has been reclassified and
-        # the given ID is no longer the one UniProt annotates entries
-        # against, which is easy to miss otherwise.
+        # Note that this only catches a query that matched nothing at all.
+        # Since the taxa of a query are OR-ed together, a single taxon that
+        # UniProt no longer annotates any entry against contributes nothing
+        # without being noticed here. Checking that requires querying each
+        # taxon on its own.
         logger.warning('No UniProt entries found for query: %s' % query)
     else:
         logger.info('Downloaded %d UniProt entries' % num_rows)
