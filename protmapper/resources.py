@@ -294,7 +294,7 @@ def _iter_uniprot_search_lines(query, columns, page_size=500):
         logger.info('Downloaded %d UniProt entries' % num_rows)
 
 
-def download_uniprot_entries_for_organisms(out_file, taxonomy_ids,
+def download_uniprot_entries_for_organisms(out_file, taxonomy_ids, columns,
                                            include_unreviewed=True,
                                            cached=True):
     """Download UniProt entries for a given set of organisms.
@@ -307,6 +307,12 @@ def download_uniprot_entries_for_organisms(out_file, taxonomy_ids,
         A list of NCBI taxonomy IDs. Entries from
         any child taxon of the given taxa, such as specific strains of a
         virus species, are included too.
+    columns : list[str]
+        The UniProt fields to download, e.g., ['accession', 'protein_name'].
+        These are the names of the fields rather than the labels that UniProt
+        puts in the header of the resulting table, so 'organism_id' here
+        gives a column headed "Organism (ID)". The valid names are listed at
+        https://www.uniprot.org/help/return_fields
     include_unreviewed : bool
         If True, both reviewed and unreviewed entries
         are downloaded, otherwise only reviewed ones.
@@ -321,17 +327,6 @@ def download_uniprot_entries_for_organisms(out_file, taxonomy_ids,
     if cached and os.path.exists(out_file):
         logger.info('Using the UniProt entries already at %s' % out_file)
         return
-    # The fields that can be retrieved are documented here: https://www.uniprot.org/help/return_fields
-    columns = [
-        'accession',  # Entry
-        'id',  # Entry Name
-        'reviewed',  # Reviewed
-        'organism_id',  # Organism (ID)
-        'gene_primary',  # Gene Names (primary)
-        'gene_synonym',  # Gene Names (synonym)
-        'protein_name',  # Protein names
-        'lineage_ids',  # Taxonomic lineage (Ids)
-    ]
     query = build_organism_query(taxonomy_ids,
                                  include_unreviewed=include_unreviewed)
     logger.info('Downloading UniProt entries for query: %s' % query)
