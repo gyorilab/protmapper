@@ -332,9 +332,15 @@ def download_uniprot_entries_for_organisms(out_file, taxonomy_ids, columns,
     query = build_organism_query(taxonomy_ids,
                                  include_unreviewed=include_unreviewed)
     logger.info('Downloading UniProt entries for query: %s' % query)
-    with gzip.open(out_file, 'wt', encoding='utf-8') as fh:
+    # We write to a temporary file and only move it into place once the
+    # download has finished. Otherwise an interrupted download leaves a
+    # partial file at out_file, which a later call with cached=True has no
+    # way of telling apart from a complete one.
+    temp_file = out_file + '.tmp'
+    with gzip.open(temp_file, 'wt', encoding='utf-8') as fh:
         for line in _iter_uniprot_search_lines(query, columns):
             fh.write(line + '\n')
+    os.replace(temp_file, out_file)
     logger.info('Saved UniProt entries into %s' % out_file)
 
 
