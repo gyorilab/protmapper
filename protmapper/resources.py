@@ -192,6 +192,158 @@ def process_uniprot_line(line, base_columns, processed_columns,
     return '\t'.join(new_line)
 
 
+def _validate_taxonomy_id(taxonomy_id):
+    """Return an NCBI taxonomy ID as a string"""
+    tid = str(taxonomy_id).strip()
+    if not tid.isdigit():
+        raise ValueError('Invalid NCBI taxonomy ID: %s' % taxonomy_id)
+    return tid
+
+
+def build_organism_query(taxonomy_ids, include_unreviewed=True):
+    """Return a UniProt query string for entries from the given organisms.
+
+    Parameters
+    ----------
+    taxonomy_ids : list[str]
+        A list of NCBI taxonomy IDs
+    include_unreviewed : bool
+        If True, the query matches both reviewed and unreviewed entries
+    Returns
+    -------
+    str
+        A UniProt query string.
+    """
+    if isinstance(taxonomy_ids, str):
+        raise ValueError('Expected a list of taxonomy IDs but got a single '
+                         'string: %s' % taxonomy_ids)
+    tids = []
+    for taxonomy_id in taxonomy_ids:
+        tid = _validate_taxonomy_id(taxonomy_id)
+        if tid not in tids:
+            tids.append(tid)
+    if not tids:
+        raise ValueError('At least one taxonomy ID is required.')
+    query = '(%s)' % ' OR '.join('taxonomy_id:%s' % tid for tid in tids)
+    reviewed = ('(reviewed:true OR reviewed:false)' if include_unreviewed
+                else 'reviewed:true')
+    return '%s AND %s' % (reviewed, query)
+
+
+def _iter_uniprot_search_lines(query, columns, page_size=500):
+    """Yield lines of a UniProt search result in TSV format.
+
+    The stream endpoint used elsewhere in this module returns an entire
+    result set in a single response, which doesn't scale once unreviewed
+    entries are included. The search endpoint used here instead pages
+    through results.
+
+    Parameters
+    ----------
+    query : str
+        A UniProt query string.
+    columns : list[str]
+        The UniProt fields to download.
+    page_size : int
+        The number of entries to request per page, at most 500.
+
+    Yields
+    ------
+    str
+        The header line of the TSV table, followed by one line per entry.
+    """
+    url = 'https://rest.uniprot.org/uniprotkb/search'
+    params = {
+        'format': 'tsv',
+        'query': query,
+        'size': page_size,
+        'fields': ','.join(columns),
+        'sort': 'accession asc',
+    }
+    header = None
+    num_rows = 0
+    total = None
+    while url:
+        res = requests.get(url, params=params)
+        # Pages after the first are fetched from the cursor URL given in the
+        # Link header, which already carries all the query parameters.
+        params = None
+        if res.status_code != 200:
+            raise RuntimeError('Failed to download "%s": status %s' %
+                               (res.url, res.status_code))
+        if total is None:
+            total = res.headers.get('x-total-results')
+            logger.info('Downloading %s UniProt entries' %
+                        (total if total else 'an unknown number of'))
+        lines = res.text.splitlines()
+        if lines:
+            # Each page repeats the header which we only emit once
+            if header is None:
+                header = lines[0]
+                yield header
+            for line in lines[1:]:
+                num_rows += 1
+                yield line
+        url = res.links.get('next', {}).get('url')
+    if not num_rows:
+        # Note that this only catches a query that matched nothing at all.
+        # Since the taxa of a query are OR-ed together, a single taxon that
+        # UniProt no longer annotates any entry against contributes nothing
+        # without being noticed here. Checking that requires querying each
+        # taxon on its own.
+        logger.warning('No UniProt entries found for query: %s' % query)
+    else:
+        logger.info('Downloaded %d UniProt entries' % num_rows)
+
+
+def download_uniprot_entries_for_organisms(out_file, taxonomy_ids, columns,
+                                           include_unreviewed=True,
+                                           cached=True):
+    """Download UniProt entries for a given set of organisms.
+
+    Parameters
+    ----------
+    out_file : str
+        Path of the compressed TSV file to write the entries into.
+    taxonomy_ids : list[str]
+        A list of NCBI taxonomy IDs. Entries from
+        any child taxon of the given taxa, such as specific strains of a
+        virus species, are included too.
+    columns : list[str]
+        The UniProt fields to download, e.g., ['accession', 'protein_name'].
+        These are the names of the fields rather than the labels that UniProt
+        puts in the header of the resulting table, so 'organism_id' here
+        gives a column headed "Organism (ID)". The valid names are listed at
+        https://www.uniprot.org/help/return_fields
+    include_unreviewed : bool
+        If True, both reviewed and unreviewed entries
+        are downloaded, otherwise only reviewed ones.
+    cached : bool
+        If True and out_file already exists, nothing is downloaded.
+        Note that this differs from the other download functions
+        in this module, whose cache is a pre-processed file on S3. S
+        So the cache is just the given file. Since the
+        contents depend on the requested organisms, pass False when
+        the requested organisms change.
+    """
+    if cached and os.path.exists(out_file):
+        logger.info('Using the UniProt entries already at %s' % out_file)
+        return
+    query = build_organism_query(taxonomy_ids,
+                                 include_unreviewed=include_unreviewed)
+    logger.info('Downloading UniProt entries for query: %s' % query)
+    # We write to a temporary file and only move it into place once the
+    # download has finished. Otherwise an interrupted download leaves a
+    # partial file at out_file, which a later call with cached=True has no
+    # way of telling apart from a complete one.
+    temp_file = out_file + '.tmp'
+    with gzip.open(temp_file, 'wt', encoding='utf-8') as fh:
+        for line in _iter_uniprot_search_lines(query, columns):
+            fh.write(line + '\n')
+    os.replace(temp_file, out_file)
+    logger.info('Saved UniProt entries into %s' % out_file)
+
+
 def parse_uniprot_synonyms(synonyms_str):
     synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
                           '', synonyms_str).strip()
